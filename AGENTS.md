@@ -6,7 +6,8 @@ holds how to work on it, and the design with its reasons.
 
 ## Commands
 
-- `pnpm install`: the dev tools, and the git hooks in `.githooks/` (by `prepare`).
+- `pnpm install`: the dev tools, and the git hooks in `.githooks/` (by `prepare`): the gate before each commit,
+  Conventional Commits, no tag moved or deleted, and no `WIP`, `fixup!` or `squash!` commit pushed.
 - `claude --plugin-dir .`, once after cloning: loading the mod, Claude Code writes the types it is checked against
   into `.claude-plugin/types/`, which git ignores. Until then the gate stops at the types and says so.
 - `pnpm check`: the gate, which the pre-commit hook runs: format, lint, types, the repo guard, the CLI's tests with
@@ -167,6 +168,10 @@ them. Their reasons:
 10. **No network block in the tests:** every address they connect to is loopback, and the others they name are
     documentation ranges, which route nowhere, so no test can reach another machine. A block would patch Node's
     sockets in every process the tests start, to guard against what no address of theirs can do.
+11. **The tag guard lets through a deletion that names the value it expects** (`git update-ref -d <tag> <value>`):
+    packing the refs, which `git gc` runs by itself, deletes each loose tag that way once `packed-refs` holds it, and
+    the `reference-transaction` hook cannot tell the two apart. `git tag -d`, `git tag -f` and a push that moves or
+    deletes a remote tag are refused.
 
 ## Known limitations
 

@@ -1,0 +1,21 @@
+#!/bin/sh
+# Tags never move: a change to a tag that exists, moving or deleting it, is refused before it is made. A release's
+# tag may already be published, and whoever fetched it trusts that it never changes.
+[ "$1" = prepared ] || exit 0
+is_zero() { case $1 in *[!0]*) return 1 ;; esac }
+refused=0
+while read -r old new ref; do
+  case $ref in
+    refs/tags/*) ;;
+    *) continue ;;
+  esac
+  current=$(git rev-parse -q --verify "$ref") || continue
+  # Packing the refs (`git gc` does it) deletes each loose tag once packed-refs holds it, naming the value it expects;
+  # `git tag -d` and `git update-ref -d` name none.
+  is_zero "$new" && ! is_zero "$old" && continue
+  if [ "$new" != "$current" ]; then
+    echo "reference-transaction: ${ref#refs/tags/} exists, and tags never move nor are deleted" >&2
+    refused=1
+  fi
+done
+exit $refused
