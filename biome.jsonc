@@ -1,0 +1,93 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": { "includes": ["**", "!.claude-plugin/types"] },
+  // Prettier formats; Biome only lints.
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "error",
+      },
+      "suspicious": {
+        "noConsole": "error",
+        "noExplicitAny": "error",
+        "noEmptyBlockStatements": "error",
+      },
+      "style": {
+        "useConst": "error",
+        "noNonNullAssertion": "error",
+      },
+      "nursery": {
+        "noFloatingPromises": "error",
+      },
+    },
+  },
+  "overrides": [
+    // The architecture: the mod runs where there is no Node, and of the CLI reads only what both agree on, which
+    // imports nothing; the CLI knows nothing of the mod.
+    {
+      "includes": ["hooks/**", "types/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  { "group": ["node:*"], "message": "The mod runs where there is no Node." },
+                  {
+                    "group": ["../cli/*", "!../cli/protocol.mts"],
+                    "message": "Of the CLI, the mod imports only protocol.mts, what both agree on.",
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      "includes": ["cli/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [{ "group": ["../hooks/*", "../types/*"], "message": "The CLI knows nothing of the mod." }],
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      "includes": ["cli/protocol.mts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  { "group": ["**"], "message": "protocol.mts imports nothing: the mod, with no Node, imports it." },
+                ],
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      // The CLI's entry point answers on stdout and stderr: that is its interface, not logging.
+      "includes": ["cli/claude-colab.mts"],
+      "linter": { "rules": { "suspicious": { "noConsole": "off" } } },
+    },
+  ],
+}

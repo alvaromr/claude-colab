@@ -1,0 +1,16 @@
+# Dependencies and tool output
+node_modules/
+coverage/
+reports/
+.stryker-tmp/
+*.log
+
+# Local agent settings
+CLAUDE.local.md
+AGENTS.local.md
+.claude/settings.local.json
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/

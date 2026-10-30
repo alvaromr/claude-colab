@@ -1,0 +1,50 @@
+// Runs with `node --test tests/`: what the server, connect and the mod agree on.
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { isCode, isName, languageOf, NAME_LENGTH, NAME_RULE } from '../cli/protocol.mts'
+
+test('a name is letters, digits, spaces and . _ -, starting with a letter or digit, up to its length', () => {
+  for (const name of ['Ana', 'Ñandú 2', 'a', 'x'.repeat(NAME_LENGTH), 'b.o_b-1']) assert.equal(isName(name), true, name)
+  for (const name of ['', ' Ana', '-Ana', 'x'.repeat(NAME_LENGTH + 1), 'Ana!', 'Ana\n', 5, null, ['Ana']]) {
+    assert.equal(isName(name), false, String(name))
+  }
+  assert.deepEqual(NAME_RULE, {
+    es: `letras, números, espacios y . _ -, hasta ${NAME_LENGTH}`,
+    en: `letters, digits, spaces and . _ -, up to ${NAME_LENGTH}`,
+  })
+})
+
+test('a room’s code is 24 letters, digits, _ or -, and nothing else', () => {
+  assert.equal(isCode('a'.repeat(24)), true)
+  assert.equal(isCode('aZ09_-'.repeat(4)), true)
+  for (const code of ['a'.repeat(23), 'a'.repeat(25), `${'a'.repeat(23)}!`, ['a'.repeat(24)], 24, undefined]) {
+    assert.equal(isCode(code), false, String(code))
+  }
+})
+
+test('the language is Spanish where the first locale variable set is Spanish, English anywhere else', () => {
+  for (const locale of [
+    { LANG: 'es_ES.UTF-8' },
+    { LANG: 'es' },
+    { LANG: 'ES_mx' },
+    { LANG: 'es.UTF-8' },
+    { LANG: 'es@euro' },
+    { LC_MESSAGES: 'es_AR.UTF-8', LANG: 'en_US.UTF-8' },
+    { LC_ALL: 'es_ES.UTF-8', LC_MESSAGES: 'en_US.UTF-8', LANG: 'en_US.UTF-8' },
+    { LC_ALL: '', LANG: 'es_ES.UTF-8' }, // an empty one counts as unset
+  ]) {
+    assert.equal(languageOf(locale), 'es', JSON.stringify(locale))
+  }
+  for (const locale of [
+    {},
+    { LANG: 'en_US.UTF-8' },
+    { LANG: 'C' },
+    { LANG: 'POSIX' },
+    { LANG: 'est_EE' },
+    { LANG: 'xes_ES' },
+    { LC_MESSAGES: 'en_GB', LANG: 'es_ES.UTF-8' },
+    { LC_ALL: 'C', LANG: 'es_ES.UTF-8' },
+  ]) {
+    assert.equal(languageOf(locale), 'en', JSON.stringify(locale))
+  }
+})

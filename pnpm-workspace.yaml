@@ -1,0 +1,10 @@
+# Supply-chain hardening: a release installs only once it is a week old, a package never loses the provenance it
+# had, the lockfile must match before any script runs, and no dependency runs an install script.
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade
+verifyDepsBeforeRun: error
+allowBuilds: {}
+overrides:
+  # Stryker's typed-rest-client pins qs 6.15.1, which has four moderate advisories (DoS); 6.16.1 fixes them all.
+  # Drop this once a Stryker release a week old pins a fixed qs.
+  qs: 6.16.1

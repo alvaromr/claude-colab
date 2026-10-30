@@ -1,0 +1,12 @@
+#!/bin/sh
+# Conventional Commits, with a subject of at most 72 characters.
+subject=$(head -n 1 "$1")
+pattern='^((feat|fix|refactor|test|docs|perf|build|ci|chore|revert)(\([a-z0-9-]+\))?!?:|fixup!|squash!) .+'
+if ! printf '%s\n' "$subject" | grep -Eq "$pattern"; then
+  echo "commit-msg: the subject must follow Conventional Commits, such as 'fix(cli): …'" >&2
+  exit 1
+fi
+if [ "$(printf '%s' "$subject" | wc -m)" -gt 72 ]; then
+  echo "commit-msg: the subject is longer than 72 characters" >&2
+  exit 1
+fi

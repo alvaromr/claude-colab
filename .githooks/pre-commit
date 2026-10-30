@@ -1,0 +1,3 @@
+#!/bin/sh
+# The gate, before every commit: the same one that runs anywhere else.
+exec pnpm check
