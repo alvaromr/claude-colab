@@ -543,6 +543,110 @@ test('every action of the pane is a tool too, refused while nothing is linked', 
   expect(left.result).toMatch(/You were in no room/)
 })
 
+// A tool as the start registers it, its words known by a piece of them.
+const spec = (name: string, about: string, isDeferred: boolean, properties = {}, required: string[] = []) => ({
+  name,
+  description: expect.stringContaining(about),
+  inputSchema: { type: 'object', properties, required },
+  isDeferred,
+})
+const field = (type: string, about: string) => ({ type, description: expect.stringContaining(about) })
+
+test('the start registers every tool with its words and schema; only say is in front, the rest deferred', async ($, on) => {
+  const { clock } = session(on)
+  const registered: unknown[] = []
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('command.register', (_, e) => ({ value: { command: e.name } }))
+  on('tool.register', (_, e) => {
+    registered.push(e)
+
+    return { value: { tool: e.name } }
+  })
+  await $.session.start({ cwd: '/home/ana/project', surface: 'terminal', isInteractive: true })
+  await clock.settle()
+
+  expect(registered).toEqual([
+    spec(
+      'say',
+      'Writes a message in the colab room',
+      false,
+      {
+        text: field('string', 'The message'),
+        to: field('string', 'Name of someone in the room'),
+      },
+      ['text'],
+    ),
+    spec('serve', 'Opens this machine’s colab room server', true, {
+      name: field('string', 'How those who connect see it'),
+      host: field('string', 'Interface it listens on'),
+      port: field('number', 'TCP port'),
+    }),
+    spec('stop_serving', 'Closes this machine’s room server', true),
+    spec(
+      'connect',
+      'Connects this session to a colab room server',
+      true,
+      {
+        server: field('string', 'ip or ip:port of the server'),
+        name: field('string', 'Name the others see you by; by default, the system user'),
+      },
+      ['server'],
+    ),
+    spec('disconnect', 'Disconnects this session from the room server', true),
+    spec('rooms', 'Says which room you are in', true),
+    spec('create', 'Makes a room on the server', true, { room: field('string', 'The room’s name') }),
+    spec(
+      'join',
+      'Goes into a room with the invitation',
+      true,
+      {
+        invitation: field('string', 'The whole invitation'),
+        name: field('string', 'Name the others see you by; by default, the pane’s'),
+      },
+      ['invitation'],
+    ),
+    spec('invite', 'Gives the invitation to the room you are in', true),
+    spec('leave', 'Leaves the room you are in', true),
+  ])
+})
+
+test('the serve tool opens the server with what it is given, trimmed, and on 0.0.0.0:4747 by default', async ($, on) => {
+  const served: string[][] = []
+  on('process.run', (_, e) => {
+    if (e.argv.includes('serve')) served.push(e.argv.slice(e.argv.indexOf('serve')))
+    const stdout = e.argv.includes('serve')
+      ? '{"ok":true,"title":"Oficina","listening":"0.0.0.0:4747"}'
+      : '{"ok":true,"running":false,"machine":"equipo"}'
+
+    return { value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+  })
+
+  expect((await $.tool.call({ tool: 'mcp__colab__serve' } as never)).result).toMatch(
+    /Server «Oficina» open in the background on 0\.0\.0\.0:4747: .* connect to 127\.0\.0\.1:4747/,
+  )
+  await $.tool.call({ tool: 'mcp__colab__serve', host: ' 127.0.0.1 ', port: 5000, name: ' Oficina ' } as never)
+  expect(served).toEqual([
+    ['serve', '--background', '--host', '0.0.0.0', '--port', '4747'],
+    ['serve', '--background', '--host', '127.0.0.1', '--port', '5000', '--name', 'Oficina'],
+  ])
+})
+
+test('say, create and invite hand connect what the model gave them, trimmed; invite answers the invitation alone', async ($, on) => {
+  const invitation = 'colab:invitación'
+  const { connect } = await linkedAna($, on, ['Ana', 'Bob', 'Carol'], { invite: { ok: true, invitation } })
+
+  await $.tool.call({ tool: 'mcp__colab__say', text: ' hola ', to: ' Bob ' })
+  await $.tool.call({ tool: 'mcp__colab__say', text: 'a todos', to: ' ' })
+  await $.tool.call({ tool: 'mcp__colab__create', room: ' sala ' } as never)
+  expect((await $.tool.call({ tool: 'mcp__colab__invite' } as never)).result).toBe(invitation)
+  expect(connect.asked.filter(one => ['say', 'create'].includes(one.op))).toEqual([
+    { op: 'create', body: {} },
+    { op: 'say', body: { text: 'hola', to: 'Bob', by: 'claude' } },
+    { op: 'say', body: { text: 'a todos', by: 'claude' } },
+    { op: 'create', body: { name: 'sala' } },
+  ])
+})
+
 test('a row that is not a message of the room is left to the engine', async ($, on) => {
   on('ui.render', ($, e) => {
     const { Text } = $.ui.resolve(e)
@@ -656,9 +760,17 @@ const fresh = (): Record<string, unknown> => ({
 
 const ROOM = { code: 'r'.repeat(24), label: '1' }
 
-/** A session linked to 192.0.2.5:4747 as Ana, through the connect tool, and in room 1 with `members`. */
-async function linkedAna($: Parameters<TestBody>[0], on: Parameters<TestBody>[1], members: string[]) {
-  const { state, connect, appended, clock } = session(on)
+/**
+ * A session linked to 192.0.2.5:4747 as Ana, through the connect tool, and in room 1 with `members`; connect gives
+ * `answers` too, by request.
+ */
+async function linkedAna(
+  $: Parameters<TestBody>[0],
+  on: Parameters<TestBody>[1],
+  members: string[],
+  answers: Record<string, Record<string, unknown>> = {},
+) {
+  const { state, connect, appended, clock } = session(on, answers)
   const linking = $.tool.call({ tool: 'mcp__colab__connect', server: '192.0.2.5:4747', name: 'Ana' })
 
   await until(clock, () => connect.started.length === 1, 'connect started')
@@ -679,8 +791,11 @@ async function linkedAna($: Parameters<TestBody>[0], on: Parameters<TestBody>[1]
   return { state, connect, appended, clock }
 }
 
-/** A fresh session with an inbox, its connect played by the test, and what it appends to the conversation kept. */
-function session(on: Parameters<TestBody>[1]) {
+/**
+ * A fresh session with an inbox, its connect played by the test and giving `answers` too, and what it appends to the
+ * conversation kept.
+ */
+function session(on: Parameters<TestBody>[1], answers: Record<string, Record<string, unknown>> = {}) {
   const clock = mock.clock(on)
   mock.store(on)
   on('ui.status', () => ({ value: undefined }))
@@ -708,7 +823,7 @@ function session(on: Parameters<TestBody>[1]) {
 
     return next(e)
   })
-  const connect = fakeConnect(on, { create: { ok: true, ...ROOM, members: ['Ana'] } })
+  const connect = fakeConnect(on, { create: { ok: true, ...ROOM, members: ['Ana'] }, ...answers })
 
   return { state, connect, appended, clock }
 }
