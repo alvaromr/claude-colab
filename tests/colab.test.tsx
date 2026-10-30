@@ -552,9 +552,10 @@ const spec = (name: string, about: string, isDeferred: boolean, properties = {},
 })
 const field = (type: string, about: string) => ({ type, description: expect.stringContaining(about) })
 
-test('the start registers every tool with its words and schema; only say is in front, the rest deferred', async ($, on) => {
+/** The tools a fresh session registers as it starts, as the engine receives them. */
+async function registeredTools($: Parameters<TestBody>[0], on: Parameters<TestBody>[1]) {
   const { clock } = session(on)
-  const registered: unknown[] = []
+  const registered: { name: string }[] = []
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('command.register', (_, e) => ({ value: { command: e.name } }))
   on('tool.register', (_, e) => {
@@ -565,7 +566,11 @@ test('the start registers every tool with its words and schema; only say is in f
   await $.session.start({ cwd: '/home/ana/project', surface: 'terminal', isInteractive: true })
   await clock.settle()
 
-  expect(registered).toEqual([
+  return registered
+}
+
+test('the start registers every tool with its words and schema; only say is in front, the rest deferred', async ($, on) => {
+  expect(await registeredTools($, on)).toEqual([
     spec(
       'say',
       'Writes a message in the colab room',
@@ -608,6 +613,27 @@ test('the start registers every tool with its words and schema; only say is in f
     spec('invite', 'Gives the invitation to the room you are in', true),
     spec('leave', 'Leaves the room you are in', true),
   ])
+})
+
+// A hook can only name a tool the mod describes, which the types check; this checks the other way round.
+test('every tool registered is answered by a hook of its own, and only those are', async ($, on) => {
+  on('tool.call', () => ({ result: 'left to the engine' })) // beneath the mod's hooks, reached only past them
+  const names = (await registeredTools($, on)).map(one => `mcp__colab__${one.name}`)
+
+  for (const name of names) {
+    const ran = await $.tool.call({ tool: name } as never)
+
+    expect(ran.result ?? ran.deny, name).not.toBe('left to the engine')
+  }
+  expect((await $.tool.call({ tool: 'mcp__colab__nothing' } as never)).result).toBe('left to the engine')
+})
+
+test('a tool that breaks is turned down, naming it', async ($, on) => {
+  on('process.run', () => {
+    throw new Error('the CLI is gone')
+  })
+
+  expect((await $.tool.call({ tool: 'mcp__colab__serve' } as never)).deny).toBe('colab failed in mcp__colab__serve')
 })
 
 test('the serve tool opens the server with what it is given, trimmed, and on 0.0.0.0:4747 by default', async ($, on) => {
