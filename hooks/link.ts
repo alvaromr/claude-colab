@@ -293,7 +293,7 @@ async function follow($: Engine, argv: string[], inbox: Inbox) {
   droppedAt ??= await $.clock.now()
   if (wanted.place !== null) expectBack()
   await updateLink($, (): Link => ({ status: 'connecting', server: wanted.server }))
-  $.clock.after(linkRetry, () => void relink($))
+  $.clock.after(linkRetry, () => unattended($, T.noRelink, relink($)))
   linkRetry = Math.min(linkRetry * 2, RETRY_LAST)
 }
 
@@ -304,11 +304,26 @@ async function letGo($: Engine) {
   settleBackNow()
 }
 
-/** Makes the link the person asked for again, after a reload or a drop. */
-async function relink($: Engine) {
+/**
+ * Makes the link the person asked for again, after a reload or a drop. One connect cannot even start, such as with no
+ * inbox, would fail the same on every try: it is let go, as a refused name is, and its answer says why. How a try
+ * that started ends, follow tells: launch answers it for a press that waits on it, and none does here.
+ */
+async function relink($: Engine): Promise<Answer | undefined> {
   const wanted = await readWant($)
 
-  if (wanted !== null && child === undefined) await connect($, wanted.server, wanted.name)
+  if (wanted === null || child !== undefined) return undefined
+  const ready = await readyToConnect($, wanted.server, wanted.name)
+
+  if (ready.inbox === undefined) {
+    await letGo($)
+    await updateLink($, () => ({ status: 'off' }))
+
+    return ready
+  }
+  await launch($, wanted.server, wanted.name, ready.inbox)
+
+  return undefined
 }
 
 /** The link the person had asked for before the reload comes back; what is said meanwhile waits for it. */
@@ -318,7 +333,7 @@ export async function resume($: Engine) {
   if (wanted !== null) {
     droppedAt = await $.clock.now() // the old link's process may not be seen gone yet
     if (wanted.place !== null) expectBack()
-    $.clock.after(RETRY_FIRST, () => void relink($))
+    $.clock.after(RETRY_FIRST, () => unattended($, T.noRelink, relink($)))
   }
 }
 

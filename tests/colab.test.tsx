@@ -451,14 +451,15 @@ test('an invitation the CLI turns down is turned down, with its reason', async (
   expect(ran.deny ?? ran.text).toMatch(/La invitación no es válida/)
 })
 
+// The link a session had asked for before a reload: to a server, back into a room.
+const WANTED = { server: '192.0.2.5:4747', name: 'Ana', place: { code: 'c'.repeat(24), label: '1' } }
+
 test('after a reload, what is said waits for the way back into the room instead of failing at once', async ($, on) => {
   const clock = mock.clock(on)
   mock.store(on)
-  mock.env(on, {}) // no inbox: linking again fails, and nothing brings the session back
-  const back: Record<string, unknown> = {
-    want: { server: '192.0.2.5:4747', name: 'Ana', place: { code: 'c'.repeat(24), label: '1' } },
-  }
-  on('state.get', (_, e, next) => (e.key in back ? { value: { value: back[e.key], version: 1 } } : next(e)))
+  mock.env(on, { CLAUDE_CODE_MESSAGING_SOCKET: '/tmp/inbox.sock', HOME: '/home/ana' })
+  fakeConnect(on) // started again, it never hears from the server: nothing brings the session back
+  seed(on, { ...fresh(), want: WANTED })
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' }) // the first drawing starts the mod
   await clock.settle()
 
@@ -473,6 +474,27 @@ test('after a reload, what is said waits for the way back into the room instead 
 
   await clock.advance(15_000) // no way back here: it gives up after a while
   expect((await said).deny).toMatch(/You are in no room/)
+  await ui.unmount()
+})
+
+test('after a reload, a link connect cannot even start is let go, and the person is told why', async ($, on) => {
+  const clock = mock.clock(on)
+  mock.store(on)
+  mock.env(on, {}) // no inbox
+  const shown = statusLines(on)
+  const state: Record<string, unknown> = { ...fresh(), want: WANTED }
+  seed(on, state)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' }) // the first drawing starts the mod
+  await clock.settle()
+
+  await clock.advance(1_000)
+  await until(clock, () => state.want === null, 'let go')
+  expect(state.link).toEqual({ status: 'off' })
+  expect(shown).toContain(
+    'Could not link again: This session has no message inbox: colab needs Claude Code 2.1.224 or later',
+  )
+  // Nothing brings the session back to its room: what is said fails at once.
+  expect((await $.tool.call({ tool: 'mcp__colab__say', text: 'hola' })).deny).toMatch(/You are in no room/)
   await ui.unmount()
 })
 
