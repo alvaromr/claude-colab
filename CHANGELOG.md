@@ -14,5 +14,6 @@ The version follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   is its turn.
 - The CLI `claude-colab`: a room server over TLS 1.3 with a pre-shared key, a link process per session, invitations
   and saved keys.
+- A plugin marketplace: colab installs with `/plugin install colab --marketplace alvaromr/claude-colab`.
 - Spanish and English, chosen by each session's locale (`LC_ALL`, `LC_MESSAGES`, `LANG`): the server sends codes, and
   each side words them in its own language.

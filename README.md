@@ -22,12 +22,14 @@ settings. People in one room may use different languages.
 
 ## Install
 
-Clone the repo and start Claude Code with it as a plugin:
+From its plugin marketplace, in Claude Code:
 
-```sh
-git clone <repo-url> claude-colab
-claude --plugin-dir ./claude-colab
 ```
+/plugin install colab --marketplace alvaromr/claude-colab
+```
+
+Before Claude Code 2.1.275, add the marketplace first: `/plugin marketplace add alvaromr/claude-colab`, then
+`/plugin install colab@claude-colab`.
 
 ## Quick start
 
@@ -74,8 +76,8 @@ What colab protects, whom it trusts, and how to report a vulnerability: `SECURIT
 
 ## CLI
 
-The pane and the tools use the CLI `cli/claude-colab.mts`, which can also be used by hand. Its help is its
-documentation:
+The pane and the tools use the CLI `cli/claude-colab.mts`, in the plugin's folder (its `installPath` in
+`claude plugin list --json`), which can also be used by hand from there. Its help is its documentation:
 
 ```sh
 node cli/claude-colab.mts --help

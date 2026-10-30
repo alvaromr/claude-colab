@@ -21,7 +21,8 @@ holds how to work on it, and the design with its reasons.
 ## Requirements
 
 1. **Generic and public:** nothing versioned names a company, a person, an IP or a local path, bar the author's name (never an
-   email) in `.claude-plugin/plugin.json`; `pnpm guard` checks it.
+   email) in `.claude-plugin/plugin.json` and the repository's GitHub owner (`alvaromr/claude-colab`) where it is
+   reached; `pnpm guard` checks it.
 2. **Network-agnostic:** it works on a LAN or over any VPN.
 3. **Security is a requirement:** an authenticated, encrypted channel, and no secret in the repo.
 4. **No third-party services:** the machines connect directly, and nothing reaches outside unless the person approves
@@ -124,7 +125,7 @@ them. Their reasons:
 - **English** for code, comments, docs and commits; what people and the model read is in both languages, in the
   strings file of its half: a text in one language alone is a bug.
 - **Nothing personal or secret versioned:** no company, person, IP or local path; documentation addresses only. The
-  one name is the author's, in the manifest.
+  only exceptions are those of Requirements, 1.
 - **Conventional Commits,** checked by the `commit-msg` hook.
 - **One change, everything coherent:** code, tests, docs and help move together.
 
@@ -171,11 +172,15 @@ them. Their reasons:
 
 - Tested between sessions on one machine; next, between two machines: first `ping` and a test TCP port, then a round
   trip. If they cannot reach each other, another network (such as Tailscale) does it; the tool does not change.
+- **Pending until `alvaromr/claude-colab` is published on GitHub:** the install line in `README.md` and the reporting
+  channel in `SECURITY.md` lead nowhere, and private vulnerability reporting, which GitHub enables per repository,
+  must be turned on in its settings. Until then, the plugin runs from a clone with `claude --plugin-dir`.
 
 ## Where things live
 
 - `README.md`: install and use. `SECURITY.md`: what colab protects, and reporting a vulnerability. `CHANGELOG.md`:
   changes per version.
-- `.claude-plugin/plugin.json`: the plugin's manifest and its version, the only one.
+- `.claude-plugin/plugin.json`: the plugin's manifest and its version, the only one. `.claude-plugin/marketplace.json`:
+  the marketplace that lists it.
 - `cli/protocol.mts`: the values both halves agree on. `types/index.d.ts`: the mod's state.
 - `stryker.config.json`, `biome.jsonc`, `.prettierrc.json`, `tsconfig.json`, `tsconfig.cli.json`: the gate's tools.

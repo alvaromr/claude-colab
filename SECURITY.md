@@ -2,8 +2,9 @@
 
 ## Reporting a vulnerability
 
-Report it privately through the repository's private vulnerability reporting (the **Security** tab, **Report a
-vulnerability**), never in a public issue. Say what an attacker needs (a key, a place on the network, a room's code),
+Report it privately through GitHub's private vulnerability reporting on `alvaromr/claude-colab` (its **Security** tab,
+**Report a vulnerability**: <https://github.com/alvaromr/claude-colab/security/advisories/new>), never in a public
+issue. Say what an attacker needs (a key, a place on the network, a room's code),
 what they get, and how to reproduce it.
 
 ## What colab protects
