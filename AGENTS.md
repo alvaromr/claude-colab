@@ -149,8 +149,10 @@ them. Their reasons:
    exports it, and any process of theirs can read the key files anyway); two `connect` started at once on one socket
    race; someone with the key can repeat a flood of handshakes to keep others out (a per-IP limit would fix it);
    names with homoglyphs pass for others' names.
-7. **Each developer may keep notes of their own in a `CLAUDE.local.md`,** which git ignores: the owner's call. Nothing
-   in it is versioned, and nothing versioned depends on it.
+7. **Each developer may keep notes of their own in a `CLAUDE.local.md`,** which git ignores, though the baseline keeps a
+   developer's own setup out of the project folder altogether: the owner's call. What that rule guards is not at stake:
+   git never takes the file, so it is neither published nor cloned, and nothing versioned depends on it, so the project
+   works the same for everyone.
 8. **Mutation runs the fast suite, not `tests/cli.test.mts`, and so leaves out `cli/claude-colab.mts`:** that test
    drives the real CLI end to end, a process per command, and one of its cases waits its real time, so running it per
    mutant costs far more than it proves of a thin entry point. Every test ends the processes it starts even when the
