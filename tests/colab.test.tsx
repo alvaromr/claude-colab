@@ -425,6 +425,22 @@ test('opening a server here stops at a check of this machine’s server that fai
   await ui.unmount()
 })
 
+test('a press of the pane whose work breaks says so in a toast', async ($, on) => {
+  const clock = mock.clock(on)
+  mock.store(on)
+  mock.env(on, {})
+  const told = toasts(on)
+  statusLines(on)
+  // Nothing answers process.run: running the CLI throws.
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' }) // the first drawing starts the mod
+  await clock.settle()
+
+  await ui.press({ key: 'host' })
+  await until(clock, () => told.length === 1, 'the failure told')
+  expect(told[0]).toMatch(/no implementation for process\.run/)
+  await ui.unmount()
+})
+
 test('a server opened or closed that the check after cannot see is complained of, the action still told', async ($, on) => {
   const shown = statusLines(on)
   const answers: Record<string, string> = {

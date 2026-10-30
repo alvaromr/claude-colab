@@ -18,6 +18,7 @@ import { ensureStarted } from './session.ts'
 import {
   type Answer,
   type Engine,
+  failed,
   isOwn,
   isSameServer,
   readChatBack,
@@ -98,9 +99,9 @@ function keepInField($: Engine, key: string, text: string | undefined) {
   })
 }
 
-/** Confirms or turns down an action of the pane in a toast, which goes by itself. */
+/** Confirms or turns down an action of the pane in a toast, which goes by itself; one that broke is turned down. */
 async function report($: Engine, pending: Promise<Answer>) {
-  const answer = await pending
+  const answer = await pending.catch((caught: unknown) => failed(String(caught)))
   const told = answer.ok ? answer.text : (answer.error ?? T.failed)
 
   if (told !== undefined) await $.ui.toast(told)
