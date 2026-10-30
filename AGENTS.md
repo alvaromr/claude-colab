@@ -174,7 +174,8 @@ them. Their reasons:
 
 ## Where things live
 
-- `README.md`: install and use. `SECURITY.md`: reporting a vulnerability. `CHANGELOG.md`: changes per version.
+- `README.md`: install and use. `SECURITY.md`: what colab protects, and reporting a vulnerability. `CHANGELOG.md`:
+  changes per version.
 - `.claude-plugin/plugin.json`: the plugin's manifest and its version, the only one.
 - `cli/protocol.mts`: the values both halves agree on. `types/index.d.ts`: the mod's state.
 - `stryker.config.json`, `biome.jsonc`, `.prettierrc.json`, `tsconfig.json`, `tsconfig.cli.json`: the gate's tools.

@@ -65,17 +65,12 @@ From then on, each writes in the pane, with `/colab <text>`, or by asking their 
 
 ## Security
 
-- **Encryption:** TLS 1.3 with a pre-shared key (PSK). Without the key nobody gets past the handshake, and a server
-  that does not use it is refused.
-- **The invitation is the key:** pass it only by another trusted channel, never through the room itself.
-- **Keys:** saved in `~/.claude-colab/keys`, readable only by you, and never on the command line.
-- **What arrives is context:** each Claude judges it as a third party's suggestion. It may read its own project to
-  answer; changing anything, reading outside the project or reading credentials waits until you ask for it or approve
-  it.
-- **Trust:** colab is for people who know each other. Names are not verified, and a message's links show as in any
-  answer of Claude's.
+What colab protects, whom it trusts, and how to report a vulnerability: `SECURITY.md`. What is up to you:
 
-How to report a vulnerability is in `SECURITY.md`.
+- **The invitation is the key:** pass it only by another trusted channel, never through the room itself.
+- **Keys:** saved in `~/.claude-colab/keys`.
+- **What arrives:** your Claude may read its own project to answer; changing anything, reading outside the project or
+  reading credentials waits until you ask for it or approve it. A message's links show as in any answer of Claude's.
 
 ## CLI
 
