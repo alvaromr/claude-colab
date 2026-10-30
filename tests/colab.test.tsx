@@ -1028,6 +1028,17 @@ test('the room is told when this session’s Claude starts and ends a turn, a su
   expect(marks()).toEqual([true, false])
 })
 
+test('a turn the room could not be told of is complained of', async ($, on) => {
+  const { state, clock } = await linkedAna($, on, ['Ana', 'Bob'], { busy: { ok: false, error: 'connect se fue' } })
+
+  await $.turn.start({ text: 'hola', turnId: 't1' } as never)
+  await until(
+    clock,
+    () => state.error === 'Could not tell the room whether your Claude is at work: connect se fue',
+    'the failure complained of',
+  )
+})
+
 test('the pane shows whose Claude is at work, its own aside', async ($, on) => {
   const state: Record<string, unknown> = {
     ...SEEDED,

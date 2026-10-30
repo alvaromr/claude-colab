@@ -37,13 +37,13 @@ export const register: Register = on => {
   // The room sees this session's Claude at work from the start of each of its turns to the end, however it ended; a
   // subagent's turns are inside one of those.
   on('turn.start', async ($, e, next) => {
-    if (e.agentId === undefined) void markBusy($, true)
+    if (e.agentId === undefined) unattended($, T.busyUntold, markBusy($, true))
 
     return next(e)
   })
 
   on('turn.complete', async ($, e, next) => {
-    if (e.agentId === undefined) void markBusy($, false)
+    if (e.agentId === undefined) unattended($, T.busyUntold, markBusy($, false))
 
     return next(e)
   })

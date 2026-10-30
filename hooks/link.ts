@@ -178,8 +178,8 @@ export async function say($: Engine, text: string, by: Author, to?: string): Pro
 }
 
 /** Tells the room whether this session's Claude is at work: any turn of its own, while it is in a room. */
-export async function markBusy($: Engine, busy: boolean) {
-  if ((await readRoom($)) !== null) await request($, 'busy', { busy })
+export async function markBusy($: Engine, busy: boolean): Promise<Answer | undefined> {
+  return (await readRoom($)) === null ? undefined : request($, 'busy', { busy })
 }
 
 /** How many people are in this session's room, as the server last said. */
