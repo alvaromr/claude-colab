@@ -123,8 +123,8 @@ them. Their reasons:
 - **Verify in a real session** before calling something done: no hypothesis passed off as fact.
 - **English** for code, comments, docs and commits; what people and the model read is in both languages, in the
   strings file of its half: a text in one language alone is a bug.
-- **Nothing personal or secret versioned:** no company, person, IP or local path; documentation addresses only. The one name is the
-  author's, in the manifest.
+- **Nothing personal or secret versioned:** no company, person, IP or local path; documentation addresses only. The
+  one name is the author's, in the manifest.
 - **Conventional Commits,** checked by the `commit-msg` hook.
 - **One change, everything coherent:** code, tests, docs and help move together.
 
@@ -161,6 +161,9 @@ them. Their reasons:
    longer has, and the tests run without them.
 9. **One test waits its real time:** `stop` gives a server that does not end a fixed wait, in a process of its own
    that a test cannot speed up.
+10. **No network block in the tests:** every address they connect to is loopback, and the others they name are
+    documentation ranges, which route nowhere, so no test can reach another machine. A block would patch Node's
+    sockets in every process the tests start, to guard against what no address of theirs can do.
 
 ## Known limitations
 
