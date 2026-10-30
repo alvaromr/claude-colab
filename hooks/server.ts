@@ -1,4 +1,4 @@
-import { type Answer, done, type Engine, failed, T, updateHosted } from './state.ts'
+import { type Answer, complained, done, type Engine, failed, T, updateHosted } from './state.ts'
 
 const CLI = 'cli/claude-colab.mts'
 
@@ -44,7 +44,7 @@ export async function openServer($: Engine, host: string, port: number, title: s
   const named = title ? ['--name', title] : []
   const opened = await runCli($, ['serve', '--background', '--host', host, '--port', String(port), ...named])
 
-  await checkServer($)
+  await complained($, T.serverUnknown, checkServer($))
   if (!opened.ok) return opened
   const local = `127.0.0.1:${String(opened.listening).split(':').pop()}`
 
@@ -55,7 +55,7 @@ export async function openServer($: Engine, host: string, port: number, title: s
 export async function closeServer($: Engine): Promise<Answer> {
   const closed = await runCli($, ['stop'])
 
-  await checkServer($)
+  await complained($, T.serverUnknown, checkServer($))
 
   return closed.ok ? done(T.serverClosed) : closed
 }

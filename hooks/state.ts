@@ -146,7 +146,12 @@ export async function complain($: Engine, why: string | null) {
 
 /** Work no press waits on: its failure, answered or thrown, is complained of instead of dropped. */
 export function unattended($: Engine, what: string, pending: Promise<Answer | undefined>) {
-  void pending.then(
+  void complained($, what, pending)
+}
+
+/** As unattended, for work the caller awaits: settles once a failure of `pending` is complained of. */
+export function complained($: Engine, what: string, pending: Promise<Answer | undefined>) {
+  return pending.then(
     answer => (answer && !answer.ok ? complain($, `${what}: ${answer.error ?? T.failed}`) : undefined),
     (caught: unknown) => complain($, `${what}: ${String(caught)}`),
   )

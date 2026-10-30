@@ -662,7 +662,10 @@ export async function disconnect($: Engine): Promise<Answer> {
  * rooms, where the person makes one, one step at a time.
  */
 export async function hostHere($: Engine, { name, title, port }: Setup): Promise<Answer> {
-  await checkServer($)
+  const checked = await checkServer($)
+
+  // Unknown, it may be open already: one opened on a guess may take its port.
+  if (!checked.ok) return checked
   if ((await readHosted($)) === null) {
     const number = port ? Number(port) : DEFAULT_PORT
 

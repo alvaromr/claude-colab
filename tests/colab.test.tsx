@@ -404,6 +404,51 @@ test('opening the pane asks after this machine’s server again, and a check tha
   await until(clock, () => shown.includes(SERVER_UNKNOWN), 'the failed check complained of')
 })
 
+test('opening a server here stops at a check of this machine’s server that fails, and says why', async ($, on) => {
+  const clock = mock.clock(on)
+  mock.store(on)
+  mock.env(on, {})
+  const told = toasts(on)
+  const ran: string[] = []
+  on('process.run', (_, e) => {
+    ran.push(String(e.argv[2]))
+    return { value: { ...NO_NODE, isStdoutTruncated: false, isStderrTruncated: false } }
+  })
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' }) // the first drawing starts the mod
+  await clock.settle()
+  ran.length = 0
+
+  await ui.press({ key: 'host' })
+  await until(clock, () => told.length === 1, 'the failure told')
+  expect(told).toEqual(['node: orden no encontrada'])
+  expect(ran, 'nothing opened on a guess').toEqual(['status'])
+  await ui.unmount()
+})
+
+test('a server opened or closed that the check after cannot see is complained of, the action still told', async ($, on) => {
+  const shown = statusLines(on)
+  const answers: Record<string, string> = {
+    serve: '{"ok":true,"title":"Portátil","listening":"0.0.0.0:4747"}',
+    stop: '{"ok":true}',
+  }
+  on('process.run', (_, e) => {
+    const stdout = answers[String(e.argv[2])]
+
+    return {
+      value: {
+        ...(stdout === undefined ? NO_NODE : { ...NO_NODE, exitCode: 0, stdout }),
+        isStdoutTruncated: false,
+        isStderrTruncated: false,
+      },
+    }
+  })
+
+  expect((await $.tool.call({ tool: 'mcp__colab__serve' } as never)).result).toMatch(/Server «Portátil» open/)
+  expect(shown).toEqual([SERVER_UNKNOWN])
+  expect((await $.tool.call({ tool: 'mcp__colab__stop_serving' } as never)).result).toMatch(/Server closed/)
+  expect(shown).toEqual([SERVER_UNKNOWN, SERVER_UNKNOWN])
+})
+
 // The language is the session's locale, read as POSIX does: the first of LC_ALL, LC_MESSAGES and LANG that is set.
 for (const [locale, heading, left] of [
   [{ LANG: 'es_ES.UTF-8' }, 'Entrar en una sala', /No estabas en ninguna sala/],
