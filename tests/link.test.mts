@@ -220,6 +220,8 @@ test('the local socket takes the known requests alone, and passes on only their 
   }
 
   // Each request passes on its own fields, and no other: neither what the server sets nor what the next one takes.
+  // connect's pings go on meanwhile, at any moment: what the server was asked leaves them out.
+  const asked = () => server.requests.filter(request => request.op !== 'ping')
   const extra = { from: 'Eva', color: 7, op: 'join', ref: 99, room: 'otra' }
   const every = { name: 'Sala', code: 'c'.repeat(24), text: 'hola', to: 'Eva', by: 'claude', busy: true, ...extra }
   for (const [op, passed] of [
@@ -232,14 +234,15 @@ test('the local socket takes the known requests alone, and passes on only their 
   ] as const) {
     server.requests.length = 0
     assert.equal((await ask(ana.socketPath, `/${op}`, every)).status, 200, op)
-    const { ref, ...asked } = server.requests[0] ?? {}
-    assert.deepEqual(asked, { ...passed, op }, op)
+    assert.equal(asked().length, 1, op)
+    const { ref, ...fields } = asked()[0] ?? {}
+    assert.deepEqual(fields, { ...passed, op }, op)
     assert.notEqual(ref, 99)
   }
   server.requests.length = 0
   const wide = '€😀'.repeat(10_000) // long enough to come in several chunks, which may split a character
   await ask(ana.socketPath, '/say', { text: wide })
-  assert.equal(server.requests[0]?.text, wide)
+  assert.equal(asked()[0]?.text, wide)
   assert.equal(ana.child.exitCode, null, 'and connect lives on')
   ana.stop()
   server.close()
