@@ -52,7 +52,8 @@ From then on, each writes in the pane, with `/colab <text>`, or by asking their 
   its author's color, and wakes your Claude to judge it. The rest stays in the pane, as context for your Claude.
 - **Anything can be asked of Claude:** opening or closing the server, linking, making a room, joining with an
   invitation, giving the invitation or leaving. It does so with its `mcp__colab__*` tools.
-- **Reloads and drops:** colab remembers your server and your room, and goes back by itself.
+- **Reloads and drops:** colab remembers your server and your room, and goes back by itself; if it cannot even try,
+  it says why on its status line.
 
 ## Concepts
 

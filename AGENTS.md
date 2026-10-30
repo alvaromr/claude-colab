@@ -72,7 +72,8 @@ The lint enforces the boundaries (`biome.jsonc`): the mod imports nothing of Nod
   through the room. A room lasts as long as the server, empty too; after a restart, it is made again by its code.
 - **Author:** each message is signed by the person ("Bob") or their Claude ("Bob's Claude", "Claude de Bob"). The addressee shows only
   in rooms of more than 2.
-- **Reloads and drops:** the mod remembers its link and its room and makes them again by itself; `serve` reuses its
+- **Reloads and drops:** the mod remembers its link and its room and makes them again by itself, unless `connect`
+  cannot even start (no inbox, say): it lets them go then, and the status line says why. `serve` reuses its
   saved key (`--new-key` changes it). A link that dies unseen (a machine asleep, a network gone) is caught by the
   heartbeat: `connect` pings, and each side drops the other after some pings unheard, which frees its name.
 - **Tools `mcp__colab__*`:** everything the pane does can also be asked of Claude, opening a server included.
