@@ -883,7 +883,8 @@ async function linkedAna(
   members: string[],
   answers: Record<string, Record<string, unknown>> = {},
 ) {
-  const { state, connect, appended, clock, cli } = session(on, answers)
+  const linked = session(on, answers)
+  const { state, connect, clock } = linked
   const linking = $.tool.call({ tool: 'mcp__colab__connect', server: '192.0.2.5:4747', name: 'Ana' })
 
   await until(clock, () => connect.started.length === 1, 'connect started')
@@ -901,7 +902,7 @@ async function linkedAna(
   connect.emit({ ev: 'rooms', rooms: [{ ...ROOM, members }] })
   await until(clock, () => (state.rooms as unknown[]).length === 1, 'the rooms pushed')
 
-  return { state, connect, appended, clock, cli }
+  return linked
 }
 
 /**
@@ -922,16 +923,18 @@ function session(on: Parameters<TestBody>[1], answers: Record<string, Record<str
   const state = fresh()
   seed(on, state)
   const appended: string[] = []
+  // Why the conversation turns down what the mod appends, once the test says it does.
+  const appending: { deny?: string } = {}
   on('session.append', (_, e, next) => {
     const [block] = e.message.content
 
     appended.push(block?.type === 'text' ? String(block.text) : '')
 
-    return next(e)
+    return appending.deny === undefined ? next(e) : { deny: appending.deny }
   })
   const connect = fakeConnect(on, { create: { ok: true, ...ROOM, members: ['Ana'] }, ...answers })
 
-  return { state, connect, appended, clock, cli }
+  return { state, connect, appended, appending, clock, cli }
 }
 
 // What connect prints when the server turns its name down for someone connected holding it.
@@ -1049,6 +1052,18 @@ test('in a room of three, only what is addressed to this session wakes it; the r
 
   expect(woken).toHaveLength(1)
   expect(woken[0]).toMatch(/Carol \(the person, not their Claude\) writes to you/)
+})
+
+test('a message the conversation turns down as context is complained of', async ($, on) => {
+  const { state, connect, appending, clock } = await linkedAna($, on, ['Ana', 'Bob', 'Carol'])
+
+  appending.deny = 'otro mod lo veta'
+  connect.emit({ ev: 'message', ...ROOM, id: 1, from: 'Bob', by: 'claude', color: 1, text: 'a todos', own: false })
+  await until(
+    clock,
+    () => state.error === 'Could not give Claude message #1 as context: otro mod lo veta',
+    'the refusal complained of',
+  )
 })
 
 test('who comes into the room or leaves it is logged once, under the heading the engine gives it', async ($, on) => {

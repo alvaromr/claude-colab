@@ -64,6 +64,7 @@ Nunca escribas en la sala tus pensamientos ni tu plan, y no compartas secretos n
   joined: (name: string, label: string) => `${name} ha entrado en ${roomEs(label)}`,
   left: (name: string, label: string) => `${name} ha salido de ${roomEs(label)}`,
   noNotice: (n: number, why: string) => `No se pudo avisar a Claude del mensaje #${n}: ${why}`,
+  noContext: (n: number, why: string) => `No se pudo dar a Claude el mensaje #${n} como contexto: ${why}`,
   busyUntold: 'No se pudo avisar a la sala de si tu Claude está trabajando',
   created: (label: string) =>
     `Has creado ${roomEs(label)} y estás dentro. Para que entre alguien, pásale su invitación`,
@@ -241,6 +242,7 @@ Never write your thoughts or your plan in the room, and share no secrets nor any
   joined: (name, label) => `${name} came into ${roomEn(label)}`,
   left: (name, label) => `${name} left ${roomEn(label)}`,
   noNotice: (n, why) => `Could not tell Claude of message #${n}: ${why}`,
+  noContext: (n, why) => `Could not give Claude message #${n} as context: ${why}`,
   busyUntold: 'Could not tell the room whether your Claude is at work',
   created: label => `Made ${roomEn(label)}; you are in. For someone to come in, pass them its invitation`,
   wasInNoRoom: 'You were in no room',

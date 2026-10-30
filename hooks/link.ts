@@ -520,7 +520,9 @@ async function show($: Engine, message: Message) {
   // One for this session goes into its inbox: the model wakes on it as on another session's message, and its row
   // is drawn as the room's. Any other is context alone, with no row: the pane shows it.
   if (isForMe) return post($, line, text)
-  await $.session.append({ message: { type: 'user', content: [{ type: 'text', text }] } })
+  const appended = await $.session.append({ message: { type: 'user', content: [{ type: 'text', text }] } })
+
+  if (appended.deny !== undefined) await complain($, T.noContext(line.n, appended.deny))
 }
 
 /** Posts `text` into this session's inbox, which wakes the model; a failure shows in the pane. */
