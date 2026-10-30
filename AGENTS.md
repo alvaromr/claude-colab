@@ -140,8 +140,8 @@ them. Their reasons:
 ## Decisions and deviations
 
 1. **The mod has no coverage or mutation figure.** `claude plugin test` measures neither, and Stryker needs Node,
-   which the mod does not have. Its tests in `tests/colab.test.tsx` specify each behaviour; mutation and coverage
-   apply to `cli/`.
+   which the mod does not have. Its tests in `tests/mod/`, one file per module of `hooks/` named after it and what
+   they share in `support.ts`, specify each behaviour; mutation and coverage apply to `cli/`.
 2. **`hub.mts` keeps the room rules beside the sockets.** Its tests go through real TLS on loopback and run in about a
    second, so the speed and precision a pure core would buy are already there.
 3. **The language is the locale's, Spanish or English:** the first of `LC_ALL`, `LC_MESSAGES` and `LANG` that is set,
