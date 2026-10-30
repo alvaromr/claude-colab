@@ -17,6 +17,12 @@ holds how to work on it, and the design with its reasons.
 - `pnpm mutation`: mutation testing of `cli/` (Stryker), outside the hooks; every surviving mutant is a missing test,
   or an equivalent one recorded in place with its reason.
 - `pnpm audit:deps`: the audit of the dev dependencies; the plugin itself has none.
+- `pnpm release <x.y.z>`: the release, stopping at the first step that fails. Checks the tree is clean and the tag
+  new, runs the gate, then installs the release (the version bumped in `plugin.json`, `CHANGELOG.md`'s Unreleased
+  moved under it) from its marketplace into a home of its own and smokes the installed copy: `claude plugin validate`,
+  the CLI's `--help` and `status`. Then writes both files, commits and tags (`colab--v<x.y.z>`, by
+  `claude plugin tag`). It never pushes.
+- `pnpm release:dry-run <x.y.z>`: the same up to the smoke, changing nothing.
 - Run the mod: `claude --plugin-dir .`. Run the CLI: `node cli/claude-colab.mts --help`.
 
 ## Requirements
@@ -187,5 +193,6 @@ them. Their reasons:
   changes per version.
 - `.claude-plugin/plugin.json`: the plugin's manifest and its version, the only one. `.claude-plugin/marketplace.json`:
   the marketplace that lists it.
+- `scripts/`: the repo guard, and the release (`release.mts`, with what it changes in the files in `bump.mts`).
 - `cli/protocol.mts`: the values both halves agree on. `types/index.d.ts`: the mod's state.
 - `stryker.config.json`, `biome.jsonc`, `.prettierrc.json`, `tsconfig.json`, `tsconfig.cli.json`: the gate's tools.

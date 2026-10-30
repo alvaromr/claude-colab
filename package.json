@@ -18,6 +18,8 @@
     "test:cli": "LC_ALL=es_ES.UTF-8 node --test --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 tests/",
     "test:mod": "claude plugin test .",
     "mutation": "stryker run",
+    "release": "node scripts/release.mts",
+    "release:dry-run": "node scripts/release.mts --dry-run",
     "audit:deps": "pnpm audit"
   },
   "devDependencies": {
