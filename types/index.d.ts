@@ -52,7 +52,7 @@ export type Author = 'person' | 'claude'
  * `to` is kept only where the room had more than two people, the one case naming the recipient tells anything.
  * `code` is its room's, which the chat goes by: rooms of the same label (another server's, or one made after the
  * server started over) never mix. A `gap` line holds no message: it marks a return, after which what was said away is
- * missing.
+ * missing. `from` is empty in a gap, and in a message of this session drawn after its link ended, whose name is gone.
  */
 export type Line = Place & {
   n: number

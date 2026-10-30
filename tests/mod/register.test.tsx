@@ -98,6 +98,30 @@ test("the output row of the person's /colab draws the message it sent", async ($
   await output.unmount()
 })
 
+test('a message this session sent, drawn while no link is on, is headed as its own, with no name to take', async $ => {
+  const call = await $.ui.mount({
+    plugin: 'colab',
+    component: 'ToolUse',
+    requestId: 't1',
+    surface: 'terminal',
+    props: { tool: 'mcp__colab__say', input: { text: 'listo' }, isRunning: false, isErrored: false },
+  } as never)
+
+  expect(await call.find({ type: 'Text', text: 'your Claude' })).toBeDefined()
+  expect(await call.find({ type: 'Text', text: "you's Claude" })).toBeUndefined()
+  await call.unmount()
+  const output = await $.ui.mount({
+    plugin: 'colab',
+    component: 'CommandOutput',
+    requestId: 'c1',
+    surface: 'terminal',
+    props: { command: 'colab', args: 'listo', text: 'Said in room «prueba»: listo', isErrored: false },
+  })
+
+  expect(await output.find({ type: 'Text', text: 'you' })).toBeDefined()
+  await output.unmount()
+})
+
 test('a row that is not a message of the room is left to the engine', async ($, on) => {
   on('ui.render', ($, e) => {
     const { Text } = $.ui.resolve(e)

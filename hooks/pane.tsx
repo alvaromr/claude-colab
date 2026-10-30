@@ -53,7 +53,14 @@ const colorOf = (n: number | undefined) =>
 let chatReach = 0
 
 /** How a message's author is named: the person by their name, their Claude as theirs. */
-const authorOf = (line: Pick<Line, 'from' | 'by'>) => (line.by === 'claude' ? T.claudeOf(line.from) : line.from)
+const authorOf = (line: Pick<Line, 'from' | 'by'>) =>
+  line.from === ''
+    ? line.by === 'claude'
+      ? T.yourClaude
+      : T.you
+    : line.by === 'claude'
+      ? T.claudeOf(line.from)
+      : line.from
 
 /** About how many rows `text` takes wrapped at `columns`, each of its lines on its own. */
 const rowsOf = (text: string, columns: number) =>

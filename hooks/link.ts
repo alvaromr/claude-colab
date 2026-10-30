@@ -201,7 +201,7 @@ export async function sentLine($: Engine, text: string, by: Author, to?: unknown
     n: 0,
     label: here?.label ?? '',
     code: '', // drawn in its own row, never looked up in the chat
-    from: current.status === 'on' ? current.name : T.you,
+    from: current.status === 'on' ? current.name : '', // drawn after the link ended: the name it went under is gone
     by,
     to: recipient,
     text,
