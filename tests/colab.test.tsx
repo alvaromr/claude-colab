@@ -1084,6 +1084,16 @@ test('a dropped link is made again, back into the room it was in', async ($, on)
   expect(state.want).toEqual({ server: '192.0.2.5:4747', name: 'Ana', place: ROOM })
 })
 
+test('a room the server was not told of leaving is still the room, there and in the pane', async ($, on) => {
+  const { state, connect } = await linkedAna($, on, ['Ana', 'Bob'], { leave: { ok: false, error: 'connect se fue' } })
+
+  expect((await $.tool.call({ tool: 'mcp__colab__leave' })).deny).toBe('connect se fue')
+  expect((await $.tool.call({ tool: 'mcp__colab__create' })).deny, 'nor is another made').toBe('connect se fue')
+  expect(state.room).toEqual(ROOM)
+  expect(state.recent).toEqual([])
+  expect(connect.asked.filter(one => one.op === 'create')).toHaveLength(1)
+})
+
 test('a link that ends asks after this machine’s server, and a check that fails is complained of', async ($, on) => {
   const { state, connect, clock, cli } = await linkedAna($, on, ['Ana', 'Bob'])
 

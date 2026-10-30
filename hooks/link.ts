@@ -556,7 +556,9 @@ async function join($: Engine, place: Place): Promise<Answer> {
   const here = await readRoom($)
 
   if (here?.code === place.code) return done(T.alreadyInside(here.label))
-  if (here !== null) await leave($)
+  const left = await leave($)
+
+  if (!left.ok) return left
   const joined = (await request($, 'join', { code: place.code })) as Entered
 
   if (!joined.ok || !joined.code || !joined.label) return joined
@@ -568,7 +570,9 @@ async function join($: Engine, place: Place): Promise<Answer> {
 /** Makes a room and goes in: labelled by the server with a number unless named; under `code` when made again. */
 export async function create($: Engine, name?: string, code?: string): Promise<Answer> {
   if (name !== undefined && !isName(name)) return failed(T.badRoomName)
-  if ((await readRoom($)) !== null) await leave($)
+  const left = await leave($)
+
+  if (!left.ok) return left
   const created = (await request($, 'create', { name, code })) as Entered
 
   if (!created.ok || !created.code || !created.label) return created
@@ -582,8 +586,10 @@ export async function leave($: Engine): Promise<Answer> {
 
   if (here === null) return done(T.wasInNoRoom)
   const wanted = await readWant($)
+  const left = await request($, 'leave')
 
-  await request($, 'leave')
+  // Still in it on the server, which keeps sending its messages: still in it here too.
+  if (!left.ok) return left
   await updateRoom($, () => null)
   await updateWant($, w => w && { ...w, place: null })
   // Kept to go back to: the code is what lets anyone in, and the server shows no list of rooms.
