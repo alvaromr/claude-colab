@@ -75,6 +75,8 @@ type Event =
   | ({ ev: 'message' } & Message)
   | { ev: 'error' | 'disconnected'; error?: string; reason?: Refusal }
 type Stream = ReturnType<Engine['process']['spawn']>
+// The session's inbox, as connect's environment carries it.
+type Inbox = Record<string, string>
 
 // The connect process's output while it runs: returning it ends the process.
 let child: Stream | undefined
@@ -223,6 +225,13 @@ export async function sayFromPane($: Engine, text: string): Promise<Answer> {
  * without it, the same server keeps the room to go back to, and another one starts with none.
  */
 export async function connect($: Engine, server: string, name: string, target?: Place): Promise<Answer> {
+  const ready = await readyToConnect($, server, name)
+
+  return ready.inbox === undefined ? ready : launch($, server, name, ready.inbox, target)
+}
+
+/** Why connect cannot start for `server` and `name`, or the session's inbox, which it starts with. */
+async function readyToConnect($: Engine, server: string, name: string): Promise<Answer & { inbox?: Inbox }> {
   if (child !== undefined) return failed(T.alreadyLinked)
   if (!server) return failed(T.noServer)
   if (name && !isName(name)) return failed(T.badName)
@@ -232,9 +241,11 @@ export async function connect($: Engine, server: string, name: string, target?: 
     CLAUDE_CODE_MESSAGING_TOKEN: (await $.env.get('CLAUDE_CODE_MESSAGING_TOKEN')) ?? '',
   }
 
-  if (!inbox.CLAUDE_CODE_MESSAGING_SOCKET) {
-    return failed(T.noInbox)
-  }
+  return inbox.CLAUDE_CODE_MESSAGING_SOCKET ? { ok: true, inbox } : failed(T.noInbox)
+}
+
+/** Starts connect, which `readyToConnect` cleared, as `connect` says. */
+async function launch($: Engine, server: string, name: string, inbox: Inbox, target?: Place): Promise<Answer> {
   const socket = `${await $.env.get('HOME')}/.claude-colab/s-${Math.random().toString(36).slice(2, 10)}.sock`
   const as = name || (await $.process.run(['whoami'])).stdout.trim()
   const linked = new Promise<Answer>(resolve => (settleConnect = resolve))
@@ -250,7 +261,7 @@ export async function connect($: Engine, server: string, name: string, target?: 
 }
 
 /** Runs connect for as long as it lives, turning each line it prints into the pane's state or the conversation. */
-async function follow($: Engine, argv: string[], inbox: Record<string, string>) {
+async function follow($: Engine, argv: string[], inbox: Inbox) {
   child = $.process.spawn({ argv, env: inbox })
   const complaint = await eachLine(child, async line => onEvent($, JSON.parse(line) as Event))
 
@@ -266,9 +277,7 @@ async function follow($: Engine, argv: string[], inbox: Record<string, string>) 
     refused === 'name-taken' && droppedAt !== undefined && (await $.clock.now()) - droppedAt <= GHOST_WAIT
 
   if (refused !== undefined && !isOwnOldLink) {
-    await updateWant($, () => null)
-    droppedAt = undefined
-    settleBackNow()
+    await letGo($)
     if (refused === 'name-taken') await complain($, T.nameTaken)
   }
   settleConnect?.(failed((await readError($)) ?? T.linkClosed))
@@ -286,6 +295,13 @@ async function follow($: Engine, argv: string[], inbox: Record<string, string>) 
   await updateLink($, (): Link => ({ status: 'connecting', server: wanted.server }))
   $.clock.after(linkRetry, () => void relink($))
   linkRetry = Math.min(linkRetry * 2, RETRY_LAST)
+}
+
+/** Lets go of the link the person asked for: nothing makes it again, and nothing waits any more to be back in a room. */
+async function letGo($: Engine) {
+  await updateWant($, () => null)
+  droppedAt = undefined
+  settleBackNow()
 }
 
 /** Makes the link the person asked for again, after a reload or a drop. */
@@ -609,9 +625,7 @@ export async function copyInvitation(
 export async function disconnect($: Engine): Promise<Answer> {
   const wanted = await readWant($)
 
-  await updateWant($, () => null)
-  droppedAt = undefined
-  settleBackNow()
+  await letGo($)
   if (child !== undefined) {
     stop(child)
 
