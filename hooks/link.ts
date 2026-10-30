@@ -20,6 +20,7 @@ import {
   readSetup,
   readWant,
   T,
+  unattended,
   updateChatBack,
   updateColors,
   updateKnown,
@@ -257,7 +258,7 @@ async function follow($: Engine, argv: string[], inbox: Record<string, string>) 
   await updateRooms($, () => [])
   await updateRoom($, () => null)
   // The link may have ended with this machine's server, closed from another session.
-  void checkServer($)
+  unattended($, T.serverUnknown, checkServer($))
   if (complaint) await complain($, complaint)
   // A name the server turned down is turned down again on every try, so the person picks another. A taken one alone
   // may be this session's own old link for a while after a drop, until the server lets it go.

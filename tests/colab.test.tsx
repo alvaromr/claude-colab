@@ -358,30 +358,50 @@ test('a field takes what it asks for on Enter, and a toast says what it expects 
   await ui.unmount()
 })
 
-test('a check of this machine’s server that fails is complained of on the status line, not dropped', async ($, on) => {
-  const clock = mock.clock(on)
-  mock.store(on)
-  mock.env(on, {})
+// What the CLI answers on a machine where it cannot run, and what the mod pins on its status line then.
+const NO_NODE = { exitCode: 127, stdout: '', stderr: 'node: orden no encontrada' }
+const SERVER_UNKNOWN = 'Could not tell whether this machine has a server: node: orden no encontrada'
+
+/** The lines the mod pins on its status line, as the test's hook beneath it takes them. */
+function statusLines(on: Parameters<TestBody>[1]) {
   const shown: (string | undefined)[] = []
   on('ui.status', (_, e) => {
     shown.push(e.text)
     return { value: undefined }
   })
-  on('process.run', () => ({
-    value: {
-      exitCode: 127,
-      stdout: '',
-      stderr: 'node: orden no encontrada',
-      isStdoutTruncated: false,
-      isStderrTruncated: false,
-    },
-  }))
+
+  return shown
+}
+
+test('a check of this machine’s server that fails is complained of on the status line, not dropped', async ($, on) => {
+  const clock = mock.clock(on)
+  mock.store(on)
+  mock.env(on, {})
+  const shown = statusLines(on)
+  on('process.run', () => ({ value: { ...NO_NODE, isStdoutTruncated: false, isStderrTruncated: false } }))
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' }) // the first drawing starts the mod
   await clock.settle()
 
   // The engine heads a plugin's status line with the plugin's name: the mod's own would show it twice.
-  expect(shown).toContain('Could not tell whether this machine has a server: node: orden no encontrada')
+  expect(shown).toContain(SERVER_UNKNOWN)
   await ui.unmount()
+})
+
+test('opening the pane asks after this machine’s server again, and a check that fails is complained of', async ($, on) => {
+  const clock = mock.clock(on)
+  const shown = statusLines(on)
+  on('process.run', () => ({ value: { ...NO_NODE, isStdoutTruncated: false, isStderrTruncated: false } }))
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+
+  const opened = await $.command.run({
+    command: 'colab',
+    args: '',
+    origin: { kind: 'composer' },
+    presentation: { isFullscreen: false, columns: 120 },
+  })
+
+  expect(opened.text).toBe('colab pane open.')
+  await until(clock, () => shown.includes(SERVER_UNKNOWN), 'the failed check complained of')
 })
 
 // The language is the session's locale, read as POSIX does: the first of LC_ALL, LC_MESSAGES and LANG that is set.
@@ -796,7 +816,7 @@ async function linkedAna(
   members: string[],
   answers: Record<string, Record<string, unknown>> = {},
 ) {
-  const { state, connect, appended, clock } = session(on, answers)
+  const { state, connect, appended, clock, cli } = session(on, answers)
   const linking = $.tool.call({ tool: 'mcp__colab__connect', server: '192.0.2.5:4747', name: 'Ana' })
 
   await until(clock, () => connect.started.length === 1, 'connect started')
@@ -814,12 +834,12 @@ async function linkedAna(
   connect.emit({ ev: 'rooms', rooms: [{ ...ROOM, members }] })
   await until(clock, () => (state.rooms as unknown[]).length === 1, 'the rooms pushed')
 
-  return { state, connect, appended, clock }
+  return { state, connect, appended, clock, cli }
 }
 
 /**
  * A fresh session with an inbox, its connect played by the test and giving `answers` too, and what it appends to the
- * conversation kept.
+ * conversation kept. `cli` is what the CLI answers, which the test may change.
  */
 function session(on: Parameters<TestBody>[1], answers: Record<string, Record<string, unknown>> = {}) {
   const clock = mock.clock(on)
@@ -829,15 +849,8 @@ function session(on: Parameters<TestBody>[1], answers: Record<string, Record<str
   on('turn.start', (_, e) => ({ turnId: e.turnId }))
   on('turn.complete', () => ({ text: '' }))
   // This machine's server, which the mod asks after when a link ends: none.
-  on('process.run', () => ({
-    value: {
-      exitCode: 0,
-      stdout: '{"ok":true,"running":false,"machine":"equipo"}',
-      stderr: '',
-      isStdoutTruncated: false,
-      isStderrTruncated: false,
-    },
-  }))
+  const cli = { exitCode: 0, stdout: '{"ok":true,"running":false,"machine":"equipo"}', stderr: '' }
+  on('process.run', () => ({ value: { ...cli, isStdoutTruncated: false, isStderrTruncated: false } }))
   mock.env(on, { CLAUDE_CODE_MESSAGING_SOCKET: '/tmp/inbox.sock', HOME: '/home/ana' })
   const state = fresh()
   seed(on, state)
@@ -851,7 +864,7 @@ function session(on: Parameters<TestBody>[1], answers: Record<string, Record<str
   })
   const connect = fakeConnect(on, { create: { ok: true, ...ROOM, members: ['Ana'] }, ...answers })
 
-  return { state, connect, appended, clock }
+  return { state, connect, appended, clock, cli }
 }
 
 // What connect prints when the server turns its name down for someone connected holding it.
@@ -1036,4 +1049,12 @@ test('a dropped link is made again, back into the room it was in', async ($, on)
   await clock.advance(1_000)
   await until(clock, () => connect.started.length === 2, 'connect started again')
   expect(state.want).toEqual({ server: '192.0.2.5:4747', name: 'Ana', place: ROOM })
+})
+
+test('a link that ends asks after this machine’s server, and a check that fails is complained of', async ($, on) => {
+  const { state, connect, clock, cli } = await linkedAna($, on, ['Ana', 'Bob'])
+
+  Object.assign(cli, NO_NODE)
+  connect.end()
+  await until(clock, () => state.error === SERVER_UNKNOWN, 'the failed check complained of')
 })

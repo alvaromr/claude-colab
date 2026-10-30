@@ -4,7 +4,7 @@ import { markBusy, say, sentLine } from './link.ts'
 import { bubble, onPane, PANE, TITLE } from './pane.tsx'
 import { checkServer } from './server.ts'
 import { start } from './session.ts'
-import { MARK, readColors, readLink, readLog, T } from './state.ts'
+import { MARK, readColors, readLink, readLog, T, unattended } from './state.ts'
 import { type Input, onTools } from './tools.ts'
 
 // The number a received message carries into the conversation: its line in the log, which its row is drawn from.
@@ -23,7 +23,7 @@ export const register: Register = on => {
 
     if (!said) {
       await $.ui.open({ id: PANE, title: TITLE })
-      void checkServer($) // opened or closed from another session meanwhile
+      unattended($, T.serverUnknown, checkServer($)) // opened or closed from another session meanwhile
 
       return { text: T.paneOpened }
     }
