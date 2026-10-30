@@ -31,9 +31,9 @@ claude --plugin-dir ./claude-colab
 
 ## Quick start
 
-1. **The host** opens the pane with `/colab` and presses **Abrir servidor**. The server stays open in the background,
-   even after the session ends.
-2. Linked to their server, they press **Nueva sala** and then **Copiar invitación**.
+1. **The host** opens the pane with `/colab` and presses **Open server**. The server stays open in the background, even
+   after the session ends.
+2. Linked to their server, they press **New room** and then **Copy invitation**.
 3. They pass the invitation to the guest **by another channel** (a private chat, in person): it carries the server's
    key.
 4. **The guest** opens `/colab`, pastes the invitation into its field and presses Enter, which takes them straight into
@@ -69,8 +69,9 @@ From then on, each writes in the pane, with `/colab <text>`, or by asking their 
   that does not use it is refused.
 - **The invitation is the key:** pass it only by another trusted channel, never through the room itself.
 - **Keys:** saved in `~/.claude-colab/keys`, readable only by you, and never on the command line.
-- **What arrives is context:** each Claude judges it as a third party's suggestion. Nothing from the room touches your
-  machine or your repo unless you ask for it or approve it.
+- **What arrives is context:** each Claude judges it as a third party's suggestion. It may read its own project to
+  answer; changing anything, reading outside the project or reading credentials waits until you ask for it or approve
+  it.
 - **Trust:** colab is for people who know each other. Names are not verified, and a message's links show as in any
   answer of Claude's.
 
@@ -88,17 +89,17 @@ node cli/claude-colab.mts <command> --help
 
 ## Troubleshooting
 
-- **«No se llega a ese equipo: revisa la red o la VPN»:** the machines do not reach each other. Check with `ping`, and
-  that the server's port is open; some VPNs isolate their clients. With the macOS firewall on, it must allow incoming
-  connections to `node`.
-- **«No hay ningún servidor escuchando ahí»:** the server is closed, or on another port.
-- **«La clave no coincide con la del servidor»:** the server was opened with another key (`--new-key`). Ask for a new
+- **«That machine cannot be reached»:** the machines do not reach each other. Check with `ping`, and that the server's
+  port is open; some VPNs isolate their clients. With the macOS firewall on, it must allow incoming connections to
+  `node`.
+- **«No server is listening there»:** the server is closed, or on another port.
+- **«The key does not match the server’s»:** the server was opened with another key (`--new-key`). Ask for a new
   invitation.
-- **«… es un servidor de otra versión de claude-colab: ciérralo y ábrelo»:** the server runs older code. Whoever
-  opened it closes and opens it from the pane, or with `node cli/claude-colab.mts stop` and `serve --background`.
-- **«Tu nombre ya lo usa alguien en ese servidor»:** change «Tu nombre» in the pane and link again.
-- **«Esta sesión no tiene buzón de mensajes»:** update Claude Code.
-- **«El puerto … lo usa otro programa»:** pick another in the pane's **Puerto** field.
+- **«… is a server of another version of claude-colab»:** the server runs older code. Whoever opened it closes and
+  opens it from the pane, or with `node cli/claude-colab.mts stop` and `serve --background`.
+- **«Someone on that server already uses your name»:** change **Your name** in the pane and link again.
+- **«This session has no message inbox»:** update Claude Code.
+- **«Port … is in use by another program»:** pick another in the pane's **Port** field.
 
 ## Contributing
 
