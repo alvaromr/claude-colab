@@ -43,7 +43,12 @@ The repo's root is the plugin: the mod `colab` and the CLI `claude-colab`. A thi
 - `cli/protocol.mts`: what the server, `connect` and the mod agree on (version, port, timings, limits, names, the
   language of a locale, the codes of the server's refusals). Pure: the mod, which has no Node, imports it, and
   `tsconfig.json` type-checks it without Node's types, which keeps it so.
-- `cli/strings.mts` and `hooks/strings.ts`: what each half tells people and the model, in Spanish and English.
+- `cli/strings.mts` and `hooks/strings.ts`: what each half tells people and the model, in Spanish and English. The
+  language is the locale's: the first of `LC_ALL`, `LC_MESSAGES` and `LANG` that is set, as POSIX reads it, so colab
+  speaks as the machine's commands do. The mod reads it once, at `session.start`: a pane drawn before it starts is in
+  English, the language of no locale. The CLI's tests run in Spanish (`LC_ALL`, set by `test:cli` and the mutation
+  command), and those of the texts check every one in both; the mod's run in English, with one per variable for the
+  choice.
 - `cli/wire.mts`: TLS with the pre-shared key, invitations, and JSON lines.
 - `cli/hub.mts`: `serve`, the room server.
 - `cli/link.mts`: `connect`, one process per session.
@@ -137,48 +142,9 @@ them. Their reasons:
 - **Conventional Commits,** checked by the `commit-msg` hook.
 - **One change, everything coherent:** code, tests, docs and help move together.
 
-## Decisions and deviations
+## Decisions
 
-1. **The mod has no coverage or mutation figure.** `claude plugin test` measures neither, and Stryker needs Node,
-   which the mod does not have. Its tests in `tests/mod/`, one file per module of `hooks/` named after it and what
-   they share in `support.ts`, specify each behaviour; mutation and coverage apply to `cli/`.
-2. **`hub.mts` keeps the room rules beside the sockets.** Its tests go through real TLS on loopback and run in about a
-   second, so the speed and precision a pure core would buy are already there.
-3. **The language is the locale's, Spanish or English:** the first of `LC_ALL`, `LC_MESSAGES` and `LANG` that is set,
-   as POSIX reads it, so colab speaks as the machine's commands do. The mod reads it once, at `session.start`: a pane
-   drawn before it starts is in English, the language of no locale. The CLI's tests run in Spanish (`LC_ALL`, set by
-   `test:cli` and the mutation command), and those of the texts check every one in both; the mod's run in English,
-   with one per variable for the choice.
-4. **`tsconfig.json` leaves out `exactOptionalPropertyTypes`:** the engine's own types, which the mod uses, are not
-   written for it. `tsconfig.cli.json` has it.
-5. **`serve` listens on every interface by default:** others have to reach it. The key guards it: without it nobody
-   gets past the handshake, and connections waiting on it are capped and cut.
-6. **Accepted low risks:** `privateFolder` checks only the folder itself, not those above (it matters only with
-   `--socket` in someone else's folder); `CLAUDE_COLAB_KEY` reaches every child of the session (only if the person
-   exports it, and any process of theirs can read the key files anyway); two `connect` started at once on one socket
-   race; someone with the key can repeat a flood of handshakes to keep others out (a per-IP limit would fix it);
-   names with homoglyphs pass for others' names.
-7. **Each developer may keep notes of their own in a `CLAUDE.local.md`,** which git ignores, though the baseline keeps a
-   developer's own setup out of the project folder altogether: the owner's call. What that rule guards is not at stake:
-   git never takes the file, so it is neither published nor cloned, and nothing versioned depends on it, so the project
-   works the same for everyone.
-8. **Mutation runs the fast suite, not `tests/cli.test.mts`, and so leaves out `cli/claude-colab.mts`:** that test
-   drives the real CLI end to end, a process per command, and one of its cases waits its real time, so running it per
-   mutant costs far more than it proves of a thin entry point. Every test ends the processes it starts even when the
-   code under test fails to stop them: the servers `cli.test.mts` opens in the background carry a name of the run and
-   are ended by it. A mutation run keeps `concurrency` low, since each mutant runs the whole command, and points
-   `TMPDIR` into Stryker's sandbox, which it deletes: a run cut short by its timeout never cleans up after itself.
-   The sandbox leaves out the tsconfig files: Stryker would read them with TypeScript's JS API, which TypeScript 7 no
-   longer has, and the tests run without them.
-9. **One test waits its real time:** `stop` gives a server that does not end a fixed wait, in a process of its own
-   that a test cannot speed up.
-10. **No network block in the tests:** every address they connect to is loopback, and the others they name are
-    documentation ranges, which route nowhere, so no test can reach another machine. A block would patch Node's
-    sockets in every process the tests start, to guard against what no address of theirs can do.
-11. **The tag guard lets through a deletion that names the value it expects** (`git update-ref -d <tag> <value>`):
-    packing the refs, which `git gc` runs by itself, deletes each loose tag that way once `packed-refs` holds it, and
-    the `reference-transaction` hook cannot tell the two apart. `git tag -d`, `git tag -f` and a push that moves or
-    deletes a remote tag are refused.
+Before changing a practice, read `docs/decisions/`: one file per deliberate deviation, with why and who decided it.
 
 ## Known limitations
 
@@ -191,7 +157,7 @@ them. Their reasons:
 ## Where things live
 
 - `README.md`: install and use. `SECURITY.md`: what colab protects, and reporting a vulnerability. `CHANGELOG.md`:
-  changes per version.
+  changes per version. `docs/decisions/`: the deliberate deviations, one per file.
 - `.claude-plugin/plugin.json`: the plugin's manifest and its version, the only one. `.claude-plugin/marketplace.json`:
   the marketplace that lists it.
 - `scripts/`: the repo guard, and the release (`release.mts`, with what it changes in the files in `bump.mts`).

@@ -17,4 +17,4 @@ what they get, and how to reproduce it.
   characters that hide or reorder text, never as instructions.
 
 Whoever holds an invitation is trusted with the room and the server: names are declared, not verified. The risks
-accepted on purpose, with their reasons, are listed in `AGENTS.md` (Decisions and deviations).
+accepted on purpose, with their reasons, are in `docs/decisions/`.
