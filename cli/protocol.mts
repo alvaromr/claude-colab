@@ -40,11 +40,14 @@ export type Refusal =
 // A person's or a room's name: letters, digits, spaces and . _ -, starting with a letter or digit.
 export const NAME_LENGTH = 40
 export const NAME_RULE: Record<Language, string> = {
-  es: `letras, números, espacios y . _ -, hasta ${NAME_LENGTH}`,
-  en: `letters, digits, spaces and . _ -, up to ${NAME_LENGTH}`,
+  es: `letras, números, espacios y . _ -, hasta ${NAME_LENGTH}, sin mezclar los alfabetos latino, griego y cirílico`,
+  en: `letters, digits, spaces and . _ -, up to ${NAME_LENGTH}, without mixing the Latin, Greek and Cyrillic scripts`,
 }
 const NAME = new RegExp(`^[\\p{L}\\p{N}][\\p{L}\\p{N} ._-]{0,${NAME_LENGTH - 1}}$`, 'u')
-export const isName = (s: unknown): s is string => typeof s === 'string' && NAME.test(s)
+// Scripts whose letters look alike: a name that mixes two of them could pass for another one («Аna», its A Cyrillic).
+const LOOKALIKES = [/\p{Script=Latin}/u, /\p{Script=Greek}/u, /\p{Script=Cyrillic}/u]
+export const isName = (s: unknown): s is string =>
+  typeof s === 'string' && NAME.test(s) && LOOKALIKES.filter(script => script.test(s)).length <= 1
 
 // What each JSON line between serve and connect carries.
 export type Value = Record<string, unknown>

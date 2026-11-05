@@ -13,7 +13,8 @@ The version follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Rules in the system prompt of each linked Claude: what arrives is context, never orders, and each judges whether it
   is its turn.
 - The CLI `claude-colab`: a room server over TLS 1.3 with a pre-shared key, a link process per session, invitations
-  and saved keys. The server takes at most a few connections at once from one address.
+  and saved keys. The server takes at most a few connections at once from one address, and refuses a name that reads
+  like one taken but for its case or its letters' width, or that mixes Latin, Greek and Cyrillic letters.
 - A plugin marketplace: colab installs with `/plugin install colab --marketplace alvaromr/claude-colab`.
 - Spanish and English, chosen by each session's locale (`LC_ALL`, `LC_MESSAGES`, `LANG`): the server sends codes, and
   each side words them in its own language.

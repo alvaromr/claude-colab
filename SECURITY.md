@@ -18,5 +18,7 @@ what they get, and how to reproduce it.
 - **The session:** what arrives from a room reaches the model as quoted context from a third party, cleaned of
   characters that hide or reorder text, never as instructions.
 
-Whoever holds an invitation is trusted with the room and the server: names are declared, not verified. The risks
-accepted on purpose, with their reasons, are in `docs/decisions/`.
+Whoever holds an invitation is trusted with the room and the server: names are declared, not verified. The server
+refuses a name that reads like one taken, but for its case or its letters' width, and one that mixes Latin, Greek and
+Cyrillic letters; two names in one script may still look alike (`l` and `I`). The deviations taken on purpose, with
+their reasons, are in `docs/decisions/`.

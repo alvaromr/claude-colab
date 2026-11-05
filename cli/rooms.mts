@@ -13,6 +13,8 @@ import { isCode, isName, MAX_TEXT, PROTOCOL, type Refusal, type Value } from './
 const MAX_ROOMS = 256
 // Clients show what someone's Claude writes as «Claude de <name>»: no person may take a name that reads like that.
 const CLAUDES_NAME = /(^|\s)claude\s+de(\s|$)/iu
+/** A name as people read it, whatever its case or its letters' width. */
+const readsAs = (name: string) => name.normalize('NFKC').toLowerCase()
 
 type Room<L> = { code: string; label: string; members: Set<Client<L>> }
 // `link`: how `deliver` reaches it. `busy`: whether its Claude is at work.
@@ -145,8 +147,10 @@ export function roomsOf<L>({ title, maxRooms = MAX_ROOMS, deliver, newCode, now 
     hello(name: unknown, link: L): { client: Client<L>; result: Result } | { refused: Result } {
       if (!isName(name)) return { refused: { reason: 'bad-name' } }
       if (CLAUDES_NAME.test(name)) return { refused: { reason: 'claude-name' } }
-      // A taken name is told apart: one that dropped unseen holds it until the server notices, then frees it.
-      if (clients.has(name)) return { refused: { reason: 'name-taken', name } }
+      // A taken name is told apart: one that dropped unseen holds it until the server notices, then frees it. One that
+      // reads the same but for its case or its letters' width is taken too: it would pass for the other.
+      if ([...clients.keys()].some(taken => readsAs(taken) === readsAs(name)))
+        return { refused: { reason: 'name-taken', name } }
       const taken = new Set([...clients.values()].map(client => client.color))
       let color = 0
       while (taken.has(color)) color++

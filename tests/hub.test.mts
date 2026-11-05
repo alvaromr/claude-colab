@@ -298,6 +298,10 @@ test('a name is refused when it is not one, reads like someone’s Claude, or is
     ['el claude  DE bob', 'claude-name'],
     ['Bob claude de', 'claude-name'],
     ['EvaN', 'name-taken'],
+    // Taken too: one that reads the same but for its case, or its letters' width.
+    ['evan', 'name-taken'],
+    ['ＥｖａＮ', 'name-taken'],
+    ['Bοb', 'bad-name'],
   ] as const) {
     const other = await client('', { isGreeted: false })
     const hello = await other.ask('hello', { name })
@@ -306,10 +310,13 @@ test('a name is refused when it is not one, reads like someone’s Claude, or is
     assert.equal(hello.name, reason === 'name-taken' ? name : undefined, 'a taken name is told')
     assert.equal(await closesWithin(other.socket, 2_000), true, 'and the connection ends')
   }
-  for (const name of ['Claude', 'Claude del Mar', 'Ñandú 2']) {
+  // Lower-cased, not upper-cased: ß reads apart from ss.
+  const strauss = await client('Strauss')
+  for (const name of ['Claude', 'Claude del Mar', 'Ñandú 2', 'Strauß']) {
     const fine = await client(name)
     fine.close()
   }
+  strauss.close()
   eva.close()
 })
 

@@ -121,9 +121,11 @@ Node, no runtime dependencies, JSON output. Node runs its TypeScript as is, stri
 - **Key:** `serve` makes 32 random bytes; they go inside the invitation. Never in argv, which `ps` shows, nor in the
   environment, which every process of the session inherits. Saved per server in `~/.claude-colab/keys` (`600`), in a
   folder whose every folder above only its user or root may change; `serve` saves its own for `127.0.0.1:<port>`.
-- **Name:** a mod option, `whoami` by default. Declared, not verified: the server refuses one taken or one that reads
-  like "Claude de …". On a refused one, the mod stops and asks for another; only a taken one after a drop or a reload
-  is retried first for a while, since it may be its own earlier link, which the heartbeat has not freed yet.
+- **Name:** a mod option, `whoami` by default. Declared, not verified: the server refuses one taken, one that reads
+  like a taken one but for its case or its letters' width, one that reads like "Claude de …", and one that mixes
+  Latin, Greek and Cyrillic letters, which look alike. On a refused one, the mod stops and asks for another; only a
+  taken one after a drop or a reload is retried first for a while, since it may be its own earlier link, which the
+  heartbeat has not freed yet.
 
 ### Rules for the connected Claudes
 

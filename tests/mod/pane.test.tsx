@@ -197,7 +197,7 @@ test('a field takes what it asks for on Enter, and a toast says what it expects 
   expect(told).toEqual([
     'A colab invitation: the whole text, which starts with colab:',
     'A whole number from 1 to 65535; empty, 4747',
-    'Letters, digits, spaces and . _ -, up to 40; empty, your user',
+    'Letters, digits, spaces and . _ -, up to 40, without mixing the Latin, Greek and Cyrillic scripts; empty, your user',
   ])
 
   await ui.input({ key: 'port', text: '4800' })

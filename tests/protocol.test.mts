@@ -9,9 +9,16 @@ test('a name is letters, digits, spaces and . _ -, starting with a letter or dig
     assert.equal(isName(name), false, String(name))
   }
   assert.deepEqual(NAME_RULE, {
-    es: `letras, números, espacios y . _ -, hasta ${NAME_LENGTH}`,
-    en: `letters, digits, spaces and . _ -, up to ${NAME_LENGTH}`,
+    es: `letras, números, espacios y . _ -, hasta ${NAME_LENGTH}, sin mezclar los alfabetos latino, griego y cirílico`,
+    en: `letters, digits, spaces and . _ -, up to ${NAME_LENGTH}, without mixing the Latin, Greek and Cyrillic scripts`,
   })
+})
+
+test('a name in one script stands; one that mixes scripts whose letters look alike would pass for another', () => {
+  for (const name of ['Анна', 'Ελένη', 'Ana 2', 'Jürgen', 'Анна 2', '李娜', 'Ana 李'])
+    assert.equal(isName(name), true, name)
+  // A Cyrillic А, a Greek ο, a Cyrillic а in a Greek name.
+  for (const name of ['Аna', 'Bοb', 'Ελа']) assert.equal(isName(name), false, name)
 })
 
 test('a room’s code is 24 letters, digits, _ or -, and nothing else', () => {
