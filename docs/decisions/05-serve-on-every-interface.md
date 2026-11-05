@@ -3,4 +3,4 @@
 - **Practice set aside:** binding a server to loopback.
 - **Why:** others have to reach it. The key guards it: without it nobody gets past the handshake, and connections
   waiting on it are capped, per address too, and cut.
-- **Decided by:** proposed by an agent; awaiting the owner's approval.
+- **Decided by:** proposed by an agent; approved by the owner.
