@@ -21,9 +21,9 @@ import {
 } from './home.mts'
 import { serve } from './hub.mts'
 import { type Answer, connect, networkAddresses } from './link.mts'
-import { DEFAULT_PORT, isName, NAME_LENGTH } from './protocol.mts'
+import { DEFAULT_PORT, isName, NAME_LENGTH, type Value } from './protocol.mts'
 import { type Defaults, TEXT } from './strings.mts'
-import { newKey, parseInvitation, parseKey, type Value } from './wire.mts'
+import { newKey, parseInvitation, parseKey } from './wire.mts'
 
 const SOCKET_OPTION = { socket: { type: 'string', default: DEFAULT_SOCKET } } as const
 

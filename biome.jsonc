@@ -85,6 +85,22 @@
       },
     },
     {
+      // The rules of the rooms are pure: their sockets are hub.mts's.
+      "includes": ["cli/rooms.mts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [{ "group": ["**", "!./protocol.mts"], "message": "rooms.mts is pure: no I/O." }],
+              },
+            },
+          },
+        },
+      },
+    },
+    {
       // The CLI's entry point answers on stdout and stderr: that is its interface, not logging.
       "includes": ["cli/claude-colab.mts"],
       "linter": { "rules": { "suspicious": { "noConsole": "off" } } },

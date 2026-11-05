@@ -2,7 +2,7 @@
 import { randomBytes } from 'node:crypto'
 import type { Duplex, Writable } from 'node:stream'
 import type { ConnectionOptions, TlsOptions } from 'node:tls'
-import { isCode, isName, MAX_LINE } from './protocol.mts'
+import { isCode, isName, MAX_LINE, type Value } from './protocol.mts'
 import { TEXT } from './strings.mts'
 
 const IDENTITY = 'claude-colab'
@@ -75,8 +75,6 @@ export const clientOptions = (key: Buffer): ConnectionOptions => ({
   // Node passes an empty object when the server shows none.
   checkServerIdentity: (_host, cert) => (cert.raw ? new Error(TEXT.certificate) : undefined),
 })
-
-export type Value = Record<string, unknown>
 
 /** Calls `onValue` with each JSON line the socket sends; destroys it on bad JSON or a line over MAX_LINE. */
 export function readLines(socket: Duplex, onValue: (value: Value) => void) {

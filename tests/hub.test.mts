@@ -5,8 +5,8 @@ import { after, before, test } from 'node:test'
 import tls from 'node:tls'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { serve } from '../cli/hub.mts'
-import { DEAD_AFTER, MAX_LINE, MAX_TEXT, PROTOCOL } from '../cli/protocol.mts'
-import { clientOptions, newKey, parseKey, readLines, type Value, writeLine } from '../cli/wire.mts'
+import { DEAD_AFTER, MAX_LINE, MAX_TEXT, PROTOCOL, type Value } from '../cli/protocol.mts'
+import { clientOptions, newKey, parseKey, readLines, writeLine } from '../cli/wire.mts'
 
 // What the server answers and pushes, as these tests read it.
 type Shown = { code: string; label: string; members: string[]; busy: string[] }

@@ -50,7 +50,7 @@ The repo's root is the plugin: the mod `colab` and the CLI `claude-colab`. A thi
   command), and those of the texts check every one in both; the mod's run in English, with one per variable for the
   choice.
 - `cli/wire.mts`: TLS with the pre-shared key, invitations, and JSON lines.
-- `cli/hub.mts`: `serve`, the room server.
+- `cli/rooms.mts`: the rules of a room server, pure; `cli/hub.mts`: `serve`, the sockets and timers around them.
 - `cli/link.mts`: `connect`, one process per session.
 - `cli/home.mts`: the private folder of each machine: local sockets, saved keys, the machine's server.
 - `cli/claude-colab.mts`: the CLI's entry point; its `--help` is its only documentation.
@@ -62,7 +62,8 @@ The repo's root is the plugin: the mod `colab` and the CLI `claude-colab`. A thi
   `read…` and `update…` functions there.
 
 The lint enforces the boundaries (`biome.jsonc`): the mod imports nothing of Node and, of `cli/`, only
-`protocol.mts`; `protocol.mts` imports nothing; the CLI imports nothing of the mod.
+`protocol.mts`; `protocol.mts` imports nothing; `rooms.mts` imports only `protocol.mts`; the CLI imports nothing of the
+mod.
 
 ### The mod
 

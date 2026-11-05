@@ -46,5 +46,8 @@ export const NAME_RULE: Record<Language, string> = {
 const NAME = new RegExp(`^[\\p{L}\\p{N}][\\p{L}\\p{N} ._-]{0,${NAME_LENGTH - 1}}$`, 'u')
 export const isName = (s: unknown): s is string => typeof s === 'string' && NAME.test(s)
 
+// What each JSON line between serve and connect carries.
+export type Value = Record<string, unknown>
+
 // A room's code: whoever has it may go in. Only its members and their invitations hold it.
 export const isCode = (s: unknown): s is string => typeof s === 'string' && /^[\w-]{24}$/.test(s)

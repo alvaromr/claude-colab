@@ -12,8 +12,8 @@ import tls from 'node:tls'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
 import { networkAddresses, reachableAt } from '../cli/link.mts'
-import { DEAD_AFTER, MAX_LINE, NAME_RULE, PROTOCOL } from '../cli/protocol.mts'
-import { newKey, parseInvitation, parseKey, readLines, serverOptions, type Value, writeLine } from '../cli/wire.mts'
+import { DEAD_AFTER, MAX_LINE, NAME_RULE, PROTOCOL, type Value } from '../cli/protocol.mts'
+import { newKey, parseInvitation, parseKey, readLines, serverOptions, writeLine } from '../cli/wire.mts'
 
 // What connect prints and answers, as these tests read it.
 type Event = { ev: string; error: string; own: boolean; socket: string; from?: string }

@@ -9,9 +9,9 @@ import { type NetworkInterfaceInfo, networkInterfaces } from 'node:os'
 import { dirname } from 'node:path'
 import tls from 'node:tls'
 import { privateFolder, socketError } from './home.mts'
-import { DEAD_AFTER, MAX_LINE, PING_EVERY, PROTOCOL, type Refusal } from './protocol.mts'
+import { DEAD_AFTER, MAX_LINE, PING_EVERY, PROTOCOL, type Refusal, type Value } from './protocol.mts'
 import { TEXT } from './strings.mts'
-import { clientOptions, invitation, readLines, type Value, writeLine } from './wire.mts'
+import { clientOptions, invitation, readLines, writeLine } from './wire.mts'
 
 const REPLY_TIMEOUT = 10_000
 // What the local socket takes, with the fields each passes on: the server's operations, and `inbox` and `invite`,
