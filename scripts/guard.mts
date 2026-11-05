@@ -1,7 +1,7 @@
 // The repo is public: nothing it versions holds a secret of colab's, an address of a real network, a person's email or
 // a path of someone's machine. Checks every file git tracks or would add; prints each finding and exits 1 on any.
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -25,7 +25,8 @@ const RULES: [string, RegExp, (found: string) => boolean][] = [
 const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: ROOT })
   .toString()
   .split('\0')
-  .filter(file => file !== '' && !SKIPPED.has(file))
+  // One deleted but not yet staged as such holds nothing any more to check.
+  .filter(file => file !== '' && !SKIPPED.has(file) && existsSync(new URL(file, `file://${ROOT}`)))
 const findings = files.flatMap(file =>
   readFileSync(new URL(file, `file://${ROOT}`), 'utf8')
     .split('\n')
