@@ -130,7 +130,7 @@ test('a server with no key saved for it cannot be linked to, and the message say
   assert.deepEqual(loadKey('192.0.2.9', 4747), Buffer.from(key, 'base64url'))
 })
 
-test('this machine’s server opens with the key of the environment, else its saved one, else a new one', t => {
+test('this machine’s server opens with its saved key, else a new one, and never with one of the environment', t => {
   t.after(() => delete process.env.CLAUDE_COLAB_KEY)
   const fresh = serverKey(4900, false)
   assert.match(fresh, /^[\w-]{43}$/, 'none saved: a new one')
@@ -139,9 +139,13 @@ test('this machine’s server opens with the key of the environment, else its sa
   const changed = serverKey(4900, true)
   assert.notEqual(changed, fresh, 'asked for a new one')
   assert.match(changed, /^[\w-]{43}$/)
+
+  // Every process the session starts would inherit a key of the environment: none is read.
   const exported = newKey()
   process.env.CLAUDE_COLAB_KEY = exported
-  for (const isNew of [false, true]) assert.equal(serverKey(4900, isNew), exported, 'the environment’s, always')
+  assert.equal(serverKey(4900, false), fresh)
+  assert.notEqual(serverKey(4900, true), exported)
+  assert.throws(() => loadKey('192.0.2.11', 4747), /No hay clave para 192\.0\.2\.11:4747/)
 })
 
 test('the machine’s server is the one written down while its process lives; one whose process ended is forgotten', () => {

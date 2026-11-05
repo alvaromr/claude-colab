@@ -69,8 +69,8 @@ Responde en JSON; sale con 1 si "ok" es false y con 2 si los argumentos no son v
       usage: 'claude-colab serve [--name <nombre>] [--host <ip>] [--port <puerto>] [--new-key] [--background]',
       help: d => `Escucha conexiones cifradas con TLS 1.3 y una clave compartida. Quien no tenga la clave no pasa del saludo TLS.
 Hay uno por equipo: si ya hay uno escuchando, no abre otro.
-${KEY_ES} Toma la de la variable CLAUDE_COLAB_KEY; sin ella, la que ya guardó para 127.0.0.1:<puerto>, así
-que al reabrir el servidor los demás no necesitan otra; si no hay ninguna, genera una. La devuelve en "key":
+${KEY_ES} Toma la que ya guardó para 127.0.0.1:<puerto>, así que al reabrir el servidor los demás no
+necesitan otra; si no hay ninguna, genera una. La devuelve en "key":
 pásala a los demás por otro medio. La guarda como la de 127.0.0.1:<puerto>, para conectarte desde este equipo.
 Escribe una línea JSON al empezar a escuchar y sigue hasta Ctrl+C.
 
@@ -102,7 +102,7 @@ Siempre da "machine": el nombre que toma el servidor si se abre sin --name.`,
     connect: {
       summary: 'se conecta a un servidor de salas y escucha lo que llega',
       usage: 'claude-colab connect <ip>[:<puerto>] [--name <nombre>] [--socket <ruta>]',
-      help: d => `Abre la conexión con el servidor y la mantiene. Usa la clave guardada con key, o la de CLAUDE_COLAB_KEY.
+      help: d => `Abre la conexión con el servidor y la mantiene. Usa la clave guardada con key.
 Escribe una línea JSON por evento: "connected", "rooms" (la lista de salas cambió), "member" (alguien entró o
 salió de una de tus salas), "message" (con "own": true si es tuyo), "error" (con "reason": "name-taken" si tu
 nombre ya está en uso allí) y "disconnected" al terminar.
@@ -222,8 +222,8 @@ Answers in JSON; exits with 1 if "ok" is false and with 2 if the arguments are n
       usage: 'claude-colab serve [--name <name>] [--host <ip>] [--port <port>] [--new-key] [--background]',
       help: d => `Listens for connections encrypted with TLS 1.3 and a shared key. Without the key, no one gets past the TLS handshake.
 There is one per machine: if one is listening already, it opens no other.
-${KEY_EN} It takes the one in CLAUDE_COLAB_KEY; without it, the one it saved for 127.0.0.1:<port>, so that
-on reopening the server the others need no new one; if there is none, it makes one. It returns it in "key":
+${KEY_EN} It takes the one it saved for 127.0.0.1:<port>, so that on reopening the server the others need
+no new one; if there is none, it makes one. It returns it in "key":
 pass it to the others by another means. It saves it as the key of 127.0.0.1:<port>, to connect from this machine.
 Writes a JSON line once it listens, and runs until Ctrl+C.
 
@@ -255,7 +255,7 @@ Always gives "machine": the name the server takes when opened without --name.`,
     connect: {
       summary: 'connects to a room server and listens to what arrives',
       usage: 'claude-colab connect <ip>[:<port>] [--name <name>] [--socket <path>]',
-      help: d => `Opens the connection to the server and keeps it. Uses the key saved with key, or the one in CLAUDE_COLAB_KEY.
+      help: d => `Opens the connection to the server and keeps it. Uses the key saved with key.
 Writes one JSON line per event: "connected", "rooms" (the list of rooms changed), "member" (someone came into or
 left one of your rooms), "message" (with "own": true if it is yours), "error" (with "reason": "name-taken" if your
 name is in use there) and "disconnected" at the end.

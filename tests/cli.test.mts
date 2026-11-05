@@ -1,7 +1,7 @@
 // Runs with `node --test tests/`: the claude-colab command end to end, as people run it, in a home of the test's own.
 import assert from 'node:assert/strict'
 import { type ChildProcess, execFile, spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import net, { type AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -14,7 +14,7 @@ type Line = Record<string, unknown>
 
 const CLI = fileURLToPath(new URL('../cli/claude-colab.mts', import.meta.url))
 const home = mkdtempSync(join(tmpdir(), 'colab-cli-'))
-const env = { ...process.env, HOME: home, CLAUDE_COLAB_KEY: '', CLAUDE_COLAB_SOCKET: '' }
+const env = { ...process.env, HOME: home, CLAUDE_COLAB_SOCKET: '' }
 const started: ChildProcess[] = []
 // Every server these tests open carries this name. `serve --background` runs apart from the test, so a failure (or
 // broken code, as a mutant) that keeps `stop` from ending it would leave it running: it is ended here by its name.
@@ -161,7 +161,6 @@ test('serve in the background answers once it listens, and keeps its key unless 
     [[], {}],
     [[], {}],
     [['--new-key'], {}],
-    [[], { CLAUDE_COLAB_KEY: newKey() }],
   ]
   const keys: unknown[] = []
   for (const [more, keyed] of opens) {
@@ -174,7 +173,6 @@ test('serve in the background answers once it listens, and keeps its key unless 
   }
   assert.equal(keys[1], keys[0], 'opened again, it keeps its key')
   assert.notEqual(keys[2], keys[1], '--new-key makes another')
-  assert.notEqual(keys[3], keys[2], 'CLAUDE_COLAB_KEY gives it its own')
 })
 
 test('serve says why it did not start: a port in use, a bad key, a bad name', LIMIT, async () => {
@@ -192,7 +190,12 @@ test('serve says why it did not start: a port in use, a bad key, a bad name', LI
   assert.equal(elsewhere.code, 1)
   assert.match(String(elsewhere.answer.error), /EADDRNOTAVAIL/, 'an address that is not this machine’s')
 
-  const badKey = await run(serve('--background', '--port', port), undefined, { CLAUDE_COLAB_KEY: 'corta' })
+  // A key file left broken by hand: the key saved for this server is no key.
+  mkdirSync(join(home, '.claude-colab', 'keys'), { recursive: true, mode: 0o700 })
+  writeFileSync(join(home, '.claude-colab', 'keys', encodeURIComponent(`127.0.0.1:${port}`)), 'corta\n', {
+    mode: 0o600,
+  })
+  const badKey = await run(serve('--background', '--port', port))
   assert.equal(badKey.code, 1)
   assert.match(badKey.stderr, new RegExp(`El servidor del puerto ${port} terminó sin escuchar`))
 

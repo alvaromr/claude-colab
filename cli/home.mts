@@ -99,13 +99,15 @@ export function markServer(host: string, port: number, title: string) {
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => process.exit(0))
 }
 
-/** CLAUDE_COLAB_KEY if set, else the key saved for that server. */
+/** The key saved for that server. */
 export function loadKey(host: string, port: number) {
-  const text = process.env.CLAUDE_COLAB_KEY || savedKey(host, port)
+  const text = savedKey(host, port)
   if (text === undefined) throw new Error(TEXT.noKey(`${host}:${port}`))
   return parseKey(text)
 }
 
-/** The key this machine's server opens with on `port`: CLAUDE_COLAB_KEY if set, else its saved one unless `isNew`. */
-export const serverKey = (port: number, isNew: boolean) =>
-  process.env.CLAUDE_COLAB_KEY || (isNew ? undefined : savedKey('127.0.0.1', port)) || newKey()
+/**
+ * The key this machine's server opens with on `port`: its saved one unless `isNew`, else a new one. It comes from no
+ * variable of the environment, which every process the session starts would inherit.
+ */
+export const serverKey = (port: number, isNew: boolean) => (isNew ? undefined : savedKey('127.0.0.1', port)) || newKey()
