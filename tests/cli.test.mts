@@ -200,18 +200,8 @@ test('serve says why it did not start: a port in use, a bad key, a bad name', LI
   assert.equal((await run(['status'])).answer.running, false)
 })
 
-test('stop says so when there is no server, and when the one there does not close', LIMIT, async () => {
+test('stop says so when there is no server', LIMIT, async () => {
   assert.match((await run(['stop'])).stderr, /No hay ningún servidor abierto/)
-
-  // A process that ignores the request to end, written down as the machine's server.
-  const stubborn = spawn(process.execPath, ['-e', "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)"])
-  started.push(stubborn)
-  await sleep(200)
-  writeFileSync(join(home, '.claude-colab', 'server.json'), JSON.stringify({ pid: stubborn.pid, port: 1 }))
-  const stopped = await run(['stop'])
-  assert.equal(stopped.code, 1)
-  assert.match(stopped.stderr, /El servidor no se ha cerrado/)
-  stubborn.kill('SIGKILL')
 })
 
 test('a key is saved for the address it is given, and an invitation for each of its addresses', LIMIT, async () => {

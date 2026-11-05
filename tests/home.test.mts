@@ -28,6 +28,8 @@ const {
   savedKey,
   saveKey,
   SERVER_LOG,
+  serverEnded,
+  serverKey,
   socketError,
 } = await import('../cli/home.mts')
 const keys = join(HOME, 'keys')
@@ -128,6 +130,20 @@ test('a server with no key saved for it cannot be linked to, and the message say
   assert.deepEqual(loadKey('192.0.2.9', 4747), Buffer.from(key, 'base64url'))
 })
 
+test('this machine’s server opens with the key of the environment, else its saved one, else a new one', t => {
+  t.after(() => delete process.env.CLAUDE_COLAB_KEY)
+  const fresh = serverKey(4900, false)
+  assert.match(fresh, /^[\w-]{43}$/, 'none saved: a new one')
+  saveKey('127.0.0.1', 4900, fresh)
+  assert.equal(serverKey(4900, false), fresh, 'the saved one')
+  const changed = serverKey(4900, true)
+  assert.notEqual(changed, fresh, 'asked for a new one')
+  assert.match(changed, /^[\w-]{43}$/)
+  const exported = newKey()
+  process.env.CLAUDE_COLAB_KEY = exported
+  for (const isNew of [false, true]) assert.equal(serverKey(4900, isNew), exported, 'the environment’s, always')
+})
+
 test('the machine’s server is the one written down while its process lives; one whose process ended is forgotten', () => {
   assert.equal(runningServer(), undefined, 'none written down')
   const mine = { pid: process.pid, host: '127.0.0.1', port: 4747, title: 'Prueba' }
@@ -138,6 +154,15 @@ test('the machine’s server is the one written down while its process lives; on
   writeFileSync(SERVER, JSON.stringify({ ...mine, pid: ended.pid }))
   assert.equal(runningServer(), undefined)
   assert.equal(isThere(SERVER), false, 'and its file goes')
+})
+
+test('the wait for this machine’s server to end tells whether it ended before its time ran out', async () => {
+  const mine = { pid: process.pid, host: '127.0.0.1', port: 4747, title: 'Prueba' }
+  writeFileSync(SERVER, JSON.stringify(mine))
+  await assert.rejects(serverEnded({ timeout: 30, every: 5 }), /^Error: El servidor no se ha cerrado/, 'it lives on')
+  setTimeout(() => rmSync(SERVER), 10)
+  await serverEnded({ timeout: 1_000, every: 5 }) // one that ends meanwhile
+  await serverEnded({ timeout: 0, every: 5 }) // none at all
 })
 
 test('a server record that is no record, or whose process is another user’s, is forgotten; one unreadable stays', () => {

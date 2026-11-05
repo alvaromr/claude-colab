@@ -15,7 +15,7 @@ holds how to work on it, and the design with its reasons.
 - `pnpm fix`: formats, applies the lint fixes, and runs the gate.
 - `pnpm test:cli` and `pnpm test:mod`: each half's tests alone.
 - `pnpm mutation`: mutation testing of `cli/` (Stryker), outside the hooks; every surviving mutant is a missing test,
-  or an equivalent one recorded in place with its reason.
+  or an equivalent one recorded in place with its reason. What it runs, and why, is in `stryker.config.mjs`.
 - `pnpm audit:deps`: the audit of the dev dependencies; the plugin itself has none.
 - `pnpm release <x.y.z>`: the release, stopping at the first step that fails. Checks the tree is clean and the tag
   new, runs the gate, then installs the release (the version bumped in `plugin.json`, `CHANGELOG.md`'s Unreleased
@@ -53,7 +53,9 @@ The repo's root is the plugin: the mod `colab` and the CLI `claude-colab`. A thi
 - `cli/rooms.mts`: the rules of a room server, pure; `cli/hub.mts`: `serve`, the sockets and timers around them.
 - `cli/link.mts`: `connect`, one process per session.
 - `cli/home.mts`: the private folder of each machine: local sockets, saved keys, the machine's server.
-- `cli/claude-colab.mts`: the CLI's entry point; its `--help` is its only documentation.
+- `cli/args.mts`: what the CLI makes of its command line, pure.
+- `cli/claude-colab.mts`: the CLI's entry point, which only wires each command to the modules that act; its `--help`
+  is its only documentation.
 - The mod, in `hooks/`: `register.tsx`, its entry point, with the conversation's rows; `session.ts`, its start;
   `link.ts`, the link, the rooms and the chat; `server.ts`, this machine's server; `pane.tsx`, the pane; `tools.ts`,
   the tools; `state.ts`, its state and what every part shares. `types/index.d.ts`: the contract of its state.
@@ -163,4 +165,4 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
   the marketplace that lists it.
 - `scripts/`: the repo guard, and the release (`release.mts`, with what it changes in the files in `bump.mts`).
 - `cli/protocol.mts`: the values both halves agree on. `types/index.d.ts`: the mod's state.
-- `stryker.config.json`, `biome.jsonc`, `.prettierrc.json`, `tsconfig.json`, `tsconfig.cli.json`: the gate's tools.
+- `stryker.config.mjs`, `biome.jsonc`, `.prettierrc.json`, `tsconfig.json`, `tsconfig.cli.json`: the gate's tools.

@@ -6,7 +6,17 @@ import { openSync, readFileSync } from 'node:fs'
 import http from 'node:http'
 import { hostname, userInfo } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import { parseArgs } from 'node:util'
+import {
+  addressOf,
+  type Name,
+  type Options,
+  type Positionals,
+  parse,
+  parseAddress,
+  parsePort,
+  UsageError,
+  type Values,
+} from './args.mts'
 import {
   DEFAULT_SOCKET,
   HOME,
@@ -17,25 +27,22 @@ import {
   saveKey,
   savedKey,
   SERVER_LOG,
+  serverEnded,
+  serverKey,
   socketError,
 } from './home.mts'
 import { serve } from './hub.mts'
 import { type Answer, connect, networkAddresses } from './link.mts'
-import { DEFAULT_PORT, isName, NAME_LENGTH, type Value } from './protocol.mts'
+import { isName, NAME_LENGTH, type Value } from './protocol.mts'
 import { type Defaults, TEXT } from './strings.mts'
-import { newKey, parseInvitation, parseKey } from './wire.mts'
+import { parseInvitation, parseKey } from './wire.mts'
 
 const SOCKET_OPTION = { socket: { type: 'string', default: DEFAULT_SOCKET } } as const
 
-type Options = Record<string, { type: 'string' | 'boolean'; default?: string }>
-type Values = Record<string, string | boolean | undefined>
-// As many as the command takes: parse checked their count.
-type Positionals = string[] & { 0: string }
 type Command = { options: Options; positionals: number } & (
-  | { run: (positionals: Positionals, values: Values) => void }
+  | { run: (positionals: Positionals, values: Values) => void | Promise<void> }
   | { request: (positionals: Positionals, values: Values) => [string, Value] }
 )
-type Name = keyof typeof TEXT.commands
 
 // A string option's value: parseArgs gives each option the type its command declares, and its default when it has one.
 const option = (values: Values, name: string) => values[name] as string | undefined
@@ -58,7 +65,7 @@ const COMMANDS: Record<Name, Command> = {
       const title = setting(o, 'name')
       if (!isName(title)) throw new UsageError(TEXT.refused['bad-name']())
       if (o.background) return inBackground(port)
-      const text = process.env.CLAUDE_COLAB_KEY || (o['new-key'] ? undefined : savedKey('127.0.0.1', port)) || newKey()
+      const text = serverKey(port, o['new-key'] === true)
       const server = serve({ key: parseKey(text), host: setting(o, 'host'), port, title }, ({ address, port }) => {
         saveKey('127.0.0.1', port, text)
         markServer(address, port, title)
@@ -88,17 +95,12 @@ const COMMANDS: Record<Name, Command> = {
   stop: {
     options: {},
     positionals: 0,
-    run() {
+    async run() {
       const running = runningServer()
       if (!running) throw new Error(TEXT.noServer)
       process.kill(running.pid, 'SIGTERM')
-      const until = Date.now() + STOP_TIMEOUT
-      const check = () => {
-        if (runningServer() === undefined) return console.log(JSON.stringify({ ok: true, stopped: running.port }))
-        if (Date.now() > until) return fail(TEXT.notStopped)
-        setTimeout(check, 100)
-      }
-      check()
+      await serverEnded({ timeout: STOP_TIMEOUT, every: 100 })
+      console.log(JSON.stringify({ ok: true, stopped: running.port }))
     },
   },
   key: {
@@ -145,7 +147,7 @@ const COMMANDS: Record<Name, Command> = {
     run() {
       const { addresses, port, key, room, code } = parseInvitation(readFileSync(0, 'utf8'))
       for (const address of addresses) saveKey(address, port, key)
-      const servers = addresses.map(address => (address.includes(':') ? `[${address}]:${port}` : `${address}:${port}`))
+      const servers = addresses.map(address => addressOf(address, port))
       console.log(JSON.stringify({ ok: true, servers, room, code }))
     },
   },
@@ -166,15 +168,8 @@ const COMMANDS: Record<Name, Command> = {
   },
 }
 
-const MAIN_HELP = TEXT.main(
-  Object.entries(TEXT.commands)
-    .map(([name, c]) => `  ${name.padEnd(8)} ${c.summary}`)
-    .join('\n'),
-)
 // What the help shows as each option's default.
 const DEFAULTS: Defaults = { machine: hostTitle(), user: userInfo().username, log: SERVER_LOG, socket: DEFAULT_SOCKET }
-
-class UsageError extends Error {}
 
 /** This machine's name as the network knows it, without its domain: a server's name when none is given. */
 function hostTitle() {
@@ -212,37 +207,6 @@ function inBackground(port: number) {
   server.once('exit', code => fail(TEXT.neverListened(port, code, SERVER_LOG)))
 }
 
-function parsePort(text: string | undefined) {
-  if (text === undefined) return DEFAULT_PORT
-  const port = Number(text)
-  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new UsageError(TEXT.badPort(text))
-  return port
-}
-
-/** `host`, `host:port`, `[ipv6]:port` or a bare IPv6 address. */
-function parseAddress(text: string) {
-  const m = /^\[(.+)\](?::(\d+))?$/.exec(text) ?? /^([^:]+)(?::(\d+))?$/.exec(text)
-  return m ? { host: String(m[1]), port: parsePort(m[2]) } : { host: text, port: DEFAULT_PORT }
-}
-
-type Parsed = { help: string } | { command: Command; positionals: Positionals; values: Values }
-
-function parse(argv: string[]): Parsed {
-  const [name, ...rest] = argv
-  if (!name || name === '--help' || name === '-h') return { help: MAIN_HELP }
-  if (!Object.hasOwn(COMMANDS, name)) throw new UsageError(`${TEXT.unknownCommand(name)}\n\n${MAIN_HELP}`)
-  const command = COMMANDS[name as Name]
-  const { usage, help } = TEXT.commands[name as Name]
-  const { values, positionals } = parseArgs({
-    args: rest,
-    allowPositionals: true,
-    options: { ...command.options, help: { type: 'boolean', short: 'h' } },
-  })
-  if (values.help) return { help: `${usage}\n\n${help(DEFAULTS)}` }
-  if (positionals.length !== command.positionals) throw new UsageError(TEXT.usage(usage))
-  return { command, positionals: positionals as Positionals, values }
-}
-
 /** Sends one request to the local connect process and prints its answer. */
 function request(socketPath: string, op: string, args: Value) {
   const req = http.request(
@@ -270,13 +234,13 @@ function request(socketPath: string, op: string, args: Value) {
 }
 
 try {
-  const parsed = parse(process.argv.slice(2))
+  const parsed = parse(process.argv.slice(2), COMMANDS, DEFAULTS)
   if ('help' in parsed) {
     console.log(parsed.help)
     process.exit(0)
   }
   const { command, positionals, values } = parsed
-  if ('run' in command) command.run(positionals, values)
+  if ('run' in command) await command.run(positionals, values)
   else request(setting(values, 'socket'), ...command.request(positionals, values))
 } catch (caught) {
   const err = caught as NodeJS.ErrnoException

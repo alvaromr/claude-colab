@@ -2,8 +2,9 @@
 import { lstatSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir, userInfo } from 'node:os'
 import { join } from 'node:path'
+import { setTimeout as sleep } from 'node:timers/promises'
 import { TEXT } from './strings.mts'
-import { parseKey } from './wire.mts'
+import { newKey, parseKey } from './wire.mts'
 
 export const HOME = join(homedir(), '.claude-colab')
 export const DEFAULT_SOCKET = process.env.CLAUDE_COLAB_SOCKET ?? join(HOME, 'colab.sock')
@@ -80,6 +81,16 @@ export function runningServer(): Running | undefined {
   }
 }
 
+/** Waits for the machine's room server to end, asking every `every` ms; fails if it has not within `timeout` ms. */
+export async function serverEnded({ timeout, every }: { timeout: number; every: number }) {
+  const until = Date.now() + timeout
+  while (runningServer() !== undefined) {
+    // Stryker disable next-line EqualityOperator: a millisecond either way of the time tells nothing apart
+    if (Date.now() >= until) throw new Error(TEXT.notStopped)
+    await sleep(every)
+  }
+}
+
 /** Writes down this process as the machine's room server, and forgets it when the process ends. */
 export function markServer(host: string, port: number, title: string) {
   privateFolder(HOME)
@@ -94,3 +105,7 @@ export function loadKey(host: string, port: number) {
   if (text === undefined) throw new Error(TEXT.noKey(`${host}:${port}`))
   return parseKey(text)
 }
+
+/** The key this machine's server opens with on `port`: CLAUDE_COLAB_KEY if set, else its saved one unless `isNew`. */
+export const serverKey = (port: number, isNew: boolean) =>
+  process.env.CLAUDE_COLAB_KEY || (isNew ? undefined : savedKey('127.0.0.1', port)) || newKey()
