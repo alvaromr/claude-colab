@@ -149,6 +149,9 @@ test('past the connections one address may hold at once, the next is cut before 
   assert.equal(await closesWithin(second, 300), false, 'the two before it stay')
   first.destroy()
   await closesWithin(first, 2_000)
+  // Closed here before the server hears of it: under load, its place is freed a moment later.
+  const held = () => new Promise<number>(resolve => capped.getConnections((_, count) => resolve(count)))
+  while ((await held()) > 1) await new Promise(resolve => setImmediate(resolve))
   const again = await open()
   assert.equal(await closesWithin(again, 300), false, 'the place the first left is taken')
   assert.equal(await closesWithin(await open(), 2_000), true, 'and the one after it is cut again')
