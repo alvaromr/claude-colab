@@ -112,8 +112,9 @@ Node, no runtime dependencies, JSON output. Node runs its TypeScript as is, stri
   `connect` turns down one of another version. It refuses with a code (`Refusal`) and the fields its words need, never
   text: its people may read another language than its own, and `connect` words it in its machine's.
 - **`connect`:** a local process per session, which the mod starts. Driven over a Unix socket in a `0700` folder, which
-  the mod reaches with `$.http.fetch` and `socketPath`; events go to stdout, one JSON line each. It gives its room's
-  invitation; for its own server, with the machine's network addresses, and the guest tries each.
+  the mod reaches with `$.http.fetch` and `socketPath`; two started at once on one socket take turns to start
+  listening, by a lock file beside it. Events go to stdout, one JSON line each. It gives its room's invitation; for
+  its own server, with the machine's network addresses, and the guest tries each.
 - **`accept`:** saves an invitation's key, read from stdin, never from argv.
 - **Encryption:** TLS 1.3 with a PSK and SHA-256 suites: with `TLS_AES_256_GCM_SHA384`, Node 26 fails the handshake.
   A server that shows a certificate is refused: only the key proves the server.

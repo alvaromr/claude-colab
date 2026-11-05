@@ -2,7 +2,7 @@
 // one JSON line on stdout. Takes requests from this machine over HTTP on a Unix socket, in a folder only its user
 // can open; the mod and the CLI's other commands use it. Run by a Claude Code session, it can also post into that
 // session's inbox (CLAUDE_CODE_MESSAGING_SOCKET), where a line wakes the model as another session's message.
-import { lstatSync, rmSync } from 'node:fs'
+import { closeSync, lstatSync, openSync, rmSync, statSync } from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
 import { type NetworkInterfaceInfo, networkInterfaces } from 'node:os'
@@ -31,6 +31,8 @@ const REQUESTS: Record<string, string[]> = {
 // What the server may push; `connected`, `disconnected` and `error` are this process's own, never the server's.
 const SERVER_EVENTS = new Set(['rooms', 'member', 'message'])
 const INBOX_TIMEOUT = 5_000
+// A start takes milliseconds: a turn to start held longer than this was left by a crash.
+const TURN_STALE = 10_000
 
 export type Answer = Value & { ok: boolean; error?: string }
 
@@ -224,11 +226,38 @@ const isListening = (path: string) =>
   })
 
 /**
+ * Takes the turn to start listening on `socketPath`, which two connects started at once would otherwise both take:
+ * each would remove the other's socket as one a crash left. A turn older than any start was left by a crash.
+ */
+function takeTurn(socketPath: string) {
+  const turn = `${socketPath}.lock`
+  try {
+    // Stryker disable next-line ConditionalExpression,EqualityOperator: a millisecond either way tells nothing apart
+    if ((statSync(turn, { throwIfNoEntry: false })?.mtimeMs ?? Date.now()) < Date.now() - TURN_STALE) rmSync(turn)
+    closeSync(openSync(turn, 'wx', 0o600))
+  } catch (err) {
+    const failure = err as NodeJS.ErrnoException
+    throw failure.code === 'EEXIST' ? new Error(TEXT.connectStarting(socketPath)) : socketError(socketPath, failure)
+  }
+  // Stryker disable next-line ObjectLiteral,BooleanLiteral: the turn is gone only if another connect took it as left by a crash, after TURN_STALE
+  return () => rmSync(turn, { force: true })
+}
+
+/**
  * Listens on `socketPath`, handing each request to `answerOp(op, fields)`, and resolves with its inode; turns it down
- * if another process listens there.
+ * if another process listens there, or is starting to.
  */
 async function listenLocally(socketPath: string, answerOp: (op: string, fields: Value) => Promise<Answer>) {
   privateFolder(dirname(socketPath))
+  const giveBack = takeTurn(socketPath)
+  try {
+    return await listenInTurn(socketPath, answerOp)
+  } finally {
+    giveBack()
+  }
+}
+
+async function listenInTurn(socketPath: string, answerOp: (op: string, fields: Value) => Promise<Answer>) {
   if (lstatSync(socketPath, { throwIfNoEntry: false })?.isSocket()) {
     if (await isListening(socketPath)) throw new Error(TEXT.connectThere(socketPath))
     rmSync(socketPath) // left by a crash

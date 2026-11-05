@@ -1,7 +1,7 @@
 // Runs with `node --test tests/`: connect, as its own process, against a stand-in server that does as each test says.
 import assert from 'node:assert/strict'
 import { type ChildProcess, spawn } from 'node:child_process'
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { syncBuiltinESMExports } from 'node:module'
 import net, { type AddressInfo } from 'node:net'
@@ -549,6 +549,8 @@ test('connect says why it cannot listen on its local socket', async () => {
   for (const [socketPath, error] of [
     [join(open, 'colab.sock'), /tiene que ser solo tuyo/],
     [tooLong, /^La ruta del socket es demasiado larga para este sistema: .*x\.sock$/],
+    // A name the system takes, whose turn to start, five characters longer, it does not.
+    [join(folder, `${'n'.repeat(248)}.sock`), /^La ruta del socket es demasiado larga para este sistema: .*n\.sock$/],
     [held, /Ya hay un connect escuchando/],
   ] as const) {
     const ana = connectTo(server.port, { socketPath })
@@ -557,5 +559,28 @@ test('connect says why it cannot listen on its local socket', async () => {
     assert.equal(ana.complaint(), '', 'and says it once, as an event')
   }
   holder.close()
+  server.close()
+})
+
+test('two connects starting on one socket take turns: one waits for none, and a turn left by a crash is taken', async () => {
+  const server = await standIn()
+  const socketPath = join(folder, 'turno.sock')
+  const turn = `${socketPath}.lock`
+
+  writeFileSync(turn, '')
+  const second = connectTo(server.port, { socketPath })
+  assert.equal(
+    (await second.until(event => event.ev === 'error')).error,
+    `Otro connect está empezando a escuchar en ${socketPath}`,
+  )
+  assert.equal(await second.ended, 1)
+
+  const old = new Date(Date.now() - 60_000)
+  utimesSync(turn, old, old)
+  const ana = connectTo(server.port, { socketPath })
+  await ana.until(event => event.ev === 'connected')
+  assert.equal(existsSync(turn), false, 'the turn is given back once it listens')
+  ana.stop()
+  await ana.ended
   server.close()
 })
