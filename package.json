@@ -24,9 +24,9 @@
     "audit:deps": "pnpm audit"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.2",
-    "@stryker-mutator/core": "10.0.0",
-    "@types/node": "26.6.5",
+    "@biomejs/biome": "2.6.4",
+    "@stryker-mutator/core": "10.1.1",
+    "@types/node": "26.6.6",
     "prettier": "3.9.10",
     "typescript": "7.0.2"
   }

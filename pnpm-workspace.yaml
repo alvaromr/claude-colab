@@ -8,3 +8,7 @@ overrides:
   # Stryker's typed-rest-client pins qs 6.15.1, which has four moderate advisories (DoS); 6.16.1 fixes them all.
   # Drop this once a Stryker release a week old pins a fixed qs.
   qs: 6.16.1
+  # Stryker pins minimatch ~10.2.4, which has a moderate advisory (DoS, GHSA-g3hv-75wg-m249); 11.0.1 fixes it. 11 drops
+  # makeRe and the AST class, which Stryker does not use: it calls minimatch(), match, negate and hasMagic.
+  # Drop this once a Stryker release a week old takes minimatch 11.
+  minimatch: 11.0.3
