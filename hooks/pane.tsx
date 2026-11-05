@@ -13,14 +13,14 @@ import {
   rejoinRecent,
   sayFromPane,
 } from './link.ts'
+import { isOwn, isSameServer } from './addresses.ts'
+import { colorOf, farthestBack, rowsOf } from './chat.ts'
 import { closeServer, machine } from './server.ts'
 import { ensureStarted } from './session.ts'
 import {
   type Answer,
   type Engine,
   failed,
-  isOwn,
-  isSameServer,
   readChatBack,
   readColors,
   readHelp,
@@ -44,11 +44,6 @@ export const PANE = 'colab'
 export const TITLE = 'Colab'
 // How many of the messages the pane's chat keeps it draws at most: those that fit its height show.
 const CHAT_DRAWN = 40
-// One per person, by the number the server gives each connection: distinct while there are no more people than colors.
-const COLORS = ['#4E9BF5', '#E5A33B', '#4CB782', '#C678DD', '#E06C75', '#2BB5C2', '#D4B83A', '#9C8BF0']
-const colorOf = (n: number | undefined) =>
-  n === undefined ? 'suggestion' : (COLORS[n % COLORS.length] ?? 'suggestion')
-
 // How far back the chat may scroll, as the last drawing of the pane measured it; the wheel stops there.
 let chatReach = 0
 
@@ -61,25 +56,6 @@ const authorOf = (line: Pick<Line, 'from' | 'by'>) =>
     : line.by === 'claude'
       ? T.claudeOf(line.from)
       : line.from
-
-/** About how many rows `text` takes wrapped at `columns`, each of its lines on its own. */
-const rowsOf = (text: string, columns: number) =>
-  text.split('\n').reduce((rows, part) => rows + Math.max(1, Math.ceil(part.length / Math.max(1, columns))), 0)
-
-/**
- * How many of the newest messages the chat may scroll past and still have the older ones fill its `rows`: a box
- * takes its borders, its author's line and its text, wrapped inside its borders and padding, and a row apart.
- */
-function farthestBack(lines: Line[], columns: number, rows: number) {
-  let filled = 0
-
-  for (const [shown, line] of lines.entries()) {
-    filled += (shown === 0 ? 0 : 1) + (line.gap ? rowsOf(T.gap, columns) : 3 + rowsOf(line.text, columns - 4))
-    if (filled >= rows) return lines.length - shown - 1
-  }
-
-  return 0
-}
 
 /** One message as the conversation and the pane draw it: boxed, with round corners, in its author's color. */
 export function bubble($: Engine, e: ResolveInput, line: Line, painted: Record<string, number>) {
@@ -301,7 +277,7 @@ export function onPane(on: On) {
       2 // the gaps between the parts
     const height = e.props.scroll?.bodyRows ?? 30
     // Back no further than where the oldest messages still fill the chat: no blank above them.
-    const reach = farthestBack(said, columns, height - fixed)
+    const reach = farthestBack(said, columns, height - fixed, T.gap)
     const back = Math.min(await readChatBack($), reach)
     const chat = said.slice(Math.max(0, said.length - back - CHAT_DRAWN), said.length - back)
 

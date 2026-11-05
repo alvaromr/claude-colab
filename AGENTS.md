@@ -10,12 +10,14 @@ holds how to work on it, and the design with its reasons.
   Conventional Commits, no tag moved or deleted, and no `WIP`, `fixup!` or `squash!` commit pushed.
 - `claude --plugin-dir .`, once after cloning: loading the mod, Claude Code writes the types it is checked against
   into `.claude-plugin/types/`, which git ignores. Until then the gate stops at the types and says so.
-- `pnpm check`: the gate, which the pre-commit hook runs: format, lint, types, the repo guard, the CLI's tests with
-  100 % coverage, and the mod's tests.
+- `pnpm check`: the gate, which the pre-commit hook runs: format, lint, types, the repo guard, the Node tests with 100 %
+  coverage, and the mod's tests in the engine.
 - `pnpm fix`: formats, applies the lint fixes, and runs the gate.
-- `pnpm test:cli` and `pnpm test:mod`: each half's tests alone.
-- `pnpm mutation`: mutation testing of `cli/` (Stryker), outside the hooks; every surviving mutant is a missing test,
-  or an equivalent one recorded in place with its reason. What it runs, and why, is in `stryker.config.mjs`.
+- `pnpm test:node`: the tests Node runs, those of `cli/` and of the mod's pure modules (`hooks/addresses.ts`,
+  `hooks/chat.ts`), with coverage. `pnpm test:mod`: the mod's tests in the engine (`claude plugin test`).
+- `pnpm mutation`: mutation testing of what Node tests (Stryker), outside the hooks; every surviving mutant is a
+  missing test, or an equivalent one recorded in place with its reason. What it runs, and why, is in
+  `stryker.config.mjs`.
 - `pnpm audit:deps`: the audit of the dev dependencies; the plugin itself has none.
 - `pnpm release <x.y.z>`: the release, stopping at the first step that fails. Checks the tree is clean and the tag
   new, runs the gate, then installs the release (the version bumped in `plugin.json`, `CHANGELOG.md`'s Unreleased
@@ -46,7 +48,7 @@ The repo's root is the plugin: the mod `colab` and the CLI `claude-colab`. A thi
 - `cli/strings.mts` and `hooks/strings.ts`: what each half tells people and the model, in Spanish and English. The
   language is the locale's: the first of `LC_ALL`, `LC_MESSAGES` and `LANG` that is set, as POSIX reads it, so colab
   speaks as the machine's commands do. The mod reads it once, at `session.start`: a pane drawn before it starts is in
-  English, the language of no locale. The CLI's tests run in Spanish (`LC_ALL`, set by `test:cli` and the mutation
+  English, the language of no locale. The CLI's tests run in Spanish (`LC_ALL`, set by `test:node` and the mutation
   command), and those of the texts check every one in both; the mod's run in English, with one per variable for the
   choice.
 - `cli/wire.mts`: TLS with the pre-shared key, invitations, and JSON lines.
@@ -58,14 +60,16 @@ The repo's root is the plugin: the mod `colab` and the CLI `claude-colab`. A thi
   is its only documentation.
 - The mod, in `hooks/`: `register.tsx`, its entry point, with the conversation's rows; `session.ts`, its start;
   `link.ts`, the link, the rooms and the chat; `server.ts`, this machine's server; `pane.tsx`, the pane; `tools.ts`,
-  the tools; `state.ts`, its state and what every part shares. `types/index.d.ts`: the contract of its state.
+  the tools; `state.ts`, its state and what every part shares. Pure, with no engine, so that Node tests them with
+  coverage and mutation: `addresses.ts`, which addresses reach which server; `chat.ts`, what a message becomes on its
+  way in and how much of the chat it takes. `types/index.d.ts`: the contract of its state.
 - The engine reads and writes a value of the state only in the file that declares its atom, and follows `$` past an
   import only into a function declaration: each value is declared once, in `state.ts`, and reached through its
   `read…` and `update…` functions there.
 
 The lint enforces the boundaries (`biome.jsonc`): the mod imports nothing of Node and, of `cli/`, only
-`protocol.mts`; `protocol.mts` imports nothing; `rooms.mts` imports only `protocol.mts`; the CLI imports nothing of the
-mod.
+`protocol.mts`; `protocol.mts`, `hooks/addresses.ts` and `hooks/chat.ts` import nothing; `rooms.mts` imports only
+`protocol.mts`; the CLI imports nothing of the mod.
 
 ### The mod
 
@@ -136,7 +140,7 @@ them. Their reasons:
 - **Gate green before every commit:** the pre-commit hook runs it; never bypass it.
 - **Test first:** every behaviour and every bug starts as a failing test; a security fix ships with one that fails if
   the fix is removed.
-- **100 % coverage of `cli/`:** a gap is either a test or an exclusion in place with its reason.
+- **100 % coverage of what Node tests:** a gap is either a test or an exclusion in place with its reason.
 - **Verify in a real session** before calling something done: no hypothesis passed off as fact.
 - **English** for code, comments, docs and commits; what people and the model read is in both languages, in the
   strings file of its half: a text in one language alone is a bug.

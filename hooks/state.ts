@@ -119,17 +119,6 @@ export function updateLog($: Engine, change: (value: Line[]) => Line[]) {
   return update($, log, change)
 }
 
-// This machine, as an address: by loopback, or by one of its network addresses, which its own server's invitations
-// carry. Its own server is reached there, and is no server of others to remember.
-export const isOwn = (server: string, own: Hosted | null) =>
-  /^(127\.|localhost(:|$)|\[::1\]|::1$)/.test(server) ||
-  (own?.addresses.includes(server.slice(0, server.lastIndexOf(':'))) ?? false)
-const portOf = (server: string) => server.slice(server.lastIndexOf(':') + 1)
-/** Whether two addresses reach one server: the same address, or two of this machine's own server, at its port. */
-export const isSameServer = (one: string, other: string, own: Hosted | null) =>
-  one === other ||
-  (own !== null && [one, other].every(server => isOwn(server, own) && portOf(server) === portOf(own.address)))
-
 export type Answer = { ok: boolean; error?: string; text?: string }
 
 export const failed = (why: string): Answer => ({ ok: false, error: why })

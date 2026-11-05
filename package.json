@@ -3,19 +3,20 @@
   "private": true,
   "description": "Development tasks of the colab mod and the claude-colab CLI; the plugin itself has no dependencies.",
   "license": "MIT",
+  "type": "module",
   "packageManager": "pnpm@12.4.2",
   "engines": {
     "node": ">=26"
   },
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
-    "check": "pnpm format && pnpm lint && pnpm typecheck && pnpm guard && pnpm test:cli && pnpm test:mod",
+    "check": "pnpm format && pnpm lint && pnpm typecheck && pnpm guard && pnpm test:node && pnpm test:mod",
     "guard": "node scripts/guard.mts",
     "fix": "prettier --write . && biome lint --write && pnpm check",
     "format": "prettier --check .",
     "lint": "biome lint --error-on-warnings",
     "typecheck": "test -f .claude-plugin/types/tsconfig.json || { echo 'No engine types yet: run claude --plugin-dir . once, which writes them to .claude-plugin/types/' >&2; exit 1; } && tsc -p . && tsc -p tsconfig.cli.json",
-    "test:cli": "LC_ALL=es_ES.UTF-8 node --test --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 tests/",
+    "test:node": "LC_ALL=es_ES.UTF-8 node --test --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 tests/",
     "test:mod": "claude plugin test .",
     "mutation": "stryker run",
     "release": "node scripts/release.mts",

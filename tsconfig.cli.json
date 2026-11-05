@@ -1,5 +1,5 @@
 {
-  // The CLI, its tests and the scripts run on Node, which strips their types; the mod (tsconfig.json) has no Node.
+  // The CLI, the scripts and the tests Node runs, which strips their types; the mod (tsconfig.json) has no Node.
   "compilerOptions": {
     "target": "es2024",
     "lib": ["es2024"],
@@ -16,5 +16,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["cli", "scripts", "tests/*.mts"]
+  "include": ["cli", "scripts", "tests/*.mts", "tests/mod/*.test.mts"]
 }

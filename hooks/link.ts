@@ -1,5 +1,7 @@
 import { DEAD_AFTER, DEFAULT_PORT, isName, PING_EVERY, type Refusal } from '../cli/protocol.mts'
-import type { Author, Hosted, Known, Line, Link, Place, Recent, Room, Setup } from '../types'
+import type { Author, Known, Line, Link, Place, Recent, Room, Setup } from '../types'
+import { isOwn, isSameRoom } from './addresses.ts'
+import { cleaned, quoted } from './chat.ts'
 import { checkServer, cli, openServer, runCli } from './server.ts'
 import {
   type Answer,
@@ -7,8 +9,6 @@ import {
   done,
   type Engine,
   failed,
-  isOwn,
-  isSameServer,
   LOG_SIZE,
   MARK,
   readError,
@@ -44,19 +44,6 @@ const RETRY_LAST = 30_000
 const GHOST_WAIT = (DEAD_AFTER + 1) * PING_EVERY
 // How many rooms left behind the pane offers to go back to.
 const RECENT_SIZE = 5
-
-// What could redraw the terminal or change how a text reads: C0 and C1 controls but tab and newline, bidirectional
-// marks and line separators, and the invisible ones the model still reads (zero-width marks and tag characters).
-// A message loses them on arrival.
-const CONTROLS =
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is the point
-  /[\u{0}-\u{8}\u{B}-\u{1F}\u{7F}-\u{9F}\u{61C}\u{200B}\u{200E}\u{200F}\u{2028}\u{2029}\u{202A}-\u{202E}\u{2060}\u{2066}-\u{2069}\u{FEFF}\u{E0000}-\u{E007F}]/gu
-// A message's text goes to the model quoted line by line under the mod's header, so no line of it passes for one.
-const quoted = (text: string) =>
-  text
-    .split('\n')
-    .map(line => `> ${line}`)
-    .join('\n')
 
 // The room a message or a member event is of: its code, and the label people read.
 type Message = Place & {
@@ -485,7 +472,7 @@ async function show($: Engine, message: Message) {
     from: message.from,
     by: message.by ?? 'person',
     ...(people > 2 && message.to !== undefined ? { to: message.to } : {}),
-    text: message.text.replace(CONTROLS, ''),
+    text: cleaned(message.text),
     own: message.own,
   }
 
@@ -604,9 +591,6 @@ export async function leave($: Engine): Promise<Answer> {
 
   return done(T.youLeft(here.label))
 }
-
-const isSameRoom = (one: Recent, other: Recent, own: Hosted | null) =>
-  one.code === other.code && isSameServer(one.server, other.server, own)
 
 /** Goes back into a room left before, made again by its code if the server started over meanwhile. */
 export async function rejoinRecent($: Engine, left: Recent): Promise<Answer> {
