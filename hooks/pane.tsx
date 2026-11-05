@@ -2,17 +2,9 @@ import type { On, ResolveInput } from 'claude-code'
 
 import { DEFAULT_PORT, isName } from '../cli/protocol.mts'
 import type { Line, Setup } from '../types'
-import {
-  acceptInvitation,
-  connect,
-  copyInvitation,
-  create,
-  disconnect,
-  hostHere,
-  leave,
-  rejoinRecent,
-  sayFromPane,
-} from './link.ts'
+import { acceptInvitation, connect, disconnect, hostHere } from './link.ts'
+import { sayFromPane } from './messages.ts'
+import { copyInvitation, create, leave, rejoinRecent } from './rooms.ts'
 import { isOwn, isSameServer } from './addresses.ts'
 import { colorOf, farthestBack, rowsOf } from './chat.ts'
 import { closeServer, machine } from './server.ts'

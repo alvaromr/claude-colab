@@ -59,10 +59,12 @@ The repo's root is the plugin: the mod `colab` and the CLI `claude-colab`. A thi
 - `cli/claude-colab.mts`: the CLI's entry point, which only wires each command to the modules that act; its `--help`
   is its only documentation.
 - The mod, in `hooks/`: `register.tsx`, its entry point, with the conversation's rows; `session.ts`, its start;
-  `link.ts`, the link, the rooms and the chat; `server.ts`, this machine's server; `pane.tsx`, the pane; `tools.ts`,
-  the tools; `state.ts`, its state and what every part shares. Pure, with no engine, so that Node tests them with
-  coverage and mutation: `addresses.ts`, which addresses reach which server; `chat.ts`, what a message becomes on its
-  way in and how much of the chat it takes. `types/index.d.ts`: the contract of its state.
+  `link.ts`, the link: connect's process and its events; `rooms.ts`, the session's rooms, and the way back into one
+  after a reload or a drop; `messages.ts`, the chat; `local.ts`, the requests to connect; `server.ts`, this machine's
+  server; `pane.tsx`, the pane; `tools.ts`, the tools; `state.ts`, its state and what every part shares. Pure, with
+  no engine, so that Node tests them with coverage and mutation: `addresses.ts`, which addresses reach which server;
+  `chat.ts`, what a message becomes on its way in and how much of the chat it takes. `types/index.d.ts`: the contract
+  of its state.
 - The engine reads and writes a value of the state only in the file that declares its atom, and follows `$` past an
   import only into a function declaration: each value is declared once, in `state.ts`, and reached through its
   `read…` and `update…` functions there.

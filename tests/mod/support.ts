@@ -154,6 +154,9 @@ export const fresh = (): Record<string, unknown> => ({
 
 export const ROOM = { code: 'r'.repeat(24), label: '1' }
 
+// The link a session had asked for before a reload: to a server, back into a room.
+export const WANTED = { server: '192.0.2.5:4747', name: 'Ana', place: { code: 'c'.repeat(24), label: '1' } }
+
 /**
  * A session linked to 192.0.2.5:4747 as Ana, through the connect tool, and in room 1 with `members`; connect gives
  * `answers` too, by request.

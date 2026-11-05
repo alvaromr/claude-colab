@@ -11,6 +11,8 @@ export type Engine = EngineInterface
 export const MARK = '[colab] '
 // How many messages the pane's chat keeps.
 export const LOG_SIZE = 200
+// How long a tool waits for connect or serve to say it is up, or for the session to be back in its room.
+export const START_TIMEOUT = 15_000
 // What the mod says, in the language of the session's locale, which start reads: until then, English.
 export let T = TEXTS.en
 

@@ -1,6 +1,6 @@
 import type { Register } from 'claude-code'
 
-import { markBusy, say, sentLine } from './link.ts'
+import { markBusy, say, sentLine } from './messages.ts'
 import { bubble, onPane, PANE, TITLE } from './pane.tsx'
 import { checkServer } from './server.ts'
 import { start } from './session.ts'

@@ -1,7 +1,9 @@
 import type { Caught, Next, On } from 'claude-code'
 
 import { DEFAULT_PORT } from '../cli/protocol.mts'
-import { acceptInvitation, connect, create, disconnect, invite, leave, roomList, say } from './link.ts'
+import { acceptInvitation, connect, disconnect } from './link.ts'
+import { say } from './messages.ts'
+import { create, invite, leave, roomList } from './rooms.ts'
 import { closeServer, openServer } from './server.ts'
 import { type Answer, done, type Engine, readSetup, T } from './state.ts'
 
