@@ -10,6 +10,9 @@ import { newCode, readLines, serverOptions, writeLine } from './wire.mts'
 const HANDSHAKE_TIMEOUT = 5_000
 const HELLO_TIMEOUT = 10_000
 const MAX_CLIENTS = 64
+// One machine runs a connect per session: past this many at once from one address, it is a flood, not people, and it
+// would keep the others out of the server's MAX_CLIENTS.
+const MAX_PER_ADDRESS = 8
 // What may wait unread for one connection; one that does not read is dropped before it fills the server's memory.
 const MAX_BACKLOG = 1024 * 1024
 
@@ -28,6 +31,7 @@ export type Serving = {
   handshakeWait?: number
   helloWait?: number
   maxRooms?: number
+  maxPerAddress?: number
 }
 
 export function serve(
@@ -40,6 +44,7 @@ export function serve(
     handshakeWait = HANDSHAKE_TIMEOUT,
     helloWait = HELLO_TIMEOUT,
     maxRooms,
+    maxPerAddress = MAX_PER_ADDRESS,
   }: Serving,
   onListening: (at: AddressInfo) => void,
 ) {
@@ -90,6 +95,20 @@ export function serve(
   // A failed handshake (wrong key, junk, timeout) reaches no room, and Node leaves its socket open: it is closed here.
   server.on('tlsClientError', (_err, socket) => socket.destroy())
   server.maxConnections = MAX_CLIENTS // counts connections still in the handshake too
+  // Counted from the first byte, before the handshake: a flood needs no key to fill the server.
+  const fromAddress = new Map<string, number>()
+  server.on('connection', socket => {
+    const address = String(socket.remoteAddress)
+    const open = fromAddress.get(address) ?? 0
+    if (open >= maxPerAddress) return socket.destroy()
+    fromAddress.set(address, open + 1)
+    socket.once('close', () => {
+      const left = Number(fromAddress.get(address)) - 1
+      // Stryker disable next-line ConditionalExpression,CallExpression: an address left at none takes no memory, which no test sees
+      if (left === 0) fromAddress.delete(address)
+      else fromAddress.set(address, left)
+    })
+  })
   // One silent past its pings is gone, though TCP never said: it leaves its room, and its name is free again.
   const sweep = setInterval(() => {
     for (const client of rooms.clients()) {

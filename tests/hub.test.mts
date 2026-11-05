@@ -57,6 +57,8 @@ before(async () => {
         handshakeWait: HANDSHAKE_WAIT,
         helloWait: HELLO_WAIT,
         maxRooms: ROOMS,
+        // Every link of these tests comes from loopback and stays until the end: the cap per address has its own test.
+        maxPerAddress: 1_000,
       },
       () => resolve(started),
     )
@@ -123,6 +125,33 @@ test('what is not TLS is cut at once', async () => {
   await new Promise(resolve => raw.once('connect', resolve))
   raw.write('GET / HTTP/1.1\r\nHost: x\r\n\r\n')
   assert.equal(await closesWithin(raw, 2_000), true)
+})
+
+test('past the connections one address may hold at once, the next is cut before its handshake; one ended frees its place', async t => {
+  const capped = await new Promise<tls.Server>(resolve => {
+    const started = serve({ key, host: '127.0.0.1', port: 0, title: 'Tope', maxPerAddress: 2 }, () => resolve(started))
+  })
+  const opened: net.Socket[] = []
+  // Ended even when the test fails halfway: the server closes only once they are.
+  t.after(() => {
+    for (const socket of opened) socket.destroy()
+    capped.close()
+  })
+  const at = (capped.address() as AddressInfo).port
+  const open = () => {
+    const raw = net.connect(at, '127.0.0.1')
+    opened.push(raw)
+    return new Promise<net.Socket>(resolve => raw.once('connect', () => resolve(raw)))
+  }
+  const [first, second] = [await open(), await open()]
+  const third = await open()
+  assert.equal(await closesWithin(third, 2_000), true, 'the third is cut')
+  assert.equal(await closesWithin(second, 300), false, 'the two before it stay')
+  first.destroy()
+  await closesWithin(first, 2_000)
+  const again = await open()
+  assert.equal(await closesWithin(again, 300), false, 'the place the first left is taken')
+  assert.equal(await closesWithin(await open(), 2_000), true, 'and the one after it is cut again')
 })
 
 test('a connection must say hello first, and soon: anything else first, or nothing, cuts it', async t => {

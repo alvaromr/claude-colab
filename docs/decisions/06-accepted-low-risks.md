@@ -5,7 +5,6 @@
 - `CLAUDE_COLAB_KEY` reaches every child of the session: only if the person exports it, and any process of theirs can
   read the key files anyway.
 - Two `connect` started at once on one socket race.
-- Someone with the key can repeat a flood of handshakes to keep others out: a per-IP limit would fix it.
 - Names with homoglyphs pass for others' names.
 
 **Decided by:** proposed by an agent; awaiting the owner's approval.
