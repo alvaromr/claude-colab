@@ -10,11 +10,13 @@ holds how to work on it, and the design with its reasons.
   Conventional Commits, no tag moved or deleted, and no `WIP`, `fixup!` or `squash!` commit pushed.
 - `claude --plugin-dir .`, once after cloning: loading the mod, Claude Code writes the types it is checked against
   into `.claude-plugin/types/`, which git ignores. Until then the gate stops at the types and says so.
-- `pnpm check`: the gate, which the pre-commit hook runs: format, lint, types, the repo guard, the Node tests with 100 %
-  coverage, and the mod's tests in the engine.
+- `pnpm check`: the gate, which the pre-commit hook runs: the Node it runs on beside the one `.node-version` pins,
+  format, lint, types, the repo guard, the Node tests with 100 % coverage, and the mod's tests in the engine.
 - `pnpm fix`: formats, applies the lint fixes, and runs the gate.
 - `pnpm test:node`: the tests Node runs, those of `cli/` and of the mod's pure modules (`hooks/addresses.ts`,
   `hooks/chat.ts`), with coverage. `pnpm test:mod`: the mod's tests in the engine (`claude plugin test`).
+- `pnpm test:matrix`: the Node tests on every Node the project supports: the oldest that `engines` takes and the one
+  `.node-version` pins, downloaded from nodejs.org and checked against their SHA-256 sums.
 - `pnpm mutation`: mutation testing of what Node tests (Stryker), outside the hooks; every surviving mutant is a
   missing test, or an equivalent one recorded in place with its reason. What it runs, and why, is in
   `stryker.config.mjs`.
