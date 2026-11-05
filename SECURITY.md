@@ -13,8 +13,8 @@ what they get, and how to reproduce it.
   a certificate instead of using the key is refused. No address may hold more than a few connections at once, so a
   flood from one machine cannot keep the others out.
 - **A room:** only who holds its code gets in, and each connection sees only its room.
-- **The keys:** saved readable by their owner alone, refused when they are not, and never passed on the command line
-  nor in the environment.
+- **The keys:** saved readable by their owner alone, in a folder no one else can swap, refused when they are not, and
+  never passed on the command line nor in the environment.
 - **The session:** what arrives from a room reaches the model as quoted context from a third party, cleaned of
   characters that hide or reorder text, never as instructions.
 

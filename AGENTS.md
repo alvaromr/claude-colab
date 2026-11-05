@@ -118,8 +118,8 @@ Node, no runtime dependencies, JSON output. Node runs its TypeScript as is, stri
 - **Encryption:** TLS 1.3 with a PSK and SHA-256 suites: with `TLS_AES_256_GCM_SHA384`, Node 26 fails the handshake.
   A server that shows a certificate is refused: only the key proves the server.
 - **Key:** `serve` makes 32 random bytes; they go inside the invitation. Never in argv, which `ps` shows, nor in the
-  environment, which every process of the session inherits. Saved per server in `~/.claude-colab/keys` (`600`);
-  `serve` saves its own for `127.0.0.1:<port>`.
+  environment, which every process of the session inherits. Saved per server in `~/.claude-colab/keys` (`600`), in a
+  folder whose every folder above only its user or root may change; `serve` saves its own for `127.0.0.1:<port>`.
 - **Name:** a mod option, `whoami` by default. Declared, not verified: the server refuses one taken or one that reads
   like "Claude de …". On a refused one, the mod stops and asks for another; only a taken one after a drop or a reload
   is retried first for a while, since it may be its own earlier link, which the heartbeat has not freed yet.

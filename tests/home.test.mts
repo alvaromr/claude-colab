@@ -248,3 +248,24 @@ test('a folder others can open is refused for sockets and keys, the home itself 
     chmodSync(HOME, 0o700)
   }
 })
+
+test('a folder under one that others may change is refused, unless that one is sticky, as /tmp is', () => {
+  const shared = join(home, 'compartida')
+  mkdirSync(shared)
+  chmodSync(shared, 0o777)
+  assert.throws(
+    () => privateFolder(join(shared, 'colab')),
+    new Error(
+      `${shared}, por encima de la carpeta de claude-colab, lo pueden cambiar otros: que solo tú o root podáis escribir en él (chmod go-w), o ponle el bit sticky (chmod +t)`,
+    ),
+  )
+  chmodSync(shared, 0o1777)
+  assert.equal(lstatSync(privateFolder(join(shared, 'colab'))).mode & 0o777, 0o700, 'sticky: no one renames it away')
+  chmodSync(shared, 0o775)
+  assert.throws(() => privateFolder(join(shared, 'colab')), /lo pueden cambiar otros/, 'its group may too')
+  assert.throws(
+    () => privateFolder(join(shared, 'dentro', 'colab')),
+    new RegExp(`^Error: ${shared}, por encima`),
+    'however far above it is',
+  )
+})

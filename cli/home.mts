@@ -1,7 +1,7 @@
 // This machine's side: a folder only its user can open, with the local sockets and the saved keys.
 import { lstatSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir, userInfo } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { TEXT } from './strings.mts'
 import { newKey, parseKey } from './wire.mts'
@@ -11,7 +11,10 @@ export const DEFAULT_SOCKET = process.env.CLAUDE_COLAB_SOCKET ?? join(HOME, 'col
 const KEYS = join(HOME, 'keys')
 const ME = userInfo().uid
 
-/** Makes `folder` if missing and refuses one that someone else can open. */
+/**
+ * Makes `folder` if missing and refuses one that someone else can open, or one under a folder someone else could
+ * swap it in: one they may write in and is not sticky, or one of theirs.
+ */
 export function privateFolder(folder: string) {
   mkdirSync(folder, { recursive: true, mode: 0o700 })
   const { mode, uid } = statSync(folder)
@@ -19,6 +22,14 @@ export function privateFolder(folder: string) {
   if ((mode & 0o077) !== 0 || uid !== ME) {
     throw new Error(TEXT.notPrivateFolder(folder))
   }
+  let above = folder
+  do {
+    above = dirname(above)
+    const { mode, uid } = statSync(above)
+    const isOpen = (mode & 0o022) !== 0 && (mode & 0o1000) === 0
+    // Stryker disable next-line ConditionalExpression,LogicalOperator: a folder of another user takes root to stage
+    if (isOpen || (uid !== ME && uid !== 0)) throw new Error(TEXT.notPrivateParent(above))
+  } while (dirname(above) !== above)
   return folder
 }
 

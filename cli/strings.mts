@@ -41,6 +41,8 @@ const es = {
   notObject: 'El cuerpo no es un objeto JSON',
   notPrivateFolder: (folder: string) =>
     `${folder} tiene que ser solo tuyo (chmod 700): guarda sockets y claves de claude-colab`,
+  notPrivateParent: (folder: string) =>
+    `${folder}, por encima de la carpeta de claude-colab, lo pueden cambiar otros: que solo tú o root podáis escribir en él (chmod go-w), o ponle el bit sticky (chmod +t)`,
   notPrivateKey: (file: string) =>
     `${file} tiene que ser un fichero solo tuyo (chmod 600): guarda una clave de claude-colab`,
   noKey: (at: string) => `No hay clave para ${at}: guárdala con claude-colab key ${at}`,
@@ -196,6 +198,8 @@ const en: typeof es = {
   notJson: 'The body is not JSON',
   notObject: 'The body is not a JSON object',
   notPrivateFolder: folder => `${folder} must be yours alone (chmod 700): it holds claude-colab's sockets and keys`,
+  notPrivateParent: folder =>
+    `${folder}, above claude-colab's folder, can be changed by others: let only you or root write in it (chmod go-w), or make it sticky (chmod +t)`,
   notPrivateKey: file => `${file} must be a file of yours alone (chmod 600): it holds a claude-colab key`,
   noKey: at => `No key for ${at}: save it with claude-colab key ${at}`,
   badInvitation: 'The invitation is not valid: copy all of it, it starts with colab:',
