@@ -140,6 +140,24 @@ test('the machine’s server is the one written down while its process lives; on
   assert.equal(isThere(SERVER), false, 'and its file goes')
 })
 
+test('a server record that is no record, or whose process is another user’s, is forgotten; one unreadable stays', () => {
+  const mine = { pid: process.pid, host: '127.0.0.1', port: 4747, title: 'Prueba' }
+  for (const [what, text] of [
+    ['junk', 'basura'],
+    ['a process of root', JSON.stringify({ ...mine, pid: 1 })],
+  ] as const) {
+    writeFileSync(SERVER, text)
+    assert.equal(runningServer(), undefined, what)
+    assert.equal(isThere(SERVER), false, `${what}: its file goes`)
+  }
+
+  writeFileSync(SERVER, JSON.stringify(mine))
+  chmodSync(SERVER, 0o000)
+  assert.throws(() => runningServer(), { code: 'EACCES' }, 'a failure of the disk is no server gone')
+  assert.equal(isThere(SERVER), true, 'and the record of a server that may live stays')
+  rmSync(SERVER)
+})
+
 test('a server written down, only for its owner, is forgotten when its process ends however it ends', async () => {
   for (const ending of ['exit', 'SIGINT', 'SIGTERM'] as const) {
     const serving = inChild(

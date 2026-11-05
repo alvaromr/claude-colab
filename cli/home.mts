@@ -61,6 +61,9 @@ export const SERVER_LOG = join(HOME, 'server.log')
 
 export type Running = { pid: number; host: string; port: number; title: string }
 
+// What reading the server's record and asking after its process fail with when there is no server.
+const GONE = ['ENOENT', 'ESRCH', 'EPERM']
+
 /** The room server listening on this machine, or undefined; forgets one that ended. */
 export function runningServer(): Running | undefined {
   privateFolder(HOME)
@@ -68,8 +71,10 @@ export function runningServer(): Running | undefined {
     const server = JSON.parse(readFileSync(SERVER, 'utf8')) as Running
     process.kill(server.pid, 0)
     return server
-  } catch {
-    // Missing, or its process gone (or reused by another user's, EPERM): no server.
+  } catch (err) {
+    // Missing, junk, or its process gone (or reused by another user's, EPERM): no server. Any other failure, as one
+    // reading the file, says nothing of the server, which may live: it stays as it came.
+    if (!(err instanceof SyntaxError) && !GONE.includes(String((err as NodeJS.ErrnoException).code))) throw err
     rmSync(SERVER, { force: true })
     return undefined
   }
