@@ -1,9 +1,9 @@
 {
   // The mod, on the types Claude Code lays when it loads it; the CLI, which runs on Node, has tsconfig.cli.json.
-  // No exactOptionalPropertyTypes here: the engine's own types (elements' props, $'s arguments) are not written for it.
   "extends": "./.claude-plugin/types/tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
+    "exactOptionalPropertyTypes": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noUnusedLocals": true,

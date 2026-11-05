@@ -203,7 +203,7 @@ export async function sentLine($: Engine, text: string, by: Author, to?: unknown
     code: '', // drawn in its own row, never looked up in the chat
     from: current.status === 'on' ? current.name : '', // drawn after the link ended: the name it went under is gone
     by,
-    to: recipient,
+    ...(recipient === undefined ? {} : { to: recipient }),
     text,
     own: true,
   }
@@ -484,7 +484,7 @@ async function show($: Engine, message: Message) {
     label: message.label,
     from: message.from,
     by: message.by ?? 'person',
-    to: people > 2 ? message.to : undefined,
+    ...(people > 2 && message.to !== undefined ? { to: message.to } : {}),
     text: message.text.replace(CONTROLS, ''),
     own: message.own,
   }
@@ -639,7 +639,7 @@ export async function copyInvitation(
   const invited = await invite($)
 
   if (!invited.ok || !invited.invitation) return invited
-  const copied = await $.ui.copy({ text: invited.invitation, surface })
+  const copied = await $.ui.copy({ text: invited.invitation, ...(surface === undefined ? {} : { surface }) })
 
   return copied.isCopied ? done(T.copied) : failed(copied.reason)
 }

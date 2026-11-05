@@ -152,7 +152,7 @@ export function onPane(on: On) {
     ) => (
       <Box key={`field-${key}`} flexDirection="row" gap={1}>
         <Text>{label}</Text>
-        <Box backgroundColor={e.surface === 'terminal' ? 'subtle' : undefined}>
+        <Box {...(e.surface === 'terminal' ? { backgroundColor: 'subtle' as const } : {})}>
           <Input
             key={key}
             value={kept[key] ?? value}
