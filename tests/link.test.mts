@@ -536,7 +536,8 @@ test('connect says why it cannot listen on its local socket', async () => {
   const open = join(folder, 'abierta')
   mkdirSync(open, { mode: 0o755 })
   chmodSync(open, 0o755)
-  const tooLong = join(folder, `${'x'.repeat(120)}.sock`)
+  // Longer than any system takes, macOS's 253 bytes included: past a name's 255 only through a folder.
+  const tooLong = join(folder, 'x'.repeat(200), `${'x'.repeat(120)}.sock`)
 
   // A socket held by a process that does not let this one in is someone else's: it is left alone.
   const held = join(folder, 'ajeno.sock')

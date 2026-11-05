@@ -87,7 +87,8 @@ test('arguments: help answers, and what is not a command or an option is a usage
   const nobody = await run(['rooms', '--socket', join(home, 'nadie.sock')])
   assert.equal(nobody.code, 1)
   assert.match(nobody.stderr, /No hay ningún connect escuchando/)
-  const tooLong = await run(['rooms', '--socket', join(home, `${'x'.repeat(120)}.sock`)])
+  // Longer than any system takes, macOS's 253 bytes included: past a name's 255 only through a folder.
+  const tooLong = await run(['rooms', '--socket', join(home, 'x'.repeat(200), `${'x'.repeat(120)}.sock`)])
   assert.equal(tooLong.code, 1)
   assert.match(tooLong.stderr, /^La ruta del socket es demasiado larga para este sistema: .*x\.sock\n$/)
 })

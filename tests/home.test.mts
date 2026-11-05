@@ -78,10 +78,13 @@ test('a socket the system turns down for its path’s length says so; any other 
   const failure = (code: string) => Object.assign(new Error(code), { code })
   const denied = failure('EACCES')
 
-  assert.equal(
-    socketError('/s.sock', failure('EINVAL')).message,
-    'La ruta del socket es demasiado larga para este sistema: /s.sock',
-  )
+  for (const code of ['EINVAL', 'ENAMETOOLONG']) {
+    assert.equal(
+      socketError('/s.sock', failure(code)).message,
+      'La ruta del socket es demasiado larga para este sistema: /s.sock',
+      code,
+    )
+  }
   assert.equal(socketError('/s.sock', denied), denied)
 })
 

@@ -23,10 +23,11 @@ export function privateFolder(folder: string) {
 
 /**
  * `err` worded, for a local socket at `path` the system turned down: the limit of its path's length is the system's
- * own (104 bytes on macOS), and macOS tells it apart only as EINVAL.
+ * own (on macOS, 104 bytes up to libuv 1.52 and 253 from 1.53), and macOS tells it apart only as EINVAL; a name
+ * past the system's own limit fails as ENAMETOOLONG before that.
  */
 export const socketError = (path: string, err: NodeJS.ErrnoException) =>
-  err.code === 'EINVAL' ? new Error(TEXT.socketTooLong(path)) : err
+  err.code === 'EINVAL' || err.code === 'ENAMETOOLONG' ? new Error(TEXT.socketTooLong(path)) : err
 
 const keyFile = (host: string, port: number) => join(KEYS, encodeURIComponent(`${host}:${port}`))
 
