@@ -15,7 +15,8 @@ holds how to work on it, and the design with its reasons.
   format, lint, types, the repo guard, the Node tests with 100 % coverage, and the mod's tests in the engine.
 - `pnpm fix`: formats, applies the lint fixes, and runs the gate.
 - `pnpm test:node`: the tests Node runs, those of `cli/` and of the mod's pure modules (`hooks/addresses.ts`,
-  `hooks/chat.ts`), with coverage. `pnpm test:mod`: the mod's tests in the engine (`claude plugin test`).
+  `hooks/chat.ts`), with coverage, and with no network but loopback (`tests/offline.mts`, which they and every process
+  they start load). `pnpm test:mod`: the mod's tests in the engine (`claude plugin test`).
 - `pnpm test:matrix`: the Node tests on every Node the project supports, before each push: the oldest that `engines`
   takes and the one `.node-version` pins, downloaded from nodejs.org and checked against their SHA-256 sums.
 - `pnpm mutation`: mutation testing of what Node tests (Stryker), before each push; every surviving mutant is a
