@@ -85,8 +85,8 @@
       },
     },
     {
-      // The mod's pure modules, which Node tests: no engine, nor anything else.
-      "includes": ["hooks/addresses.ts", "hooks/chat.ts"],
+      // The mod's pure modules, which Node tests: no engine, nor anything else but the protocol, pure too.
+      "includes": ["hooks/addresses.ts", "hooks/chat.ts", "hooks/linking.ts"],
       "linter": {
         "rules": {
           "style": {
@@ -94,7 +94,10 @@
               "level": "error",
               "options": {
                 "patterns": [
-                  { "group": ["**"], "message": "A pure module of the mod imports nothing: Node tests it." },
+                  {
+                    "group": ["**", "!../cli/protocol.mts"],
+                    "message": "A pure module of the mod imports only the protocol: Node tests it.",
+                  },
                 ],
               },
             },

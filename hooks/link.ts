@@ -1,6 +1,7 @@
-import { DEAD_AFTER, DEFAULT_PORT, isName, PING_EVERY, type Refusal } from '../cli/protocol.mts'
+import { DEFAULT_PORT, isName, isPort, type Refusal } from '../cli/protocol.mts'
 import type { Known, Link, Place, Room, Setup } from '../types'
-import { isOwn } from './addresses.ts'
+import { isOwn, remembered } from './addresses.ts'
+import { failureOf, isLetGo, isOthersMove, nextWait, RETRY_FIRST, splitLines } from './linking.ts'
 import { type Message, show } from './messages.ts'
 import { backInRoom, expectBack, join, rejoin, settleBackNow } from './rooms.ts'
 import { checkServer, cli, openServer, runCli } from './server.ts'
@@ -28,13 +29,6 @@ import {
   updateSetup,
   updateWant,
 } from './state.ts'
-
-// The wait before linking again after a drop, doubling up to the last.
-const RETRY_FIRST = 1_000
-const RETRY_LAST = 30_000
-// How long after a drop or a reload a taken name may still be this session's own link, not yet seen gone: past the
-// server's pings and one more, it is someone else's.
-const GHOST_WAIT = (DEAD_AFTER + 1) * PING_EVERY
 
 type Event =
   | { ev: 'connected'; name: string; color: number; server: string; title: string; socket: string; rooms: Room[] }
@@ -65,14 +59,11 @@ function withTimeout($: Engine, pending: Promise<Answer>, why: string) {
 }
 
 /** The person's words for what connect or TLS reported. */
-const explained = (code: string) =>
-  /DECRYPT_ERROR|BINDER/.test(code)
-    ? T.keyMismatch
-    : code === 'ECONNREFUSED'
-      ? T.nobodyThere
-      : /ETIMEDOUT|EHOSTUNREACH|ENETUNREACH/.test(code)
-        ? T.unreachable
-        : code
+function explained(code: string) {
+  const kind = failureOf(code)
+
+  return kind === undefined ? code : T[kind]
+}
 
 /** Calls `onLine` with each line a process prints, and returns what it printed on stderr. */
 async function eachLine(stream: Stream, onLine: (line: string) => Promise<void>) {
@@ -85,9 +76,9 @@ async function eachLine(stream: Stream, onLine: (line: string) => Promise<void>)
         complaint += text
         continue
       }
-      const lines = (pending + text).split('\n')
+      const { lines, rest } = splitLines(pending, text)
 
-      pending = lines.pop() ?? ''
+      pending = rest
       for (const line of lines) {
         try {
           await onLine(line)
@@ -154,12 +145,7 @@ async function follow($: Engine, argv: string[], inbox: Inbox) {
   // The link may have ended with this machine's server, closed from another session.
   unattended($, T.serverUnknown, checkServer($))
   if (complaint) await complain($, complaint)
-  // A name the server turned down is turned down again on every try, so the person picks another. A taken one alone
-  // may be this session's own old link for a while after a drop, until the server lets it go.
-  const isOwnOldLink =
-    refused === 'name-taken' && droppedAt !== undefined && (await $.clock.now()) - droppedAt <= GHOST_WAIT
-
-  if (refused !== undefined && !isOwnOldLink) {
+  if (isLetGo(refused, droppedAt, await $.clock.now())) {
     await letGo($)
     if (refused === 'name-taken') await complain($, T.nameTaken)
   }
@@ -177,7 +163,7 @@ async function follow($: Engine, argv: string[], inbox: Inbox) {
   if (wanted.place !== null) expectBack()
   await updateLink($, (): Link => ({ status: 'connecting', server: wanted.server }))
   $.clock.after(linkRetry, () => unattended($, T.noRelink, relink($)))
-  linkRetry = Math.min(linkRetry * 2, RETRY_LAST)
+  linkRetry = nextWait(linkRetry)
 }
 
 /** Lets go of the link the person asked for: nothing makes it again, and nothing waits any more to be back in a room. */
@@ -281,7 +267,7 @@ async function onEvent($: Engine, event: Event) {
       if (!isOwn(event.server, await readHosted($))) {
         const server: Known = { address: event.server, title: event.title }
 
-        await updateKnown($, all => [server, ...all.filter(one => one.address !== server.address)])
+        await updateKnown($, all => remembered(all, server))
         await $.store.set('servers', await readKnown($))
       }
       settleConnect?.(done(T.connected(event.title, event.server, event.name)))
@@ -301,9 +287,7 @@ async function onEvent($: Engine, event: Event) {
 
       return
     case 'member': {
-      const current = await readLink($)
-
-      if (event.code === (await readRoom($))?.code && current.status === 'on' && event.name !== current.name) {
+      if (isOthersMove(event, await readRoom($), await readLink($))) {
         $.ui.log((event.action === 'join' ? T.joined : T.left)(event.name, event.label))
       }
 
@@ -347,7 +331,7 @@ export async function hostHere($: Engine, { name, title, port }: Setup): Promise
   if ((await readHosted($)) === null) {
     const number = port ? Number(port) : DEFAULT_PORT
 
-    if (!Number.isInteger(number) || number < 1 || number > 65535) return failed(T.badPort(port))
+    if (!isPort(number)) return failed(T.badPort(port))
     const opened = await openServer($, '0.0.0.0', number, title)
 
     if (!opened.ok) return opened

@@ -14,9 +14,8 @@ holds how to work on it, and the design with its reasons.
 - `pnpm check`: the gate, which the pre-commit hook runs: the Node it runs on beside the one `.node-version` pins,
   format, lint, types, the repo guard, the Node tests with 100 % coverage, and the mod's tests in the engine.
 - `pnpm fix`: formats, applies the lint fixes, and runs the gate.
-- `pnpm test:node`: the tests Node runs, those of `cli/` and of the mod's pure modules (`hooks/addresses.ts`,
-  `hooks/chat.ts`), with coverage, and with no network but loopback (`tests/offline.mts`, which they and every process
-  they start load). `pnpm test:mod`: the mod's tests in the engine (`claude plugin test`).
+- `pnpm test:node`: the tests Node runs, those of `cli/` and of the mod's pure modules, with coverage, and with no
+  network but loopback (`tests/offline.mts`, which they and every process they start load). `pnpm test:mod`: the mod's tests in the engine (`claude plugin test`).
 - `pnpm test:matrix`: the Node tests on every Node the project supports, before each push: the oldest that `engines`
   takes and the one `.node-version` pins, downloaded from nodejs.org and checked against their SHA-256 sums.
 - `pnpm mutation`: mutation testing of what Node tests (Stryker), before each push; every surviving mutant is a
@@ -62,20 +61,23 @@ The repo's root is the plugin: the mod `colab` and the CLI `claude-colab`. A thi
 - `cli/args.mts`: what the CLI makes of its command line, pure.
 - `cli/claude-colab.mts`: the CLI's entry point, which only wires each command to the modules that act; its `--help`
   is its only documentation.
-- The mod, in `hooks/`: `register.tsx`, its entry point, with the conversation's rows; `session.ts`, its start;
-  `link.ts`, the link: connect's process and its events; `rooms.ts`, the session's rooms, and the way back into one
-  after a reload or a drop; `messages.ts`, the chat; `local.ts`, the requests to connect; `server.ts`, this machine's
-  server; `pane.tsx`, the pane; `tools.ts`, the tools; `state.ts`, its state and what every part shares. Pure, with
-  no engine, so that Node tests them with coverage and mutation: `addresses.ts`, which addresses reach which server;
-  `chat.ts`, what a message becomes on its way in and how much of the chat it takes. `types/index.d.ts`: the contract
-  of its state.
+- The mod, in `hooks/`, its decisions apart from its hooks into the engine. Pure, with no engine, so that Node tests
+  them with coverage and mutation: `addresses.ts`, which addresses reach which server, and the servers and rooms kept
+  to go back to; `chat.ts`, what a message becomes on its way in, who it is for, how the log keeps it and how much of
+  the chat it takes; `linking.ts`, what connect and the CLI say, and whether a link that ends is made again. On the
+  engine, which they hand their work to: `register.tsx`, its entry point, with the conversation's rows; `session.ts`,
+  its start; `link.ts`, the link: connect's process and its events; `rooms.ts`, the session's rooms, and the way back
+  into one after a reload or a drop; `messages.ts`, the chat; `local.ts`, the requests to connect; `server.ts`, this
+  machine's server; `pane.tsx`, the pane; `tools.ts`, the tools; `state.ts`, its state and what every part shares.
+  `types/index.d.ts`: the contract of its state, which the engine wants whole in one file: the pure modules take
+  plain shapes instead.
 - The engine reads and writes a value of the state only in the file that declares its atom, and follows `$` past an
   import only into a function declaration: each value is declared once, in `state.ts`, and reached through its
   `read…` and `update…` functions there.
 
 The lint enforces the boundaries (`biome.jsonc`): the mod imports nothing of Node and, of `cli/`, only
-`protocol.mts`; `protocol.mts`, `hooks/addresses.ts` and `hooks/chat.ts` import nothing; `rooms.mts` imports only
-`protocol.mts`; the CLI imports nothing of the mod.
+`protocol.mts`; `protocol.mts` imports nothing; the mod's pure modules and `rooms.mts` import only `protocol.mts`;
+the CLI imports nothing of the mod.
 
 ### The mod
 

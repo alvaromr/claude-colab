@@ -1,7 +1,12 @@
 // Runs with `node --test tests/`: what the server, connect and the mod agree on.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { isCode, isName, languageOf, NAME_LENGTH, NAME_RULE } from '../cli/protocol.mts'
+import { isCode, isName, isPort, languageOf, NAME_LENGTH, NAME_RULE } from '../cli/protocol.mts'
+
+test('a port is a whole number from 1 to 65535', () => {
+  for (const port of [1, 4747, 65535]) assert.equal(isPort(port), true, String(port))
+  for (const port of [0, 65536, 1.5, -1, Number.NaN]) assert.equal(isPort(port), false, String(port))
+})
 
 test('a name is letters, digits, spaces and . _ -, starting with a letter or digit, up to its length', () => {
   for (const name of ['Ana', 'Ñandú 2', 'a', 'x'.repeat(NAME_LENGTH), 'b.o_b-1']) assert.equal(isName(name), true, name)

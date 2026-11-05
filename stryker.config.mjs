@@ -10,10 +10,10 @@ export default {
       'mkdir -p .t && TMPDIR="$PWD/.t" LC_ALL=es_ES.UTF-8 NODE_OPTIONS=--import=./tests/offline.mts node --test ' +
       'tests/args.test.mts tests/hub.test.mts ' +
       'tests/link.test.mts tests/home.test.mts tests/wire.test.mts tests/protocol.test.mts tests/strings.test.mts ' +
-      'tests/mod/addresses.test.mts tests/mod/chat.test.mts',
+      'tests/mod/addresses.test.mts tests/mod/chat.test.mts tests/mod/linking.test.mts',
   },
   // The entry point only wires the commands to the modules that act: its end-to-end tests cover it.
-  mutate: ['cli/**/*.mts', '!cli/claude-colab.mts', 'hooks/addresses.ts', 'hooks/chat.ts'],
+  mutate: ['cli/**/*.mts', '!cli/claude-colab.mts', 'hooks/addresses.ts', 'hooks/chat.ts', 'hooks/linking.ts'],
   // Stryker would read them with TypeScript's JS API, which TypeScript 7 no longer has; the tests run without them.
   ignorePatterns: ['tsconfig.json', 'tsconfig.cli.json'],
   // Off, and with it incremental mode: a command is one test to Stryker, which could then tell neither which tests

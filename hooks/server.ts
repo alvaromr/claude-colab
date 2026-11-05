@@ -1,3 +1,4 @@
+import { answerOf, hostedOf } from './linking.ts'
 import { type Answer, complained, done, type Engine, failed, T, updateHosted } from './state.ts'
 
 const CLI = 'cli/claude-colab.mts'
@@ -13,15 +14,7 @@ export function cli($: Engine) {
 export async function runCli($: Engine, args: string[], stdin?: string): Promise<Answer & Record<string, unknown>> {
   const ran = await $.process.run(['node', cli($), ...args], stdin === undefined ? {} : { stdin })
 
-  try {
-    const answer = JSON.parse(ran.stdout) as Answer & Record<string, unknown>
-
-    if (ran.exitCode === 0 || answer.ok === false) return answer
-  } catch {
-    // Nothing on stdout: the reason is on stderr.
-  }
-
-  return failed(ran.stderr.trim() || T.cliFailed(String(args[0])))
+  return answerOf(ran) ?? failed(T.cliFailed(String(args[0])))
 }
 
 /** Asks whether this machine's room server is open, and keeps what the pane shows of it. */
@@ -30,11 +23,7 @@ export async function checkServer($: Engine): Promise<Answer> {
 
   if (!status.ok) return status
   machine = status.machine as string
-  await updateHosted($, () =>
-    status.running
-      ? { address: String(status.listening), title: String(status.title), addresses: status.addresses as string[] }
-      : null,
-  )
+  await updateHosted($, () => hostedOf(status))
 
   return done(status.running ? T.serverHere(String(status.title), String(status.listening)) : T.noServerOpen)
 }

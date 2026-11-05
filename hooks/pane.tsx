@@ -1,6 +1,6 @@
 import type { On, ResolveInput } from 'claude-code'
 
-import { DEFAULT_PORT, isName } from '../cli/protocol.mts'
+import { DEFAULT_PORT, isName, isPort } from '../cli/protocol.mts'
 import type { Line, Setup } from '../types'
 import { acceptInvitation, connect, disconnect, hostHere } from './link.ts'
 import { sayFromPane } from './messages.ts'
@@ -213,9 +213,7 @@ export function onPane(on: On) {
             })}
           {server === null &&
             field('port', T.port, typed.port, String(DEFAULT_PORT), value => {
-              const number = Number(value)
-
-              if (value !== '' && (!Number.isInteger(number) || number < 1 || number > 65535)) return T.portRule
+              if (value !== '' && !isPort(Number(value))) return T.portRule
               void changeSetup($, { port: value })
 
               return undefined

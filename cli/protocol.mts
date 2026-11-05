@@ -1,6 +1,8 @@
 // What serve, connect and the mod agree on. Pure, with no Node: the mod, which has none, imports it too.
 
 export const DEFAULT_PORT = 4747
+/** Whether `n` is a TCP port a server can listen on: a whole number from 1 to 65535. */
+export const isPort = (n: number) => Number.isInteger(n) && n >= 1 && n <= 65535
 // What serve and connect speak: raised whenever one would misread the other. A server runs apart, and outlives the
 // code it started from: connect turns down one of another version, which has to be closed and opened again.
 export const PROTOCOL = 5

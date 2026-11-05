@@ -1,7 +1,74 @@
 // Runs with `node --test tests/`, as the CLI's: what a message becomes on its way in, and what the chat makes room for.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { cleaned, colorOf, farthestBack, quoted, rowsOf } from '../../hooks/chat.ts'
+import {
+  appended,
+  cleaned,
+  colorOf,
+  farthestBack,
+  isForMe,
+  lineOf,
+  membersIn,
+  quoted,
+  rowsOf,
+  shownTo,
+  withGap,
+} from '../../hooks/chat.ts'
+
+const HERE = { code: 'c'.repeat(24), label: '1' }
+const ON = { status: 'on', name: 'Ana' }
+// A line of the chat, as the log keeps it.
+const said = (n: number, more: Record<string, unknown> = {}) => ({
+  ...HERE,
+  n,
+  from: 'Bob',
+  by: 'person',
+  text: 'eh',
+  own: false,
+  ...more,
+})
+
+test('a line joins the log last, numbered after the one before it, and the log keeps its newest alone', () => {
+  assert.deepEqual(appended([], said(0), 3), [said(1)])
+  assert.deepEqual(appended([said(1), said(2), said(3)], said(0), 3), [said(2), said(3), said(4)])
+})
+
+test('back in a room it was in, the log marks a gap once, until the room says something again', () => {
+  const gap = said(3, { from: '', text: '', gap: true })
+  assert.deepEqual(withGap([said(1), said(2)], HERE, 10), [said(1), said(2), gap])
+  assert.deepEqual(withGap([said(1), said(2), gap], HERE, 10), [said(1), said(2), gap], 'one is there already')
+  assert.deepEqual(withGap([said(1)], { ...HERE, code: 'd'.repeat(24) }, 10), [said(1)], 'a room never seen: none')
+  const other = said(2, { code: 'd'.repeat(24) })
+  assert.deepEqual(withGap([said(1), other], HERE, 2), [other, { ...gap, n: 3 }], 'kept to the newest too')
+})
+
+test('a room counts the members the server last listed for it; one it did not list, none', () => {
+  const rooms = [{ ...HERE, members: ['Ana', 'Bob'], busy: [] }]
+  assert.equal(membersIn(rooms, HERE.code), 2)
+  assert.equal(membersIn(rooms, 'd'.repeat(24)), 0)
+  assert.equal(membersIn(rooms, undefined), 0)
+})
+
+test('a message is for this session when addressed to its name, or to no one in a room of two', () => {
+  assert.equal(isForMe({ own: false, to: 'Ana' }, ON, 5), true)
+  assert.equal(isForMe({ own: false }, ON, 2), true)
+  assert.equal(isForMe({ own: false }, ON, 3), false, 'to no one, among more')
+  assert.equal(isForMe({ own: false, to: 'Eva' }, ON, 2), false, 'to someone else')
+  assert.equal(isForMe({ own: true, to: 'Ana' }, ON, 2), false, 'its own')
+  assert.equal(isForMe({ own: false }, { status: 'off' }, 2), false, 'not linked: no name to be addressed by')
+})
+
+test('a recipient shows only in a room of more than two, the one case where naming it tells anything', () => {
+  assert.equal(shownTo('Eva', 3), 'Eva')
+  assert.equal(shownTo('Eva', 2), undefined)
+  for (const to of ['', undefined, 7]) assert.equal(shownTo(to, 3), undefined, String(to))
+})
+
+test('a message received becomes a line of the chat: cleaned, by its person unless it says otherwise', () => {
+  const message = { ...HERE, from: 'Bob', text: 'ho​la', own: false, to: 'Eva' }
+  assert.deepEqual(lineOf(message, 3), { ...said(0, { text: 'hola' }), to: 'Eva' })
+  assert.deepEqual(lineOf({ ...message, by: 'claude' }, 2), said(0, { text: 'hola', by: 'claude' }))
+})
 
 test('a message loses what could redraw the terminal or hide text, and keeps its tabs and lines', () => {
   const hidden = ['\u0000', '\u0008', '\u000B', '\u001B', '\u007F', '\u009F', '؜', '​', '‎', '‏']

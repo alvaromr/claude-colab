@@ -1,5 +1,5 @@
 import type { Author, Line, Place } from '../types'
-import { cleaned, quoted } from './chat.ts'
+import { appended, isForMe, lineOf, membersIn, quoted, shownTo } from './chat.ts'
 import { request } from './local.ts'
 import { backInRoom } from './rooms.ts'
 import {
@@ -51,16 +51,14 @@ export async function markBusy($: Engine, busy: boolean): Promise<Answer | undef
 
 /** How many people are in this session's room, as the server last said. */
 async function peopleHere($: Engine) {
-  const here = await readRoom($)
-
-  return (await readRooms($)).find(one => one.code === here?.code)?.members.length ?? 0
+  return membersIn(await readRooms($), (await readRoom($))?.code)
 }
 
 /** A message this session sends, as its row draws it: the log gets it later, from the server's echo. */
 export async function sentLine($: Engine, text: string, by: Author, to?: unknown): Promise<Line> {
   const current = await readLink($)
   const here = await readRoom($)
-  const recipient = typeof to === 'string' && to && (await peopleHere($)) > 2 ? to : undefined
+  const recipient = shownTo(to, await peopleHere($))
 
   return {
     n: 0,
@@ -90,29 +88,17 @@ export async function sayFromPane($: Engine, text: string): Promise<Answer> {
  * one is given to the model as context; one for this session wakes it to judge.
  */
 export async function show($: Engine, message: Message) {
-  const current = await readLink($)
-  const people = (await readRooms($)).find(one => one.code === message.code)?.members.length ?? 0
-  // In a room of two, whatever the other side says without a recipient is for this side.
-  const isForMe =
-    !message.own &&
-    current.status === 'on' &&
-    (message.to === current.name || (message.to === undefined && people === 2))
-  const line: Line = {
-    n: 0,
-    code: message.code,
-    label: message.label,
-    from: message.from,
-    by: message.by ?? 'person',
-    ...(people > 2 && message.to !== undefined ? { to: message.to } : {}),
-    text: cleaned(message.text),
-    own: message.own,
-  }
+  const people = membersIn(await readRooms($), message.code)
+  const isMine = isForMe(message, await readLink($), people)
+  const line: Line = lineOf(message, people)
 
   await updateColors($, all => ({ ...all, [message.from]: message.color ?? 0 }))
   await updateLog($, all => {
-    line.n = (all.at(-1)?.n ?? 0) + 1
+    const logged = appended(all, line, LOG_SIZE)
 
-    return [...all, line].slice(-LOG_SIZE)
+    line.n = Number(logged.at(-1)?.n) // the number it is logged under, which its row and the model read
+
+    return logged
   })
   // What this session sent shows in the rows of the call or command that sent it; the pane's has none, so it goes
   // into the inbox: its row is drawn as the room's, and the model judges whether it concerns it.
@@ -130,7 +116,7 @@ export async function show($: Engine, message: Message) {
   const told = T.received({
     from: message.from,
     isClaude: line.by === 'claude',
-    isForMe,
+    isForMe: isMine,
     to: message.to,
     label: message.label,
   })
@@ -138,10 +124,10 @@ export async function show($: Engine, message: Message) {
 
   // One for this session goes into its inbox: the model wakes on it as on another session's message, and its row
   // is drawn as the room's. Any other is context alone, with no row: the pane shows it.
-  if (isForMe) return post($, line, text)
-  const appended = await $.session.append({ message: { type: 'user', content: [{ type: 'text', text }] } })
+  if (isMine) return post($, line, text)
+  const added = await $.session.append({ message: { type: 'user', content: [{ type: 'text', text }] } })
 
-  if (appended.deny !== undefined) await complain($, T.noContext(line.n, appended.deny))
+  if (added.deny !== undefined) await complain($, T.noContext(line.n, added.deny))
 }
 
 /** Posts `text` into this session's inbox, which wakes the model; a failure shows in the pane. */

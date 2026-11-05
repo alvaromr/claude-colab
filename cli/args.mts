@@ -1,7 +1,7 @@
 // What the CLI makes of its command line: the command, its options and positionals, and the addresses and ports they
 // name. Pure: the commands themselves, which act, live in the entry point.
 import { parseArgs } from 'node:util'
-import { DEFAULT_PORT } from './protocol.mts'
+import { DEFAULT_PORT, isPort } from './protocol.mts'
 import { type Defaults, TEXT } from './strings.mts'
 
 export type Options = Record<string, { type: 'string' | 'boolean'; default?: string }>
@@ -23,7 +23,7 @@ export const MAIN_HELP = TEXT.main(
 export function parsePort(text: string | undefined) {
   if (text === undefined) return DEFAULT_PORT
   const port = Number(text)
-  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new UsageError(TEXT.badPort(text))
+  if (!isPort(port)) throw new UsageError(TEXT.badPort(text))
   return port
 }
 

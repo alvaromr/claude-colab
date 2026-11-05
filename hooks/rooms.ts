@@ -1,6 +1,7 @@
 import { isName } from '../cli/protocol.mts'
-import type { Line, Place, Recent } from '../types'
-import { isSameRoom } from './addresses.ts'
+import type { Place, Recent } from '../types'
+import { withLeft, without } from './addresses.ts'
+import { withGap } from './chat.ts'
 import { request } from './local.ts'
 import {
   type Answer,
@@ -75,15 +76,7 @@ async function enter($: Engine, place: Place) {
   await updateChatBack($, () => 0)
   // Back in a room this session was in: what was said meanwhile never reached it, and the chat says so, once until
   // the room says something again.
-  await updateLog($, all => {
-    const last = all.findLast(line => line.code === place.code)
-
-    if (last === undefined || last.gap) return all
-    const n = (all.at(-1)?.n ?? 0) + 1
-    const gap: Line = { ...place, n, from: '', by: 'person', text: '', own: false, gap: true }
-
-    return [...all, gap].slice(-LOG_SIZE)
-  })
+  await updateLog($, all => withGap(all, place, LOG_SIZE))
   await updateRoom($, () => place)
   await updateWant($, w => w && { ...w, place })
 }
@@ -137,7 +130,7 @@ export async function leave($: Engine): Promise<Answer> {
     const left: Recent = { ...here, server: wanted.server }
     const own = await readHosted($)
 
-    await updateRecent($, all => [left, ...all.filter(one => !isSameRoom(one, left, own))].slice(0, RECENT_SIZE))
+    await updateRecent($, all => withLeft(all, left, own, RECENT_SIZE))
   }
 
   return done(T.youLeft(here.label))
@@ -148,7 +141,7 @@ export async function rejoinRecent($: Engine, left: Recent): Promise<Answer> {
   const entered = await enterAgain($, left)
   const own = await readHosted($)
 
-  if (entered.ok) await updateRecent($, all => all.filter(one => !isSameRoom(one, left, own)))
+  if (entered.ok) await updateRecent($, all => without(all, left, own))
 
   return entered
 }

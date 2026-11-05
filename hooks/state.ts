@@ -3,6 +3,7 @@ import type { EngineInterface } from 'claude-code'
 
 import type { Language } from '../cli/protocol.mts'
 import type { Hosted, Known, Line, Link, Place, Recent, Room, Setup, Want } from '../types'
+import type { Answer } from './linking.ts'
 import { TEXTS } from './strings.ts'
 
 export type Engine = EngineInterface
@@ -121,10 +122,7 @@ export function updateLog($: Engine, change: (value: Line[]) => Line[]) {
   return update($, log, change)
 }
 
-export type Answer = { ok: boolean; error?: string; text?: string }
-
-export const failed = (why: string): Answer => ({ ok: false, error: why })
-export const done = (text: string): Answer => ({ ok: true, text })
+export { type Answer, done, failed } from './linking.ts'
 
 /**
  * A failure of the link or of the inbox, which no press is waiting on: kept in sight on the status line until the

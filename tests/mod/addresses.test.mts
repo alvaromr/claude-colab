@@ -1,7 +1,7 @@
 // Runs with `node --test tests/`, as the CLI's: which addresses reach which server.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { isOwn, isSameRoom, isSameServer } from '../../hooks/addresses.ts'
+import { isOwn, isSameRoom, isSameServer, remembered, withLeft, without } from '../../hooks/addresses.ts'
 
 const OWN = { address: '0.0.0.0:4747', addresses: ['192.0.2.5', '2001:db8::5'] }
 
@@ -39,4 +39,24 @@ test('two rooms left are one when they have one code on one server', () => {
   assert.equal(isSameRoom(left, { ...left, server: '192.0.2.5:4747' }, OWN), true)
   assert.equal(isSameRoom(left, { ...left, code: 'b'.repeat(24) }, OWN), false)
   assert.equal(isSameRoom(left, { ...left, server: '192.0.2.9:4747' }, OWN), false)
+})
+
+test('a server linked to goes first among those known, once, under the name it gives now', () => {
+  const known = [
+    { address: '192.0.2.8:4747', title: 'A' },
+    { address: '192.0.2.9:4747', title: 'B' },
+  ]
+  assert.deepEqual(remembered(known, { address: '192.0.2.9:4747', title: 'B2' }), [
+    { address: '192.0.2.9:4747', title: 'B2' },
+    { address: '192.0.2.8:4747', title: 'A' },
+  ])
+})
+
+test('a room left goes first among those to go back to, once, and only the newest are kept', () => {
+  const room = (code: string, server = '192.0.2.9:4747') => ({ code: code.repeat(24), label: '1', server })
+  const recent = [room('a'), room('b', '127.0.0.1:4747'), room('c')]
+  const again = room('b', '192.0.2.5:4747')
+  assert.deepEqual(withLeft(recent, again, OWN, 5), [again, room('a'), room('c')], 'the same room, at its own address')
+  assert.deepEqual(withLeft(recent, room('d'), OWN, 2), [room('d'), room('a')])
+  assert.deepEqual(without(recent, again, OWN), [room('a'), room('c')])
 })
