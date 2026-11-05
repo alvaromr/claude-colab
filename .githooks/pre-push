@@ -1,30 +1,5 @@
 #!/bin/sh
-# Before a push: no unfinished commit (WIP, fixup!, squash!) leaves this machine, and no tag the remote holds moves or
-# goes. Only the commits the remote lacks are read.
-is_zero() { case $1 in *[!0]*) return 1 ;; esac }
-refused=0
-while read -r _ local remote_ref remote; do
-  case $remote_ref in
-    refs/tags/*)
-      if ! is_zero "$remote" && [ "$local" != "$remote" ]; then
-        echo "pre-push: ${remote_ref#refs/tags/} exists on $1, and tags never move nor are deleted" >&2
-        refused=1
-      fi
-      continue
-      ;;
-  esac
-  is_zero "$local" && continue
-  if is_zero "$remote"; then range="$local --not --remotes=$1"; else range="$remote..$local"; fi
-  # $range is split on purpose: it is one or more arguments.
-  commits=$(git log --format='%h %s' $range) || {
-    echo "pre-push: cannot read the commits to push to $remote_ref" >&2
-    exit 1
-  }
-  unfinished=$(printf '%s\n' "$commits" | grep -Ei '^[0-9a-f]+ (wip([^[:alnum:]]|$)|fixup! |squash! )')
-  if [ -n "$unfinished" ]; then
-    printf 'pre-push: an unfinished commit cannot be pushed; finish it, or fold it in with git rebase --autosquash:\n%s\n' \
-      "$unfinished" >&2
-    refused=1
-  fi
-done
-exit $refused
+# Before a push: the refs it pushes pass the guard, then the checks too slow for each commit run on the tree: the
+# audit of the dependencies, the Node tests on every Node the project supports, and mutation, whole (about 45 minutes).
+"$(dirname "$0")/push-guard" "$@" || exit 1
+pnpm audit:deps && pnpm test:matrix && pnpm mutation

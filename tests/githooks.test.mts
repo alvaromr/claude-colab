@@ -1,8 +1,8 @@
-// Runs with `node --test tests/`: the git hooks that keep tags in place and unfinished commits off a remote, in
-// repositories of the test's own.
+// Runs with `node --test tests/`: the git hooks that keep tags in place and unfinished commits off a remote, and what
+// the hooks before a commit and a push run, in repositories of the test's own.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, test } from 'node:test'
@@ -10,11 +10,15 @@ import { fileURLToPath } from 'node:url'
 
 const dir = mkdtempSync(join(tmpdir(), 'colab-githooks-'))
 after(() => rmSync(dir, { recursive: true, force: true }))
-// Only the hooks under test: the repo's pre-commit would run the whole gate in each repository made here.
+// Only the guards under test: the repo's pre-commit would run the whole gate in each repository made here, and its
+// pre-push the audit, the Node matrix and mutation after the guard of what is pushed.
 const hooks = join(dir, 'hooks')
 mkdirSync(hooks)
-for (const hook of ['reference-transaction', 'pre-push']) {
-  symlinkSync(fileURLToPath(new URL(`../.githooks/${hook}`, import.meta.url)), join(hooks, hook))
+for (const [hook, guard] of [
+  ['reference-transaction', 'reference-transaction'],
+  ['pre-push', 'push-guard'],
+]) {
+  symlinkSync(fileURLToPath(new URL(`../.githooks/${guard}`, import.meta.url)), join(hooks, String(hook)))
 }
 // Inside a commit, where the pre-commit hook runs these tests, git exports GIT_DIR and GIT_INDEX_FILE: inherited, they
 // would point every command here at the repository being committed. No GIT_ variable of the caller's goes through.
@@ -27,7 +31,10 @@ const env = {
 }
 let made = 0
 
-/** A repository with one commit, and a bare remote it pushes to; `git(...)` runs with the hooks, `bare(...)` without. */
+/**
+ * A repository with one commit, at `root`, and a bare remote it pushes to; `git(...)` runs with the hooks, `bare(...)`
+ * without.
+ */
 function repository() {
   const root = join(dir, String(made++))
   const run =
@@ -42,7 +49,7 @@ function repository() {
   bare('init', '-q', '--bare', 'remote.git')
   bare('remote', 'add', 'origin', 'remote.git')
   bare('commit', '-q', '--allow-empty', '-m', 'feat: one')
-  return { git: run(hooks), bare }
+  return { git: run(hooks), bare, root }
 }
 
 test('a tag is made, but never moved nor deleted', () => {
@@ -101,4 +108,51 @@ test('a tag on the remote is never moved nor deleted by a push', () => {
   }
   git('tag', 'v2')
   assert.equal(git('push', '-q', 'origin', 'main', 'v2').status, 0)
+})
+
+/**
+ * Runs the repo's `hook` in `cwd` with `stdin`, a pnpm on the PATH that only writes down what it is asked, and
+ * resolves with its status and each pnpm run.
+ */
+function runHook(hook: string, cwd: string, stdin = '') {
+  const bin = join(dir, `bin-${made++}`)
+  const log = join(bin, 'log')
+  mkdirSync(bin)
+  writeFileSync(log, '')
+  writeFileSync(join(bin, 'pnpm'), `#!/bin/sh\necho "$*" >> '${log}'\n`, { mode: 0o755 })
+  const { status } = spawnSync('sh', [fileURLToPath(new URL(`../.githooks/${hook}`, import.meta.url)), 'origin'], {
+    cwd,
+    input: stdin,
+    env: { ...env, PATH: `${bin}:${process.env.PATH}` },
+  })
+  return { status, runs: readFileSync(log, 'utf8').split('\n').filter(Boolean) }
+}
+
+test('a commit of docs alone checks only their format and the repo guard; any other, the whole gate', () => {
+  const { bare, root } = repository()
+  for (const [files, runs] of [
+    [
+      ['README.md', 'docs/decisions/1.md', 'LICENSE'],
+      ['format', 'guard'],
+    ],
+    [['README.md', 'cli/a.mts'], ['check']],
+    [[], ['check']],
+  ] as const) {
+    bare('rm', '-q', '-r', '--cached', '--ignore-unmatch', '.')
+    for (const file of files) {
+      mkdirSync(join(root, file, '..'), { recursive: true })
+      writeFileSync(join(root, file), 'x\n')
+      bare('add', file)
+    }
+    assert.deepEqual(runHook('pre-commit', root).runs, runs, files.join(' '))
+  }
+})
+
+test('a push runs the audit, the Node matrix and mutation, only once its guard lets it through', () => {
+  const { bare, root } = repository()
+  assert.deepEqual(runHook('pre-push', root), { status: 0, runs: ['audit:deps', 'test:matrix', 'mutation'] })
+  bare('commit', '-q', '--allow-empty', '-m', 'WIP')
+  const sha = bare('rev-parse', 'HEAD').stdout.trim()
+  const refused = runHook('pre-push', root, `refs/heads/main ${sha} refs/heads/main ${'0'.repeat(40)}\n`)
+  assert.deepEqual(refused, { status: 1, runs: [] })
 })
