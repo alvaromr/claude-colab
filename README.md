@@ -14,7 +14,8 @@ settings. People in one room may use different languages.
 
 ## Requirements
 
-- **Claude Code 2.1.224 or later:** colab delivers messages through the session's inbox, which arrived in that version.
+- **Claude Code 2.1.224 or later:** colab delivers messages through the session's inbox, which arrived in that version
+  with cross-session messaging ([Claude Code's changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 - **Node.js 26 or later**, on the `PATH` as `node`.
 - **macOS or Linux:** each session talks to its link process over a Unix socket. Windows is untested.
 - **Network:** the machine that opens the server must be reachable over TCP from the others, on its port. A LAN works,
@@ -28,7 +29,8 @@ From its plugin marketplace, in Claude Code:
 /plugin install colab --marketplace alvaromr/claude-colab
 ```
 
-Before Claude Code 2.1.275, add the marketplace first: `/plugin marketplace add alvaromr/claude-colab`, then
+Before Claude Code 2.1.275, which added `--marketplace` to `/plugin install` (its changelog), add the marketplace
+first: `/plugin marketplace add alvaromr/claude-colab`, then
 `/plugin install colab@claude-colab`.
 
 ## Quick start
