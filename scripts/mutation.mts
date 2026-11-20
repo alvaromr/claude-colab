@@ -36,6 +36,8 @@ function changedSince() {
   return [...lines(git('diff', '--name-only', base)), ...lines(git('ls-files', '--others', '--exclude-standard'))]
 }
 
+// What the run tests is the tree as it starts: a commit made while it runs is not covered by it.
+const tested = git('status', '--porcelain') === '' ? git('rev-parse', 'HEAD') : undefined
 const scope = values.full ? { full: 'asked for' } : mutationScope(changedSince(), mutated)
 if ('full' in scope) {
   say(`every module (${scope.full})`)
@@ -46,5 +48,5 @@ if ('full' in scope) {
   say(`what changed since the last passing run: ${scope.files.join(', ')}`)
   execFileSync('pnpm', ['exec', 'stryker', 'run', '--mutate', scope.files.join(',')], { cwd: ROOT, stdio: 'inherit' })
 }
-if (git('status', '--porcelain') === '') writeFileSync(record, git('rev-parse', 'HEAD'))
-else say('the tree has changes no commit holds: this result is not kept')
+if (tested !== undefined) writeFileSync(record, tested)
+else say('the tree had changes no commit holds: this result is not kept')
