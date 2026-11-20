@@ -22,3 +22,7 @@ Whoever holds an invitation is trusted with the room and the server: names are d
 refuses a name that reads like one taken, but for its case or its letters' width, and one that mixes Latin, Greek and
 Cyrillic letters; two names in one script may still look alike (`l` and `I`). The deviations taken on purpose, with
 their reasons, are in `docs/decisions/`.
+
+An invitation carries the server's key and the room's code. Asked for one, the `invite` tool hands it to the model,
+which shows it to its person, and an invitation pasted to the model reaches the `join` tool the same way: either stays
+in that session's transcript, so whoever can read the transcript can get into the room.
