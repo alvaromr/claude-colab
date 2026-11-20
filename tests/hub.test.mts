@@ -116,6 +116,16 @@ async function client(name: string, { isGreeted = true } = {}) {
   return { ask, hello, events, socket, close: () => socket.destroy() }
 }
 
+/** Who is in the room a client was last told of. */
+const membersOf = (who: { events: Event[] }) =>
+  who.events.findLast(event => event.ev === 'rooms')?.rooms?.[0]?.members ?? []
+/** Waits until `isMet`, a turn of the event loop at a time: what a test waits on comes, and TURN bounds the wait. */
+async function until(isMet: () => boolean) {
+  while (!isMet()) await new Promise(resolve => setImmediate(resolve))
+}
+// For a test that waits with until: past it, what it waits on never came.
+const TURN = { timeout: 5_000 }
+
 test('without the key no one gets past the handshake', async () => {
   await assert.rejects(linked(parseKey(newKey())), /DECRYPT_ERROR|BINDER|alert/i)
 })
@@ -173,7 +183,7 @@ test('a connection must say hello first, and soon: anything else first, or nothi
   greeted.close()
 })
 
-test('a connection that resets while the server writes to it is let go, and the server goes on', async () => {
+test('a connection that resets while the server writes to it is let go, and the server goes on', TURN, async () => {
   const ana = await client('AnaR')
   const made = await ana.ask('create')
   // A TLS socket cannot reset; the TCP one beneath it can.
@@ -183,10 +193,10 @@ test('a connection that resets while the server writes to it is let go, and the 
   await new Promise(resolve => gone.once('secureConnect', resolve))
   writeLine(gone, { op: 'hello', name: 'Reseteo', ref: 1 })
   writeLine(gone, { op: 'join', code: made.code, ref: 2 })
-  await sleep(100)
+  await until(() => membersOf(ana).includes('Reseteo'))
   raw.resetAndDestroy()
   for (let n = 0; n < 20; n++) await ana.ask('say', { text: 'x'.repeat(MAX_TEXT) })
-  await sleep(100)
+  await until(() => !membersOf(ana).includes('Reseteo'))
 
   const again = await client('Reseteo')
   assert.equal(again.hello?.ok, true, 'its name is free again')
@@ -216,18 +226,19 @@ test('each connection takes the lowest color no one connected has', async () => 
   for (const one of [first, second, third]) one.close()
 })
 
-test('the members of a room are told its list as it changes, and only then', async () => {
+test('the members of a room are told its list as it changes, and only then', TURN, async () => {
   const ana = await client('AnaT')
   const eva = await client('EvaT')
   const listed = (who: { events: Event[] }) =>
     who.events.filter(event => event.ev === 'rooms').map(event => event.rooms)
+  // The server answers Ana's ping after what it pushed her before: once answered, every list an act made is in.
   const after = async (act: Promise<unknown>) => {
     await act
-    await sleep(50)
+    await ana.ask('ping')
   }
 
   const made = await ana.ask('create')
-  await sleep(50)
+  await ana.ask('ping')
   assert.deepEqual(listed(ana).at(-1), [{ code: made.code, label: made.label, members: ['AnaT'], busy: [] }])
   await after(eva.ask('join', { code: made.code }))
   assert.deepEqual(listed(ana).at(-1)?.[0]?.members, ['AnaT', 'EvaT'])
@@ -241,7 +252,7 @@ test('the members of a room are told its list as it changes, and only then', asy
   assert.deepEqual(listed(ana).at(-1)?.[0]?.members, ['AnaT'])
   await after(eva.ask('join', { code: made.code }))
   eva.close()
-  await sleep(100)
+  await until(() => listed(ana).at(-1)?.[0]?.members.length === 1) // once the server hears the close
   assert.deepEqual(listed(ana).at(-1)?.[0]?.members, ['AnaT'], 'one that drops is gone from the list')
   ana.close()
 })
