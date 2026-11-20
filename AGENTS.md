@@ -9,10 +9,12 @@ holds how to work on it, and the design with its reasons.
 - `pnpm install`: the dev tools, and the git hooks in `.githooks/` (by `prepare`): the gate before each commit (for
   docs alone, only their format and the repo guard), Conventional Commits, no tag moved or deleted, and before a push
   no `WIP`, `fixup!` or `squash!` commit in it, then the slow checks.
+- `shellcheck`, installed apart (Homebrew: `brew install shellcheck`): the gate lints the git hooks with it, and stops
+  and says so without it. Not a dev dependency: its npm package downloads the program when it runs, unchecked.
 - `claude --plugin-dir .`, once after cloning: loading the mod, Claude Code writes the types it is checked against
   into `.claude-plugin/types/`, which git ignores. Until then the gate stops at the types and says so.
 - `pnpm check`: the gate, which the pre-commit hook runs: the Node it runs on beside the one `.node-version` pins,
-  format, lint, types, the repo guard, the Node tests with 100 % coverage, and the mod's tests in the engine.
+  format, lint, the git hooks' lint, types, the repo guard, the Node tests with 100 % coverage, and the mod's tests in the engine.
 - `pnpm check:slow`: the checks too slow for each commit, which a push and a release run: the audit, the Node matrix
   and mutation.
 - `pnpm fix`: formats, applies the lint fixes, and runs the gate.
