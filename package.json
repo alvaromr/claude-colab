@@ -11,6 +11,7 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "check": "echo \"node $(node --version), pinned $(cat .node-version)\" && pnpm format && pnpm lint && pnpm typecheck && pnpm guard && pnpm test:node && pnpm test:mod",
+    "check:slow": "pnpm audit:deps && pnpm test:matrix && pnpm mutation",
     "guard": "node scripts/guard.mts",
     "fix": "prettier --write . && biome lint --write && pnpm check",
     "format": "prettier --check .",

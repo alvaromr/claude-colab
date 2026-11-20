@@ -46,8 +46,10 @@ function release() {
   if (output('git', ['status', '--porcelain']) !== '') throw new Error('the tree has uncommitted changes')
   if (output('git', ['tag', '--list', tag]) !== '') throw new Error(`the tag ${tag} exists already`)
 
-  say('running the gate')
+  // The slow checks too, which a push runs: a tag made before they fail could never be moved.
+  say('running the gate and the slow checks')
   run('pnpm', ['check'])
+  run('pnpm', ['check:slow'])
 
   const scratch = mkdtempSync(join(tmpdir(), 'colab-release-'))
   try {

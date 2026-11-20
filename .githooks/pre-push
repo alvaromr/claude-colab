@@ -1,5 +1,5 @@
 #!/bin/sh
-# Before a push: the refs it pushes pass the guard, then the checks too slow for each commit run on the tree: the
-# audit of the dependencies, the Node tests on every Node the project supports, and mutation, whole (about 45 minutes).
+# Before a push: the refs it pushes pass the guard, then the checks too slow for each commit run on the tree
+# (`pnpm check:slow`, about 45 minutes).
 "$(dirname "$0")/push-guard" "$@" || exit 1
-pnpm audit:deps && pnpm test:matrix && pnpm mutation
+pnpm check:slow

@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url'
 const dir = mkdtempSync(join(tmpdir(), 'colab-githooks-'))
 after(() => rmSync(dir, { recursive: true, force: true }))
 // Only the guards under test: the repo's pre-commit would run the whole gate in each repository made here, and its
-// pre-push the audit, the Node matrix and mutation after the guard of what is pushed.
+// pre-push the slow checks after the guard of what is pushed.
 const hooks = join(dir, 'hooks')
 mkdirSync(hooks)
 for (const [hook, guard] of [
@@ -148,9 +148,9 @@ test('a commit of docs alone checks only their format and the repo guard; any ot
   }
 })
 
-test('a push runs the audit, the Node matrix and mutation, only once its guard lets it through', () => {
+test('a push runs the slow checks, only once its guard lets it through', () => {
   const { bare, root } = repository()
-  assert.deepEqual(runHook('pre-push', root), { status: 0, runs: ['audit:deps', 'test:matrix', 'mutation'] })
+  assert.deepEqual(runHook('pre-push', root), { status: 0, runs: ['check:slow'] })
   bare('commit', '-q', '--allow-empty', '-m', 'WIP')
   const sha = bare('rev-parse', 'HEAD').stdout.trim()
   const refused = runHook('pre-push', root, `refs/heads/main ${sha} refs/heads/main ${'0'.repeat(40)}\n`)
