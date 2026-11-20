@@ -16,6 +16,7 @@ while read -r _ local remote_ref remote; do
   is_zero "$local" && continue
   if is_zero "$remote"; then range="$local --not --remotes=$1"; else range="$remote..$local"; fi
   # $range is split on purpose: it is one or more arguments.
+  # shellcheck disable=SC2086
   commits=$(git log --format='%h %s' $range) || {
     echo "pre-push: cannot read the commits to push to $remote_ref" >&2
     exit 1
