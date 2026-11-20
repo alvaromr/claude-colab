@@ -5,6 +5,8 @@ export const DEFAULT_PORT = 4747
 export const ANY_HOST = '0.0.0.0'
 // Where this machine reaches its own server, and the address its server's key is saved for.
 export const LOOPBACK = '127.0.0.1'
+/** Whether `host` is this machine by loopback: any 127 address, localhost, or ::1, bracketed or not. */
+export const isLoopback = (host: string) => /^(127\.|localhost$|\[::1\]$|::1$)/.test(host)
 // What every invitation starts with: the pane and the CLI tell one apart by it.
 export const INVITATION_PREFIX = 'colab:'
 /** Whether `n` is a TCP port a server can listen on: a whole number from 1 to 65535. */

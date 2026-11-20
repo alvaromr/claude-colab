@@ -6,7 +6,15 @@ import { isOwn, isSameRoom, isSameServer, localAt, remembered, withLeft, without
 const OWN = { address: '0.0.0.0:4747', addresses: ['192.0.2.5', '2001:db8::5'] }
 
 test('this machine is reached by loopback, or by one of its own addresses, at any port', () => {
-  for (const server of ['127.0.0.1:4747', '127.0.0.2:5000', 'localhost:4747', 'localhost', '[::1]:4747', '::1']) {
+  for (const server of [
+    '127.0.0.1:4747',
+    '127.0.0.2:5000',
+    'localhost:4747',
+    'localhost',
+    '[::1]:4747',
+    '::1',
+    '::1:4747',
+  ]) {
     assert.equal(isOwn(server, null), true, server)
   }
   for (const server of ['192.0.2.5:4747', '192.0.2.5:4800', '2001:db8::5:4747']) {

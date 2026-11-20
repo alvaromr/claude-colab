@@ -9,7 +9,7 @@ import { type NetworkInterfaceInfo, networkInterfaces } from 'node:os'
 import { dirname } from 'node:path'
 import tls from 'node:tls'
 import { privateFolder, socketError } from './home.mts'
-import { DEAD_AFTER, MAX_LINE, PING_EVERY, PROTOCOL, type Refusal, type Value } from './protocol.mts'
+import { DEAD_AFTER, isLoopback, MAX_LINE, PING_EVERY, PROTOCOL, type Refusal, type Value } from './protocol.mts'
 import { TEXT } from './strings.mts'
 import { clientOptions, invitation, readLines, writeLine } from './wire.mts'
 
@@ -71,7 +71,7 @@ async function postToInbox(text: unknown, wait: number): Promise<Answer> {
  * address this machine has on a network (a LAN, a VPN), since which one reaches it depends on the guest.
  */
 export function reachableAt(host: string) {
-  return /^(127\.|localhost$|::1$)/.test(host) ? networkAddresses() : [host]
+  return isLoopback(host) ? networkAddresses() : [host]
 }
 
 // Stryker disable next-line ConditionalExpression: for the type checker; Node lists no undefined interface
