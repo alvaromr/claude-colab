@@ -3,7 +3,6 @@ import assert from 'node:assert/strict'
 import net, { type AddressInfo } from 'node:net'
 import { after, before, test } from 'node:test'
 import tls from 'node:tls'
-import { setTimeout as sleep } from 'node:timers/promises'
 import { serve } from '../cli/hub.mts'
 import { DEAD_AFTER, MAX_LINE, MAX_TEXT, PROTOCOL, type Value } from '../cli/protocol.mts'
 import { clientOptions, newKey, parseKey, readLines, writeLine } from '../cli/wire.mts'
@@ -214,14 +213,18 @@ test('a connection that never finishes the handshake is cut', async () => {
   assert.equal(await closesWithin(raw, HANDSHAKE_WAIT * 2), true, 'and not more')
 })
 
-test('each connection takes the lowest color no one connected has', async () => {
+test('each connection takes the lowest color no one connected has', TURN, async () => {
   const first = await client('Color1')
   const second = await client('Color2')
   const taken = [first.hello?.color, second.hello?.color]
   assert.notEqual(taken[0], taken[1])
   const freed = Math.min(Number(taken[0]), Number(taken[1]))
-  ;(taken[0] === freed ? first : second).close()
-  await sleep(100)
+  // In one room, the one that stays is told when the server lets the other go, and with it its color.
+  const made = await first.ask('create')
+  await second.ask('join', { code: made.code })
+  const [gone, stays] = taken[0] === freed ? [first, second] : [second, first]
+  gone.close()
+  await until(() => stays.events.some(event => event.ev === 'member' && event.action === 'leave'))
 
   const third = await client('Color3')
   assert.equal(third.hello?.color, freed)

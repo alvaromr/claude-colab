@@ -164,8 +164,10 @@ test('the wait for this machine’s server to end tells whether it ended before 
   const mine = { pid: process.pid, host: '127.0.0.1', port: 4747, title: 'Prueba' }
   writeFileSync(SERVER, JSON.stringify(mine))
   await assert.rejects(serverEnded({ timeout: 30, every: 5 }), /^Error: El servidor no se ha cerrado/, 'it lives on')
-  setTimeout(() => rmSync(SERVER), 10)
-  await serverEnded({ timeout: 1_000, every: 5 }) // one that ends meanwhile
+  // One that ends meanwhile: the wait has found it running, synchronously, before the record goes.
+  const ending = serverEnded({ timeout: 1_000, every: 5 })
+  rmSync(SERVER)
+  await ending
   await serverEnded({ timeout: 0, every: 5 }) // none at all
 })
 
