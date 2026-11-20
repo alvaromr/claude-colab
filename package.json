@@ -20,7 +20,7 @@
     "test:node": "LC_ALL=es_ES.UTF-8 NODE_OPTIONS=--import=./tests/offline.mts node --test --test-coverage-exclude='tests/**' --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 'tests/**/*.test.mts'",
     "test:matrix": "node scripts/node-matrix.mts",
     "test:mod": "claude plugin test .",
-    "mutation": "stryker run",
+    "mutation": "node scripts/mutation.mts",
     "release": "node scripts/release.mts",
     "release:dry-run": "node scripts/release.mts --dry-run",
     "audit:deps": "pnpm audit"

@@ -14,7 +14,7 @@ holds how to work on it, and the design with its reasons.
 - `pnpm check`: the gate, which the pre-commit hook runs: the Node it runs on beside the one `.node-version` pins,
   format, lint, types, the repo guard, the Node tests with 100 % coverage, and the mod's tests in the engine.
 - `pnpm check:slow`: the checks too slow for each commit, which a push and a release run: the audit, the Node matrix
-  and mutation, about 45 minutes.
+  and mutation.
 - `pnpm fix`: formats, applies the lint fixes, and runs the gate.
 - `pnpm test:node`: the tests Node runs, those of `cli/` and of the mod's pure modules, with coverage, and with no
   network but loopback (`tests/offline.mts`, which they and every process they start load). `pnpm test:mod`: the
@@ -22,7 +22,9 @@ holds how to work on it, and the design with its reasons.
 - `pnpm test:matrix`: the Node tests on every Node the project supports: the oldest that `engines` takes and the one
   `.node-version` pins, downloaded from nodejs.org and checked against their SHA-256 sums.
 - `pnpm mutation`: mutation testing of what Node tests (Stryker); every surviving mutant is a missing test, or an
-  equivalent one recorded in place with its reason. What it runs, and why, is in `stryker.config.mjs`.
+  equivalent one recorded in place with its reason. It mutates only the modules changed since the last run that
+  passed, or whose tests changed, and every module when none passed yet, when what all mutants depend on changed
+  (`scripts/scope.mts`), or with `--full`, about 60 minutes. What it runs, and why, is in `stryker.config.mjs`.
 - `pnpm audit:deps`: the audit of the dev dependencies; the plugin itself has none.
 - `pnpm release <x.y.z>`: the release, stopping at the first step that fails. Checks the tree is clean and the tag
   new, runs the gate and the slow checks, then installs the release (the version bumped in `plugin.json`,
