@@ -1,6 +1,6 @@
 import type { On, ResolveInput } from 'claude-code'
 
-import { DEFAULT_PORT, isName, isPort } from '../cli/protocol.mts'
+import { DEFAULT_PORT, INVITATION_PREFIX, isName, isPort } from '../cli/protocol.mts'
 import type { Line, Setup } from '../types'
 import { acceptInvitation, connect, disconnect, hostHere } from './link.ts'
 import { sayFromPane } from './messages.ts'
@@ -151,7 +151,7 @@ export function onPane(on: On) {
     const invitationField = (
       <Box flexDirection="column">
         {field('invitation', T.invitation, '', T.invitationHint, value => {
-          if (!value.startsWith('colab:')) return T.notAnInvitation
+          if (!value.startsWith(INVITATION_PREFIX)) return T.notAnInvitation
           void report($, acceptInvitation($, value, typed.name))
 
           return undefined

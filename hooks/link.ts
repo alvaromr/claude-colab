@@ -1,6 +1,6 @@
-import { DEFAULT_PORT, isName, isPort, type Refusal } from '../cli/protocol.mts'
+import { ANY_HOST, DEFAULT_PORT, isName, isPort, type Refusal } from '../cli/protocol.mts'
 import type { Known, Link, Place, Room, Setup } from '../types'
-import { isOwn, remembered } from './addresses.ts'
+import { isOwn, localAt, remembered } from './addresses.ts'
 import { failureOf, isLetGo, isOthersMove, nextWait, RETRY_FIRST, splitLines } from './linking.ts'
 import { type Message, show } from './messages.ts'
 import { backInRoom, expectBack, join, rejoin, settleBackNow } from './rooms.ts'
@@ -332,10 +332,10 @@ export async function hostHere($: Engine, { name, title, port }: Setup): Promise
     const number = port ? Number(port) : DEFAULT_PORT
 
     if (!isPort(number)) return failed(T.badPort(port))
-    const opened = await openServer($, '0.0.0.0', number, title)
+    const opened = await openServer($, ANY_HOST, number, title)
 
     if (!opened.ok) return opened
   }
 
-  return connect($, `127.0.0.1:${(await readHosted($))?.address.split(':').pop()}`, name)
+  return connect($, localAt(String((await readHosted($))?.address)), name)
 }

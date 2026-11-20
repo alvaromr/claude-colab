@@ -3,6 +3,7 @@ import { lstatSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } f
 import { homedir, userInfo } from 'node:os'
 import { dirname, join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
+import { LOOPBACK } from './protocol.mts'
 import { TEXT } from './strings.mts'
 import { newKey, parseKey } from './wire.mts'
 
@@ -121,4 +122,4 @@ export function loadKey(host: string, port: number) {
  * The key this machine's server opens with on `port`: its saved one unless `isNew`, else a new one. It comes from no
  * variable of the environment, which every process the session starts would inherit.
  */
-export const serverKey = (port: number, isNew: boolean) => (isNew ? undefined : savedKey('127.0.0.1', port)) || newKey()
+export const serverKey = (port: number, isNew: boolean) => (isNew ? undefined : savedKey(LOOPBACK, port)) || newKey()

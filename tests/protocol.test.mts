@@ -1,7 +1,21 @@
 // Runs with `node --test tests/`: what the server, connect and the mod agree on.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { isCode, isName, isPort, languageOf, NAME_LENGTH, NAME_RULE } from '../cli/protocol.mts'
+import {
+  ANY_HOST,
+  INVITATION_PREFIX,
+  isCode,
+  isName,
+  isPort,
+  LOOPBACK,
+  languageOf,
+  NAME_LENGTH,
+  NAME_RULE,
+} from '../cli/protocol.mts'
+
+test('a server listens on every interface unless told, is reached here by loopback, and invites with colab:', () => {
+  assert.deepEqual([ANY_HOST, LOOPBACK, INVITATION_PREFIX], ['0.0.0.0', '127.0.0.1', 'colab:'])
+})
 
 test('a port is a whole number from 1 to 65535', () => {
   for (const port of [1, 4747, 65535]) assert.equal(isPort(port), true, String(port))

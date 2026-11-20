@@ -1,6 +1,6 @@
 import type { Caught, Next, On } from 'claude-code'
 
-import { DEFAULT_PORT } from '../cli/protocol.mts'
+import { ANY_HOST, DEFAULT_PORT } from '../cli/protocol.mts'
 import { acceptInvitation, connect, disconnect } from './link.ts'
 import { say } from './messages.ts'
 import { create, invite, leave, roomList } from './rooms.ts'
@@ -83,7 +83,7 @@ async function sayTool($: Engine, e: Input) {
 async function serveTool($: Engine, e: Input) {
   const port = typeof e.port === 'number' ? e.port : DEFAULT_PORT
 
-  return reply(await openServer($, text(e, 'host') || '0.0.0.0', port, text(e, 'name')))
+  return reply(await openServer($, text(e, 'host') || ANY_HOST, port, text(e, 'name')))
 }
 
 async function stopServingTool($: Engine) {

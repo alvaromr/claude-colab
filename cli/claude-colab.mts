@@ -33,7 +33,7 @@ import {
 } from './home.mts'
 import { serve } from './hub.mts'
 import { type Answer, connect, networkAddresses } from './link.mts'
-import { isName, NAME_LENGTH, type Value } from './protocol.mts'
+import { ANY_HOST, isName, LOOPBACK, NAME_LENGTH, type Value } from './protocol.mts'
 import { type Defaults, TEXT } from './strings.mts'
 import { parseInvitation, parseKey } from './wire.mts'
 
@@ -52,7 +52,7 @@ const COMMANDS: Record<Name, Command> = {
   serve: {
     options: {
       name: { type: 'string', default: hostTitle() },
-      host: { type: 'string', default: '0.0.0.0' },
+      host: { type: 'string', default: ANY_HOST },
       port: { type: 'string' },
       'new-key': { type: 'boolean' },
       background: { type: 'boolean' },
@@ -67,7 +67,7 @@ const COMMANDS: Record<Name, Command> = {
       if (o.background) return inBackground(port)
       const text = serverKey(port, o['new-key'] === true)
       const server = serve({ key: parseKey(text), host: setting(o, 'host'), port, title }, ({ address, port }) => {
-        saveKey('127.0.0.1', port, text)
+        saveKey(LOOPBACK, port, text)
         markServer(address, port, title)
         tell({ ok: true, listening: `${address}:${port}`, title, key: text })
       })
@@ -86,7 +86,7 @@ const COMMANDS: Record<Name, Command> = {
         listening: `${running.host}:${running.port}`,
         title: running.title,
         pid: running.pid,
-        key: savedKey('127.0.0.1', running.port),
+        key: savedKey(LOOPBACK, running.port),
         addresses: networkAddresses(),
       }
       console.log(JSON.stringify({ ok: true, running: Boolean(running), machine: hostTitle(), ...found }))

@@ -1,6 +1,12 @@
 // What serve, connect and the mod agree on. Pure, with no Node: the mod, which has none, imports it too.
 
 export const DEFAULT_PORT = 4747
+// Where serve listens unless told: every interface, since others have to reach it (docs/decisions/05).
+export const ANY_HOST = '0.0.0.0'
+// Where this machine reaches its own server, and the address its server's key is saved for.
+export const LOOPBACK = '127.0.0.1'
+// What every invitation starts with: the pane and the CLI tell one apart by it.
+export const INVITATION_PREFIX = 'colab:'
 /** Whether `n` is a TCP port a server can listen on: a whole number from 1 to 65535. */
 export const isPort = (n: number) => Number.isInteger(n) && n >= 1 && n <= 65535
 // What serve and connect speak: raised whenever one would misread the other. A server runs apart, and outlives the

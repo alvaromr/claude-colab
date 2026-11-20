@@ -1,3 +1,4 @@
+import { localAt } from './addresses.ts'
 import { answerOf, hostedOf } from './linking.ts'
 import { type Answer, complained, done, type Engine, failed, T, updateHosted } from './state.ts'
 
@@ -35,7 +36,7 @@ export async function openServer($: Engine, host: string, port: number, title: s
 
   await complained($, T.serverUnknown, checkServer($))
   if (!opened.ok) return opened
-  const local = `127.0.0.1:${String(opened.listening).split(':').pop()}`
+  const local = localAt(String(opened.listening))
 
   return done(T.serverOpened(String(opened.title), String(opened.listening), local))
 }

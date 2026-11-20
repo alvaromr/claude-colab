@@ -1,7 +1,7 @@
 // Runs with `node --test tests/`, as the CLI's: which addresses reach which server.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { isOwn, isSameRoom, isSameServer, remembered, withLeft, without } from '../../hooks/addresses.ts'
+import { isOwn, isSameRoom, isSameServer, localAt, remembered, withLeft, without } from '../../hooks/addresses.ts'
 
 const OWN = { address: '0.0.0.0:4747', addresses: ['192.0.2.5', '2001:db8::5'] }
 
@@ -32,6 +32,11 @@ test('two addresses reach one server when they are the same, or both reach this 
   assert.equal(isSameServer('127.0.0.1:4747', '192.0.2.5:4747', null), false, 'with no server of its own')
   assert.equal(isSameServer('127.0.0.1:4800', '192.0.2.5:4800', OWN), false, 'at another port than its own')
   assert.equal(isSameServer('127.0.0.1:4747', '192.0.2.9:4747', OWN), false, 'one of them another machine')
+})
+
+test('this machine reaches a server it listens with by loopback, at the port it listens on', () => {
+  assert.equal(localAt('0.0.0.0:4800'), '127.0.0.1:4800')
+  assert.equal(localAt('[::]:4800'), '127.0.0.1:4800')
 })
 
 test('two rooms left are one when they have one code on one server', () => {

@@ -2,7 +2,7 @@
 import { randomBytes } from 'node:crypto'
 import type { Duplex, Writable } from 'node:stream'
 import type { ConnectionOptions, TlsOptions } from 'node:tls'
-import { isCode, isName, MAX_LINE, type Value } from './protocol.mts'
+import { INVITATION_PREFIX, isCode, isName, MAX_LINE, type Value } from './protocol.mts'
 import { TEXT } from './strings.mts'
 
 const IDENTITY = 'claude-colab'
@@ -14,8 +14,6 @@ export const newKey = () => randomBytes(32).toString('base64url')
 // A room's code: whoever has it may go in. Only its members and their invitations hold it.
 export const newCode = () => randomBytes(18).toString('base64url')
 
-const INVITATION = 'colab:'
-
 /**
  * Everything to go into a room from another machine, as one text to pass on by another means: the server's
  * addresses (any of them may be the one that reaches it), its port and key, the room and its code.
@@ -23,17 +21,17 @@ const INVITATION = 'colab:'
 export type Invitation = { addresses: string[]; port: number; key: string; room: string; code: string }
 
 export const invitation = ({ addresses, port, key, room, code }: Invitation) =>
-  INVITATION + Buffer.from(JSON.stringify({ addresses, port, key, room, code })).toString('base64url')
+  INVITATION_PREFIX + Buffer.from(JSON.stringify({ addresses, port, key, room, code })).toString('base64url')
 
 /** What `invitation` put in, checked; throws on anything else. */
 export function parseInvitation(text: unknown): Invitation {
   const bad = new Error(TEXT.badInvitation)
   const body = String(text).trim()
-  if (!body.startsWith(INVITATION)) throw bad
+  if (!body.startsWith(INVITATION_PREFIX)) throw bad
   let found: Partial<Record<keyof Invitation, unknown>> | null
   // Stryker disable BlockStatement: what does not parse fails the checks below just the same
   try {
-    found = JSON.parse(Buffer.from(body.slice(INVITATION.length), 'base64url').toString('utf8'))
+    found = JSON.parse(Buffer.from(body.slice(INVITATION_PREFIX.length), 'base64url').toString('utf8'))
   } catch {
     throw bad
   }
