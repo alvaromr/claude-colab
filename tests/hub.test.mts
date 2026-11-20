@@ -73,8 +73,8 @@ after(() => {
 })
 
 /** A TLS link to the test's server with `withKey`, not yet greeted. */
-function linked(withKey = key) {
-  const socket = tls.connect({ ...clientOptions(withKey), host: '127.0.0.1', port })
+function linked(withKey = key, at = port) {
+  const socket = tls.connect({ ...clientOptions(withKey), host: '127.0.0.1', port: at })
   links.push(socket)
   return new Promise<tls.TLSSocket>((resolve, reject) =>
     socket.once('secureConnect', () => resolve(socket)).once('error', reject),
@@ -94,10 +94,11 @@ const closesWithin = (socket: net.Socket, ms: number) =>
 
 /**
  * A connection that greets the server as `name`; `ask(op, args)` resolves to the server's reply, `events` holds what
- * it pushed. With `isGreeted` false the hello is left to the test, as `ask('hello', …)`.
+ * it pushed. With `isGreeted` false the hello is left to the test, as `ask('hello', …)`; `at`, the port of a server
+ * of the test's own.
  */
-async function client(name: string, { isGreeted = true } = {}) {
-  const socket = await linked()
+async function client(name: string, { isGreeted = true, at = port } = {}) {
+  const socket = await linked(key, at)
   const pending = new Map<unknown, (reply: Reply) => void>()
   const events: Event[] = []
   let lastRef = 0
@@ -430,9 +431,19 @@ test('one that leaves, or drops, is gone from its room, and the others are told'
   ana.close()
 })
 
-test('a connection that does not read what it is sent is dropped before it fills the server', TURN, async () => {
-  const ana = await client('AnaB')
-  const mute = await client('MudoB')
+test('a connection that does not read what it is sent is dropped before it fills the server', TURN, async t => {
+  // A server of its own, with the pings of any server: the one of the other tests would cut the silent one for its
+  // pings, while the room's messages are still on their way, and hide whether the backlog cuts it.
+  const patient = await new Promise<tls.Server>(resolve => {
+    const started = serve({ key, host: '127.0.0.1', port: 0, title: 'Atasco' }, () => resolve(started))
+  })
+  const at = (patient.address() as AddressInfo).port
+  const ana = await client('AnaB', { at })
+  const mute = await client('MudoB', { at })
+  t.after(() => {
+    for (const one of [ana, mute]) one.close()
+    patient.close()
+  })
   const made = await ana.ask('create')
   await mute.ask('join', { code: made.code })
   mute.socket.pause()
@@ -441,8 +452,6 @@ test('a connection that does not read what it is sent is dropped before it fills
   for (let sent = 0; sent < 400; sent++) assert.equal((await ana.ask('say', { text })).ok, true)
   await until(() => membersOf(ana).length === 1)
   assert.deepEqual((await ana.ask('rooms')).rooms[0]?.members, ['AnaB'], 'the one that did not read is out')
-  ana.close()
-  mute.close()
 })
 
 test('a connection silent past its pings is dropped, and its name is free again', async t => {
