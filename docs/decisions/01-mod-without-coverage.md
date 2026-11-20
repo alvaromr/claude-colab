@@ -6,4 +6,4 @@
   Node tests with both. The rest, tested in `tests/mod/`, one file per module of `hooks/` named after it and what
   they share in `support.ts`, is the engine's glue: the order of its steps, its state, its rows, its pane and its
   processes.
-- **Decided by:** proposed by an agent; awaiting the owner's approval.
+- **Decided by:** proposed by an agent; approved by the owner.
