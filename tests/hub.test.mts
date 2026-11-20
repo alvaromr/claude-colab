@@ -125,6 +125,8 @@ async function until(isMet: () => boolean) {
 }
 // For a test that waits with until: past it, what it waits on never came.
 const TURN = { timeout: 5_000 }
+/** Once each client's ping is answered, all the server pushed it before is in: it writes to each in order. */
+const settled = (...whom: { ask: (op: unknown) => Promise<unknown> }[]) => Promise.all(whom.map(one => one.ask('ping')))
 
 test('without the key no one gets past the handshake', async () => {
   await assert.rejects(linked(parseKey(newKey())), /DECRYPT_ERROR|BINDER|alert/i)
@@ -264,7 +266,7 @@ test('going into the room one is in changes nothing, and tells no one again', as
   assert.deepEqual([again.ok, again.members], [true, ['AnaJ']])
   const remade = await ana.ask('create', { code: made.code })
   assert.deepEqual([remade.ok, remade.members], [true, ['AnaJ']])
-  await sleep(50)
+  await settled(ana)
   assert.equal(ana.events.filter(event => event.ev === 'member').length, 1, 'one join, told once')
   ana.close()
 })
@@ -367,7 +369,7 @@ test('what is said reaches its room alone, signed by the server as who said it',
   const said = await eva.ask('say', { text: 'hola', by: { evil: 1 }, from: 'AnaS', color: 9 })
   assert.equal(said.ok, true)
   assert.equal((await eva.ask('say', { text: 'listo', by: 'claude', to: 'AnaS' })).ok, true)
-  await sleep(50)
+  await settled(ana, eva, outsider)
 
   const heard = ana.events.filter(event => event.ev === 'message')
   const room = { code: made.code, label: made.label, from: 'EvaS', color: eva.hello?.color }
@@ -405,14 +407,14 @@ test('what is said reaches its room alone, signed by the server as who said it',
   for (const client of [ana, eva, outsider]) client.close()
 })
 
-test('one that leaves, or drops, is gone from its room, and the others are told', async () => {
+test('one that leaves, or drops, is gone from its room, and the others are told', TURN, async () => {
   const ana = await client('AnaL')
   const eva = await client('EvaL')
   const made = await ana.ask('create')
   await eva.ask('join', { code: made.code })
 
   eva.close()
-  await sleep(100)
+  await until(() => ana.events.some(event => event.ev === 'member' && event.action === 'leave'))
   assert.deepEqual(
     ana.events.filter(event => event.ev === 'member').map(({ name, action }) => [name, action]),
     [
@@ -428,7 +430,7 @@ test('one that leaves, or drops, is gone from its room, and the others are told'
   ana.close()
 })
 
-test('a connection that does not read what it is sent is dropped before it fills the server', async () => {
+test('a connection that does not read what it is sent is dropped before it fills the server', TURN, async () => {
   const ana = await client('AnaB')
   const mute = await client('MudoB')
   const made = await ana.ask('create')
@@ -437,7 +439,7 @@ test('a connection that does not read what it is sent is dropped before it fills
 
   const text = 'x'.repeat(MAX_TEXT)
   for (let sent = 0; sent < 400; sent++) assert.equal((await ana.ask('say', { text })).ok, true)
-  await sleep(100)
+  await until(() => membersOf(ana).length === 1)
   assert.deepEqual((await ana.ask('rooms')).rooms[0]?.members, ['AnaB'], 'the one that did not read is out')
   ana.close()
   mute.close()
@@ -581,7 +583,7 @@ test('whose Claude is at work goes with the room’s members, to them alone, unt
 
   assert.equal((await outsider.ask('busy', { busy: true })).reason, 'not-in-room')
   assert.equal((await eva.ask('busy', { busy: true })).ok, true)
-  await sleep(50)
+  await settled(ana, eva, outsider)
   const lastRooms = (who: { events: Event[] }) => who.events.filter(event => event.ev === 'rooms').at(-1)?.rooms
   assert.deepEqual(lastRooms(ana)?.[0]?.busy, ['EvaW'])
   assert.deepEqual(lastRooms(outsider), [], 'another room sees nothing')
