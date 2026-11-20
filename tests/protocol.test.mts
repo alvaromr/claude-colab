@@ -20,7 +20,16 @@ test('a server listens on every interface unless told, is reached here by loopba
 
 test('this machine, as a host, is any 127 address, localhost or ::1, bracketed or not', () => {
   for (const host of ['127.0.0.1', '127.0.1.1', 'localhost', '::1', '[::1]']) assert.equal(isLoopback(host), true, host)
-  for (const host of ['192.0.2.9', 'equipo127.lan', 'localhost.lan', 'localhostess', 'x127.0.0.1', '::10', '::12']) {
+  for (const host of [
+    '192.0.2.9',
+    'equipo127.lan',
+    'localhost.lan',
+    'localhostess',
+    'x127.0.0.1',
+    '::10',
+    '::12',
+    '[::1]:4747',
+  ]) {
     assert.equal(isLoopback(host), false, host)
   }
 })
