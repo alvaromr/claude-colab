@@ -181,7 +181,7 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
 ## Where things live
 
 - `README.md`: install and use. `SECURITY.md`: what colab protects, and reporting a vulnerability. `CHANGELOG.md`:
-  changes per version. `docs/decisions/`: the deliberate deviations, one per file.
+  changes per version. `CONTRIBUTING.md`: points here. `docs/decisions/`: the deliberate deviations, one per file.
 - `.claude-plugin/plugin.json`: the plugin's manifest and its version, the only one. `.claude-plugin/marketplace.json`:
   the marketplace that lists it.
 - `scripts/`: the repo guard, and the release (`release.mts`, with what it changes in the files in `bump.mts`).
