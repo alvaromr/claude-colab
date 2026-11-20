@@ -8,8 +8,10 @@ import {
   complain,
   done,
   type Engine,
+  enteredRoom,
   failed,
   LOG_SIZE,
+  leftRoom,
   readHosted,
   readLink,
   readRoom,
@@ -20,8 +22,6 @@ import {
   updateChatBack,
   updateLog,
   updateRecent,
-  updateRoom,
-  updateWant,
 } from './state.ts'
 import { isNumbered } from './strings.ts'
 
@@ -77,8 +77,7 @@ async function enter($: Engine, place: Place) {
   // Back in a room this session was in: what was said meanwhile never reached it, and the chat says so, once until
   // the room says something again.
   await updateLog($, all => withGap(all, place, LOG_SIZE))
-  await updateRoom($, () => place)
-  await updateWant($, w => w && { ...w, place })
+  await enteredRoom($, place)
 }
 
 /** What the server answers on making or joining a room: the room, as it tells it. */
@@ -123,8 +122,7 @@ export async function leave($: Engine): Promise<Answer> {
 
   // Still in it on the server, which keeps sending its messages: still in it here too.
   if (!left.ok) return left
-  await updateRoom($, () => null)
-  await updateWant($, w => w && { ...w, place: null })
+  await leftRoom($)
   // Kept to go back to: the code is what lets anyone in, and the server shows no list of rooms.
   if (wanted !== null) {
     const left: Recent = { ...here, server: wanted.server }

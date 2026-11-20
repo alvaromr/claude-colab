@@ -11,6 +11,7 @@ import {
   done,
   type Engine,
   failed,
+  letGoLink,
   readError,
   readHosted,
   readKnown,
@@ -21,13 +22,13 @@ import {
   START_TIMEOUT,
   T,
   unattended,
+  unlinked,
   updateColors,
   updateKnown,
   updateLink,
-  updateRoom,
   updateRooms,
   updateSetup,
-  updateWant,
+  wantLink,
 } from './state.ts'
 
 type Event =
@@ -126,7 +127,7 @@ async function launch($: Engine, server: string, name: string, inbox: Inbox, tar
 
   refused = undefined
   await updateSetup($, s => ({ ...s, name }))
-  await updateWant($, w => ({ server, name, place: target ?? (w?.server === server ? w.place : null) }))
+  await wantLink($, server, name, target)
   await complain($, null)
   await updateLink($, (): Link => ({ status: 'connecting', server }))
   void follow($, ['node', cli($), 'connect', server, '--name', as, '--socket', socket], inbox)
@@ -140,8 +141,7 @@ async function follow($: Engine, argv: string[], inbox: Inbox) {
   const complaint = await eachLine(child, async line => onEvent($, JSON.parse(line) as Event))
 
   child = undefined
-  await updateRooms($, () => [])
-  await updateRoom($, () => null)
+  await unlinked($)
   // The link may have ended with this machine's server, closed from another session.
   unattended($, T.serverUnknown, checkServer($))
   if (complaint) await complain($, complaint)
@@ -168,7 +168,7 @@ async function follow($: Engine, argv: string[], inbox: Inbox) {
 
 /** Lets go of the link the person asked for: nothing makes it again, and nothing waits any more to be back in a room. */
 async function letGo($: Engine) {
-  await updateWant($, () => null)
+  await letGoLink($)
   droppedAt = undefined
   settleBackNow()
 }

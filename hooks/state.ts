@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface } from 'claude-code'
 
 import type { Language } from '../cli/protocol.mts'
-import type { Hosted, Known, Line, Link, Place, Recent, Room, Setup, Want } from '../types'
+import type { Hosted, Known, Line, Link, Place, Recent, Room, Setup } from '../types'
 import type { Answer } from './linking.ts'
 import { TEXTS } from './strings.ts'
 
@@ -54,9 +54,6 @@ export function updateRooms($: Engine, change: (value: Room[]) => Room[]) {
 }
 export function readRoom($: Engine) {
   return read($, room)
-}
-export function updateRoom($: Engine, change: (value: Place | null) => Place | null) {
-  return update($, room, change)
 }
 export function readSetup($: Engine) {
   return read($, setup)
@@ -112,8 +109,32 @@ export function updateColors($: Engine, change: (value: Record<string, number>) 
 export function readWant($: Engine) {
   return read($, want)
 }
-export function updateWant($: Engine, change: (value: Want | null) => Want | null) {
-  return update($, want, change)
+
+// The link and the room the person asked for (`want`), and the room this session is in (`room`), change only here,
+// by these steps: which room the link goes back to follows from them.
+
+/** The person asks for a link to `server` as `name`: into `target`, or back into the room wanted on that server. */
+export async function wantLink($: Engine, server: string, name: string, target?: Place) {
+  await update($, want, w => ({ server, name, place: target ?? (w?.server === server ? w.place : null) }))
+}
+/** The person lets go of the link: nothing makes it again. */
+export async function letGoLink($: Engine) {
+  await update($, want, () => null)
+}
+/** This session went into `place`, which the link goes back to after a reload or a drop. */
+export async function enteredRoom($: Engine, place: Place) {
+  await update($, room, () => place)
+  await update($, want, w => w && { ...w, place })
+}
+/** This session left its room, and the link goes back to none. */
+export async function leftRoom($: Engine) {
+  await update($, room, () => null)
+  await update($, want, w => w && { ...w, place: null })
+}
+/** The link ended, or never was in this module: no room is seen, and the one wanted stays wanted. */
+export async function unlinked($: Engine) {
+  await update($, rooms, () => [])
+  await update($, room, () => null)
 }
 export function readLog($: Engine) {
   return read($, log)

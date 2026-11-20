@@ -77,7 +77,9 @@ The repo's root is the plugin: the mod `colab` and the CLI `claude-colab`. A thi
   plain shapes instead.
 - The engine reads and writes a value of the state only in the file that declares its atom, and follows `$` past an
   import only into a function declaration: each value is declared once, in `state.ts`, and reached through its
-  `read…` and `update…` functions there.
+  `read…` and `update…` functions there. The link and room the person asked for, and the room the session is in,
+  change only by the named steps there (`wantLink`, `enteredRoom`, `leftRoom`, `unlinked`, `letGoLink`), which keep
+  them agreeing.
 
 The lint enforces the boundaries (`biome.jsonc`): the mod imports nothing of Node and, of `cli/`, only
 `protocol.mts`; `protocol.mts` imports nothing; the mod's pure modules and `rooms.mts` import only `protocol.mts`;

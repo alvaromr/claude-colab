@@ -2,17 +2,7 @@ import { languageOf } from '../cli/protocol.mts'
 import type { Known, Setup } from '../types'
 import { resume } from './link.ts'
 import { checkServer } from './server.ts'
-import {
-  type Engine,
-  speak,
-  T,
-  unattended,
-  updateKnown,
-  updateLink,
-  updateRoom,
-  updateRooms,
-  updateSetup,
-} from './state.ts'
+import { type Engine, speak, T, unattended, unlinked, updateKnown, updateLink, updateSetup } from './state.ts'
 import { registerTools } from './tools.ts'
 
 let hasStarted = false
@@ -29,8 +19,7 @@ export async function start($: Engine) {
   )
   // A reload ends the connect process with the old module: nothing is linked any more.
   await updateLink($, () => ({ status: 'off' }))
-  await updateRooms($, () => [])
-  await updateRoom($, () => null)
+  await unlinked($)
   unattended($, T.serverUnknown, checkServer($)) // the pane waits for it
   const saved = (await $.store.get('setup')) as Partial<Setup> | undefined
   const servers = (await $.store.get('servers')) as Known[] | undefined
