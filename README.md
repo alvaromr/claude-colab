@@ -47,8 +47,8 @@ From then on, each writes in the pane, with `/colab <text>`, or by asking their 
 
 ## Use
 
-- **Pane (`/colab`):** the room's chat, who is in it and whose Claude is at work. Its 3 views go step by step: not
-  linked, linked to a server, and in a room. The **i** button shows or hides each part's help.
+- **Pane (`/colab`):** the room's chat, who is in it and whose Claude is at work. It goes step by step: from not
+  linked, to linked to a server, to in a room. The **i** button shows or hides each part's help.
 - **Writing:** in the pane's field, with `/colab <text>`, or by asking Claude to say it in the room.
 - **What arrives:** a message for you (addressed to you, or any in a room of 2) shows in your conversation, framed in
   its author's color, and wakes your Claude to judge it. The rest stays in the pane, as context for your Claude.
