@@ -1,5 +1,5 @@
 import type { Author, Line, Place } from '../types'
-import { appended, isForMe, lineOf, membersIn, quoted, shownTo } from './chat.ts'
+import { appended, cleaned, isForMe, lineOf, membersIn, quoted, shownTo } from './chat.ts'
 import { request } from './local.ts'
 import { backInRoom } from './rooms.ts'
 import {
@@ -92,7 +92,7 @@ export async function show($: Engine, message: Message) {
   const isMine = isForMe(message, await readLink($), people)
   const line: Line = lineOf(message, people)
 
-  await updateColors($, all => ({ ...all, [message.from]: message.color ?? 0 }))
+  await updateColors($, all => ({ ...all, [line.from]: message.color ?? 0 }))
   await updateLog($, all => {
     const logged = appended(all, line, LOG_SIZE)
 
@@ -107,18 +107,18 @@ export async function show($: Engine, message: Message) {
 
     if (pending === -1 || line.by !== 'person') return
     fromPane.splice(pending, 1)
-    const said = `${MARK}#${line.n} · ${T.saidInPane(message.label)}\n\n${quoted(line.text)}`
+    const said = `${MARK}#${line.n} · ${T.saidInPane(line.label)}\n\n${quoted(line.text)}`
 
     await post($, line, said)
 
     return
   }
   const told = T.received({
-    from: message.from,
+    from: line.from,
     isClaude: line.by === 'claude',
     isForMe: isMine,
-    to: message.to,
-    label: message.label,
+    to: message.to === undefined ? undefined : cleaned(message.to),
+    label: line.label,
   })
   const text = `${MARK}#${line.n} · ${told}\n\n${quoted(line.text)}`
 

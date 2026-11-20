@@ -32,17 +32,20 @@ export const isForMe = (message: { own: boolean; to?: string }, link: Linked, pe
 /** The recipient a message shows: only in a room of more than two, the one case naming it tells anything. */
 export const shownTo = (to: unknown, people: number) => (typeof to === 'string' && to && people > 2 ? to : undefined)
 
-/** A message received, as a line of the chat: cleaned, by its person unless it says otherwise, numbered on logging. */
+/**
+ * A message received, as a line of the chat: its text and who, where and to whom cleaned, by its person unless it says
+ * otherwise, numbered on logging.
+ */
 export function lineOf<B extends string>(
   message: { code: string; label: string; from: string; by?: B; to?: string; text: string; own: boolean },
   people: number,
 ) {
-  const to = shownTo(message.to, people)
+  const to = shownTo(message.to === undefined ? undefined : cleaned(message.to), people)
   return {
     n: 0,
     code: message.code,
-    label: message.label,
-    from: message.from,
+    label: cleaned(message.label),
+    from: cleaned(message.from),
     by: message.by ?? ('person' as const),
     ...(to === undefined ? {} : { to }),
     text: cleaned(message.text),

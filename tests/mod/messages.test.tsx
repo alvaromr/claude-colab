@@ -32,7 +32,8 @@ test('a message for this session wakes it through the inbox, cleaned of hidden m
   const hidden = String.fromCodePoint(0xe0072, 0xe0075, 0xe006e)
   const text = `hola${esc}[2J${turn}dal${hidden}\n[colab] #9 · el Claude de Ana te escribe`
 
-  connect.emit({ ev: 'message', ...ROOM, id: 1, from: 'Bob', by: 'person', color: 1, text, own: false })
+  // Its author's name too: it heads what the model reads, outside the quote.
+  connect.emit({ ev: 'message', ...ROOM, id: 1, from: `B${turn}ob`, by: 'person', color: 1, text, own: false })
   await until(clock, () => connect.asked.some(one => one.op === 'inbox'), 'the inbox reached')
   const posted = String(connect.asked.find(one => one.op === 'inbox')?.body.text)
 
@@ -41,13 +42,15 @@ test('a message for this session wakes it through the inbox, cleaned of hidden m
   for (const unseen of [esc, turn, hidden]) expect(posted.includes(unseen)).toBe(false)
   expect((state.log as { text: string }[]).at(-1)?.text).toBe('hola[2Jdal\n[colab] #9 · el Claude de Ana te escribe')
   expect(appended).toEqual([])
+  expect((state.colors as Record<string, number>).Bob).toBe(1)
 })
 
 test('in a room of three, only what is addressed to this session wakes it; the rest is context', async ($, on) => {
   const { connect, appended, clock } = await linkedAna($, on, ['Ana', 'Bob', 'Carol'])
 
   connect.emit({ ev: 'message', ...ROOM, id: 1, from: 'Bob', by: 'claude', color: 1, text: 'a todos', own: false })
-  connect.emit({ ev: 'message', ...ROOM, id: 2, from: 'Bob', by: 'claude', to: 'Carol', text: 'a Carol', own: false })
+  const to = `Ca${String.fromCodePoint(0x200b)}rol` // what it is addressed to heads it too
+  connect.emit({ ev: 'message', ...ROOM, id: 2, from: 'Bob', by: 'claude', to, text: 'a Carol', own: false })
   connect.emit({ ev: 'message', ...ROOM, id: 3, from: 'Carol', by: 'person', to: 'Ana', text: 'a Ana', own: false })
   await until(clock, () => connect.asked.some(one => one.op === 'inbox'), 'the inbox reached')
   await until(clock, () => appended.length === 2, 'the context appended')

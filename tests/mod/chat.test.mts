@@ -68,6 +68,10 @@ test('a message received becomes a line of the chat: cleaned, by its person unle
   const message = { ...HERE, from: 'Bob', text: 'ho​la', own: false, to: 'Eva' }
   assert.deepEqual(lineOf(message, 3), { ...said(0, { text: 'hola' }), to: 'Eva' })
   assert.deepEqual(lineOf({ ...message, by: 'claude' }, 2), said(0, { text: 'hola', by: 'claude' }))
+  const hidden = { ...message, from: 'B‮ob', label: '1​', to: 'E\u0007va' }
+  assert.deepEqual(lineOf(hidden, 3), lineOf(message, 3), 'who, where and to whom lose them too')
+  const { to, ...toNoOne } = message
+  assert.deepEqual(lineOf(toNoOne, 3), said(0, { text: 'hola' }), `to no one, not to ${to}`)
 })
 
 test('a message loses what could redraw the terminal or hide text, and keeps its tabs and lines', () => {
