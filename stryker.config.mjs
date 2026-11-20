@@ -8,7 +8,7 @@ export default {
     // short by its timeout never cleans up after itself.
     command:
       'mkdir -p .t && TMPDIR="$PWD/.t" LC_ALL=es_ES.UTF-8 NODE_OPTIONS=--import=./tests/offline.mts node --test ' +
-      'tests/args.test.mts tests/hub.test.mts ' +
+      'tests/args.test.mts tests/rooms.test.mts tests/hub.test.mts ' +
       'tests/link.test.mts tests/home.test.mts tests/wire.test.mts tests/protocol.test.mts tests/strings.test.mts ' +
       'tests/mod/addresses.test.mts tests/mod/chat.test.mts tests/mod/linking.test.mts',
   },
