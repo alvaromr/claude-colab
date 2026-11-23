@@ -27,9 +27,11 @@ holds how to work on it, and the design with its reasons.
 - `pnpm test:matrix`: the Node tests on every Node the project supports: the oldest that `engines` takes and the one
   `.node-version` pins, downloaded from nodejs.org and checked against their SHA-256 sums.
 - `pnpm mutation`: mutation testing of what Node tests (Stryker); every surviving mutant is a missing test, or an
-  equivalent one recorded in place with its reason. It mutates only the modules changed since the last run that
-  passed, or whose tests changed, and every module when none passed yet, when what all mutants depend on changed
-  (`scripts/scope.mts`), or with `--full`, about 60 minutes. What it runs, and why, is in `stryker.config.mjs`.
+  equivalent one recorded in place with its reason. It mutates only the modules whose mutants a change since the last
+  run that passed can alter: the change reaches their code, what it imports, or a test that runs them, with its
+  helpers. Config that changes neither the mutants nor how their tests run, and any tool but Stryker and its parser,
+  reach none. Every module, about 60 minutes, only when none passed yet, Stryker or its parser changed, or the config
+  changed how the tests run (`scripts/scope.mts`), or with `--full`. What it runs, and why, is in `stryker.config.mjs`.
 - `pnpm audit:deps`: the audit of the dev dependencies; the plugin itself has none.
 - `pnpm release <x.y.z>`: the release, stopping at the first step that fails. Checks the tree is clean and the tag
   new, runs the gate and the slow checks, then installs the release (the version bumped in `plugin.json`,

@@ -1,38 +1,87 @@
-// What a mutation run mutates (`mutation.mts`), pure: the modules a change touched since the last run that passed, or
-// all of them when nothing passed yet or something every mutant depends on changed. Mutants a change did not touch
-// give the result they gave last time, so running them again proves nothing new.
+// What a mutation run mutates (`mutation.mts`), pure: of the modules mutated, those whose mutants a change since the
+// last run that passed can give another result, and all of them when nothing passed yet, Stryker changed, or its
+// config changed how the tests run. Any other mutant gives the result it gave last time, so running it again proves
+// nothing new.
+import { matchesGlob, posix } from 'node:path'
 
-/**
- * What every mutant depends on: the mutation and test setup, the dependencies (any change to them changes the
- * lockfile), the Node they run on.
- */
-export const SHARED = [
-  'stryker.config.mjs',
-  'pnpm-lock.yaml',
-  'pnpm-workspace.yaml',
-  '.node-version',
-  'tests/offline.mts',
-]
+/** What Stryker is told: what to mutate and how to run the tests, besides keys that change neither. */
+export interface Config {
+  mutate: readonly string[]
+  commandRunner: { command: string }
+  [key: string]: unknown
+}
 
-/**
- * The module a test file tests, by name: `tests/<x>.test.mts` tests the plugin's `cli/<x>.mts`, `tests/mod/<x>.test.*`
- * its `hooks/<x>.*`.
- */
-const testedBy = (test: string) => {
-  const found = /^tests\/(mod\/)?([^/]+)\.test\.[^.]+$/.exec(test)
-  return found && `plugins/colab/${found[1] ? 'hooks' : 'cli'}/${found[2]}.`
+/** A mutation setup: its config, the files it mutates, and the tools that make its mutants (`toolsOf`). */
+export interface Setup {
+  config: Config
+  mutated: readonly string[]
+  tools: readonly string[]
+}
+
+/** The files each file imports, by path from the repository's root. */
+export type Imports = Readonly<Record<string, readonly string[]>>
+
+// Config keys that change neither which mutants exist nor how their tests run; `mutate` counts by the files it takes.
+const UNSEEN = new Set(['mutate', 'concurrency', 'reporters', 'thresholds'])
+// Stryker makes the mutants, from what Babel parses: another version of either may make others.
+const TOOLS = /^ {2}'?((?:@stryker-mutator|@babel)\/[^@'(]+@[^'(:]+)/gm
+const SPECIFIERS = [/\bfrom\s+'([^']+)'/g, /^import\s+'([^']+)'/gm, /\bimport\('([^']+)'\)/g, /\bnew URL\('([^']+)'/g]
+
+/** The files, of `files`, that a pattern of `patterns` takes and no negated one (`!…`) gives back. */
+export const matching = (patterns: readonly string[], files: readonly string[]) =>
+  files.filter(
+    file =>
+      patterns.some(pattern => !pattern.startsWith('!') && matchesGlob(file, pattern)) &&
+      !patterns.some(pattern => pattern.startsWith('!') && matchesGlob(file, pattern.slice(1))),
+  )
+
+/** The Stryker and Babel packages a lockfile's text resolves, by name and version, each once. */
+export const toolsOf = (lock: string) => [...new Set(Array.from(lock.matchAll(TOOLS), found => String(found[1])))]
+
+/** The files that `file`, of text `text`, imports by a relative specifier: static, dynamic, or as a URL. */
+export const importsOf = (file: string, text: string) =>
+  SPECIFIERS.flatMap(pattern => Array.from(text.matchAll(pattern), found => String(found[1])))
+    .filter(specifier => specifier.startsWith('.'))
+    .map(specifier => posix.join(posix.dirname(file), specifier))
+
+/** `files` and every file they import, however deep. */
+function closure(files: readonly string[], imports: Imports) {
+  const reached = new Set<string>()
+  const visit = (file: string) => {
+    if (reached.has(file)) return
+    reached.add(file)
+    for (const imported of imports[file] ?? []) visit(imported)
+  }
+  for (const file of files) visit(file)
+  return reached
 }
 
 /**
- * The files to mutate, of `mutated`, given the files `changed` since the last passing run (`undefined` if none passed);
- * or why the run is full.
+ * The files to mutate, of `now.mutated`, given the files `changed` since the last passing run and its setup (`last`,
+ * `undefined` if none passed); or why every one is.
  */
-export function mutationScope(changed: readonly string[] | undefined, mutated: readonly string[]) {
-  if (changed === undefined) return { full: 'no earlier result' }
-  const shared = changed.find(file => SHARED.includes(file))
-  if (shared !== undefined) return { full: `${shared} changed` }
-  const stems = changed.map(testedBy).filter(stem => stem !== null)
-  return {
-    files: mutated.filter(file => changed.includes(file) || stems.some(stem => file.startsWith(stem))),
+export function mutationScope(
+  now: Setup,
+  imports: Imports,
+  last: { changed: readonly string[]; setup: Setup } | undefined,
+) {
+  if (last === undefined) return { full: 'no earlier result' }
+  if (String(now.tools) !== String(last.setup.tools)) return { full: 'Stryker or its parser changed' }
+  const seen = (config: Config) => JSON.stringify(Object.entries(config).filter(([key]) => !UNSEEN.has(key)))
+  if (seen(now.config) !== seen(last.setup.config)) return { full: 'stryker.config.mjs changes how the tests run' }
+
+  const { command } = now.config.commandRunner
+  const tests = command.match(/\S+\.test\.\w+/g) ?? []
+  const preloaded = Array.from(command.matchAll(/--import=(\S+)/g), found => posix.normalize(String(found[1])))
+  const changed = new Set(last.changed)
+  // A mutant runs its module, what it imports, and every test of the command that reaches it, with what that imports.
+  const reaches = (file: string) => {
+    const reach = closure([file, ...preloaded], imports)
+    for (const test of tests) {
+      const ran = closure([test], imports)
+      if (ran.has(file)) for (const reached of ran) reach.add(reached)
+    }
+    return [...reach].some(reached => changed.has(reached))
   }
+  return { files: now.mutated.filter(file => !last.setup.mutated.includes(file) || reaches(file)) }
 }
