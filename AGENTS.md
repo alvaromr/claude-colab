@@ -185,7 +185,8 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
   channel in `SECURITY.md` lead nowhere, and private vulnerability reporting, which GitHub enables per repository,
   must be turned on in its settings. Until then, the plugin runs from a clone with
   `claude --plugin-dir plugins/colab`. Just before the first push, the owner's decision: the history is squashed into
-  one initial commit, and only then come the first release and the push, whose mutation runs in full.
+  one initial commit, whose author and committer carry a public address (GitHub's `users.noreply.github.com`), never
+  a work or personal email; only then come the first release, `0.1.0`, and the push, whose mutation runs in full.
 
 ## Where things live
 
