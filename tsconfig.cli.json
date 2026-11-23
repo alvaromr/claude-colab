@@ -1,5 +1,6 @@
 {
-  // The CLI, the scripts and the tests Node runs, which strips their types; the mod (tsconfig.json) has no Node.
+  // The CLI, the scripts, the tests Node runs and their config, all of which Node strips the types of; the mod
+  // (tsconfig.json) has no Node.
   "compilerOptions": {
     "target": "es2024",
     "lib": ["es2024"],
@@ -16,5 +17,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["plugins/colab/cli", "scripts", "tests/*.mts", "tests/mod/*.test.mts"]
+  "include": ["plugins/colab/cli", "scripts", "tests/*.mts", "tests/mod/*.test.mts", "vitest.config.mts"]
 }

@@ -1,6 +1,6 @@
-// Runs with `node --test tests/`, as the CLI's: what a message becomes on its way in, and what the chat makes room for.
+// Runs with Vitest, as the CLI's: what a message becomes on its way in, and what the chat makes room for.
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { test } from 'vitest'
 import {
   appended,
   cleaned,

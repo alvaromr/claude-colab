@@ -1,8 +1,8 @@
-// Runs with `node --test tests/`: what serve and connect share, without a link.
+// Runs with Vitest: what serve and connect share, without a link.
 import assert from 'node:assert/strict'
 import { PassThrough } from 'node:stream'
-import { test } from 'node:test'
 import type { PeerCertificate, TLSSocket } from 'node:tls'
+import { test } from 'vitest'
 import { MAX_LINE } from '../plugins/colab/cli/protocol.mts'
 import {
   clientOptions,

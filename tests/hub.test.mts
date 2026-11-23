@@ -1,8 +1,8 @@
-// Runs with `node --test tests/`: the room server, over a real TLS link on a free port of this machine.
+// Runs with Vitest: the room server, over a real TLS link on a free port of this machine.
 import assert from 'node:assert/strict'
 import net, { type AddressInfo } from 'node:net'
-import { after, before, test } from 'node:test'
 import tls from 'node:tls'
+import { afterAll as after, beforeAll as before, test } from 'vitest'
 import { serve } from '../plugins/colab/cli/hub.mts'
 import { DEAD_AFTER, MAX_LINE, MAX_TEXT, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.mts'
 import { clientOptions, newKey, parseKey, readLines, writeLine } from '../plugins/colab/cli/wire.mts'
@@ -145,7 +145,7 @@ test('past the connections one address may hold at once, the next is cut before 
   })
   const opened: net.Socket[] = []
   // Ended even when the test fails halfway: the server closes only once they are.
-  t.after(() => {
+  t.onTestFinished(() => {
     for (const socket of opened) socket.destroy()
     capped.close()
   })
@@ -180,7 +180,7 @@ test('a connection must say hello first, and soon: anything else first, or nothi
 
   const greeted = await client('Saludado')
   const pings = setInterval(() => void greeted.ask('ping'), PING / 2)
-  t.after(() => clearInterval(pings))
+  t.onTestFinished(() => clearInterval(pings))
   assert.equal(await closesWithin(greeted.socket, HELLO_WAIT * 2), false, 'one that said it stays')
   greeted.close()
 })
@@ -443,7 +443,7 @@ test('a connection that does not read what it is sent is dropped before it fills
   const at = (patient.address() as AddressInfo).port
   const ana = await client('AnaB', { at })
   const mute = await client('MudoB', { at })
-  t.after(() => {
+  t.onTestFinished(() => {
     for (const one of [ana, mute]) one.close()
     patient.close()
   })
@@ -461,7 +461,7 @@ test('a connection silent past its pings is dropped, and its name is free again'
   const silent = await client('Callado')
   const pinging = await client('Activo')
   const pings = setInterval(() => void pinging.ask('ping'), PING / 2)
-  t.after(() => clearInterval(pings))
+  t.onTestFinished(() => clearInterval(pings))
 
   assert.equal(await closesWithin(silent.socket, (DEAD_AFTER + 2) * PING), true, 'the silent one is cut')
   assert.equal(pinging.socket.destroyed, false, 'the one that pings stays')

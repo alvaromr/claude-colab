@@ -1,6 +1,6 @@
-// Runs with `node --test tests/`: which files a mutation run mutates, from what changed since the last one that passed.
+// Runs with Vitest: which files a mutation run mutates, from what changed since the last one that passed.
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { test } from 'vitest'
 import { importsOf, matching, mutationScope, toolsOf, type Setup } from '../scripts/scope.mts'
 
 const [protocol, wire, rooms, hub, chat] = [
@@ -21,15 +21,14 @@ const imports = {
   'tests/mod/chat.test.mts': [chat],
   'tests/helper.mts': [],
   'tests/offline.mts': [],
+  'vitest.config.mts': ['tests/offline.mts'],
 }
 const config = {
   mutate: ['plugins/colab/cli/**/*.mts', 'plugins/colab/hooks/chat.ts'],
-  commandRunner: {
-    command:
-      'NODE_OPTIONS=--import=./tests/offline.mts node --test tests/hub.test.mts tests/rooms.test.mts tests/mod/chat.test.mts',
-  },
+  testRunner: 'vitest',
+  vitest: { configFile: 'vitest.config.mts' },
+  testFiles: ['tests/hub.test.mts', 'tests/rooms.test.mts', 'tests/mod/*.test.mts'],
   concurrency: 3,
-  timeoutMS: 5000,
   reporters: ['progress'],
   thresholds: { break: 100 },
 }
@@ -65,8 +64,8 @@ test('a changed module re-runs the mutants of every module whose code or tests r
   assert.deepEqual(scope([chat]), { files: [protocol, chat] }, 'chat’s tests run protocol too')
 })
 
-test('with no test named in its command, a mutant runs its module alone, and what that imports', () => {
-  const bare = { ...now, config: { ...config, commandRunner: { command: 'node --test' } } }
+test('with no test file named, a mutant runs its module alone, and what that imports', () => {
+  const bare = { ...now, config: { ...config, testFiles: [] } }
   const withGone = { ...imports, [hub]: [wire, rooms, 'plugins/colab/cli/gone.mts'] }
   assert.deepEqual(mutationScope(bare, withGone, { changed: [rooms, 'tests/hub.test.mts'], setup: bare }), {
     files: [rooms, hub],
@@ -81,6 +80,7 @@ test('a changed test re-runs the mutants of every module it runs', () => {
 test('a shared test helper re-runs the mutants its tests run; one loaded before every test, all of them', () => {
   assert.deepEqual(scope(['tests/helper.mts']), { files: [protocol, wire, rooms, hub] })
   assert.deepEqual(scope(['tests/offline.mts']), { files: [protocol, wire, rooms, hub, chat] })
+  assert.deepEqual(scope(['vitest.config.mts']), { files: [protocol, wire, rooms, hub, chat] }, 'and the tests’ config')
 })
 
 test('a module mutated now but not last time is mutated, whatever changed', () => {
@@ -92,7 +92,8 @@ test('config that changes neither the mutants nor how their tests run re-runs no
   assert.deepEqual(scope(['stryker.config.mjs'], unseen), { files: [] })
   for (const before of [
     { ...config, timeoutMS: 9000 },
-    { ...config, commandRunner: { command: 'node --test tests/hub.test.mts' } },
+    { ...config, testFiles: ['tests/hub.test.mts'] },
+    { ...config, vitest: { configFile: 'other.config.mts' } },
   ]) {
     assert.deepEqual(scope(['stryker.config.mjs'], { config: before }), {
       full: 'stryker.config.mjs changes how the tests run',

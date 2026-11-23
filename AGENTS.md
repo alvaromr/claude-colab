@@ -20,13 +20,16 @@ holds how to work on it, and the design with its reasons.
 - `pnpm check:slow`: the checks too slow for each commit, which a push and a release run: the audit, the Node matrix
   and mutation.
 - `pnpm fix`: formats, applies the lint fixes, and runs the gate.
-- `pnpm test:node`: the tests Node runs, those of `cli/` and of the mod's pure modules, with coverage, and with no
-  network but loopback (`tests/offline.mts`, which they and every process they start load). `pnpm test:mod`: the
+- `pnpm test:node`: the tests Node runs, those of `cli/` and of the mod's pure modules, by Vitest with V8 coverage,
+  the processes they start included, and with no network but loopback (`tests/offline.mts`, which they and every
+  process they start load). Vitest imports the files as Node does, not through Vite: the processes the tests start
+  run the same files, and their coverage adds up only if both read them alike. `pnpm test:mod`: the
   mod's tests in the engine (`claude plugin test`), on a copy of the plugin with `tests/mod` inside: the engine runs
   only tests in the plugin's folder, and follows no link out of it.
 - `pnpm test:matrix`: the Node tests on every Node the project supports: the oldest that `engines` takes and the one
   `.node-version` pins, downloaded from nodejs.org and checked against their SHA-256 sums.
-- `pnpm mutation`: mutation testing of what Node tests (Stryker); every surviving mutant is a missing test, or an
+- `pnpm mutation`: mutation testing of what Node tests (Stryker, with its Vitest runner, which runs each mutant against
+  only the tests that cover it); every surviving mutant is a missing test, or an
   equivalent one recorded in place with its reason. It mutates only the modules whose mutants a change since the last
   run that passed can alter: the change reaches their code, what it imports, or a test that runs them, with its
   helpers. Config that changes neither the mutants nor how their tests run, and any tool but Stryker and its parser,
@@ -64,8 +67,8 @@ connectivity between machines is not the mod's business.
 - `cli/strings.mts` and `hooks/strings.ts`: what each half tells people and the model, in Spanish and English. The
   language is the locale's: the first of `LC_ALL`, `LC_MESSAGES` and `LANG` that is set, as POSIX reads it, so colab
   speaks as the machine's commands do. The mod reads it once, at `session.start`: a pane drawn before it starts is in
-  English, the language of no locale. The CLI's tests run in Spanish (`LC_ALL`, set by `test:node` and the mutation
-  command), and those of the texts check every one in both; the mod's run in English, with one per variable for the
+  English, the language of no locale. The CLI's tests run in Spanish (`LC_ALL`, set by `vitest.config.mts`), and
+  those of the texts check every one in both; the mod's run in English, with one per variable for the
   choice.
 - `cli/wire.mts`: TLS with the pre-shared key, invitations, and JSON lines.
 - `cli/rooms.mts`: the rules of a room server, pure; `cli/hub.mts`: `serve`, the sockets and timers around them.
@@ -194,4 +197,4 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
 - `scripts/`: the repo guard, the mod's tests on a copy of the plugin (`test-mod.mts`), and the release
   (`release.mts`, with what it changes in the files in `bump.mts`).
 - In the plugin, `cli/protocol.mts`: the values both halves agree on. `types/index.d.ts`: the mod's state.
-- `stryker.config.mjs`, `biome.jsonc`, `.prettierrc.json`, `tsconfig.json`, `tsconfig.cli.json`: the gate's tools.
+- `vitest.config.mts`, `stryker.config.mjs`, `biome.jsonc`, `.prettierrc.json`, `tsconfig.json`, `tsconfig.cli.json`: the gate's tools.

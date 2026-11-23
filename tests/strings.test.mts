@@ -1,6 +1,6 @@
-// Runs with `node --test tests/`: what the CLI tells people, in each language.
+// Runs with Vitest: what the CLI tells people, in each language.
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { test } from 'vitest'
 import { languageOf } from '../plugins/colab/cli/protocol.mts'
 import { TEXT, TEXTS } from '../plugins/colab/cli/strings.mts'
 

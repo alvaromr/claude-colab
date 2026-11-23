@@ -1,6 +1,6 @@
-// Runs with `node --test tests/`, as the CLI's: what connect and the CLI say, and what the mod makes of it.
+// Runs with Vitest, as the CLI's: what connect and the CLI say, and what the mod makes of it.
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { test } from 'vitest'
 import { DEAD_AFTER, PING_EVERY } from '../../plugins/colab/cli/protocol.mts'
 import {
   answerOf,

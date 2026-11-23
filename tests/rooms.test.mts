@@ -1,7 +1,7 @@
-// Runs with `node --test tests/`: the rules of a room server, with no sockets. Each link is a name, and what the rules
-// deliver is kept per link; codes and the time are the test's own. `hub.test.mts` tests them through the real server.
+// Runs with Vitest: the rules of a room server, with no sockets. Each link is a name, and what the rules deliver is
+// kept per link; codes and the time are the test's own. `hub.test.mts` tests them through the real server.
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { test } from 'vitest'
 import type { Value } from '../plugins/colab/cli/protocol.mts'
 import { type Client, type Result, roomsOf } from '../plugins/colab/cli/rooms.mts'
 

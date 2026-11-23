@@ -4,10 +4,14 @@
 // nothing new.
 import { matchesGlob, posix } from 'node:path'
 
-/** What Stryker is told: what to mutate and how to run the tests, besides keys that change neither. */
+/**
+ * What Stryker is told: what to mutate, the test files it runs and Vitest's config, which names what every test
+ * loads first; besides keys that change neither.
+ */
 export interface Config {
   mutate: readonly string[]
-  commandRunner: { command: string }
+  testFiles: readonly string[]
+  vitest: { configFile: string }
   [key: string]: unknown
 }
 
@@ -70,13 +74,12 @@ export function mutationScope(
   const seen = (config: Config) => JSON.stringify(Object.entries(config).filter(([key]) => !UNSEEN.has(key)))
   if (seen(now.config) !== seen(last.setup.config)) return { full: 'stryker.config.mjs changes how the tests run' }
 
-  const { command } = now.config.commandRunner
-  const tests = command.match(/\S+\.test\.\w+/g) ?? []
-  const preloaded = Array.from(command.matchAll(/--import=(\S+)/g), found => posix.normalize(String(found[1])))
+  const tests = matching(now.config.testFiles, Object.keys(imports))
   const changed = new Set(last.changed)
-  // A mutant runs its module, what it imports, and every test of the command that reaches it, with what that imports.
+  // A mutant runs its module, what it imports, Vitest's config with what it loads before every test, and every test
+  // file that reaches it, with what that imports.
   const reaches = (file: string) => {
-    const reach = closure([file, ...preloaded], imports)
+    const reach = closure([file, now.config.vitest.configFile], imports)
     for (const test of tests) {
       const ran = closure([test], imports)
       if (ran.has(file)) for (const reached of ran) reach.add(reached)

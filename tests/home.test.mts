@@ -1,11 +1,11 @@
-// Runs with `node --test tests/`: the keys this machine keeps, in a home of the test's own.
+// Runs with Vitest: the keys this machine keeps, in a home of the test's own.
 import assert from 'node:assert/strict'
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process'
 import { chmodSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { after, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { afterAll as after, test } from 'vitest'
 import { newKey } from '../plugins/colab/cli/wire.mts'
 
 const HOME_MODULE = fileURLToPath(new URL('../plugins/colab/cli/home.mts', import.meta.url))
@@ -131,7 +131,9 @@ test('a server with no key saved for it cannot be linked to, and the message say
 })
 
 test('this machine’s server opens with its saved key, else a new one, and never with one of the environment', t => {
-  t.after(() => delete process.env.CLAUDE_COLAB_KEY)
+  t.onTestFinished(() => {
+    delete process.env.CLAUDE_COLAB_KEY
+  })
   const fresh = serverKey(4900, false)
   assert.match(fresh, /^[\w-]{43}$/, 'none saved: a new one')
   saveKey('127.0.0.1', 4900, fresh)

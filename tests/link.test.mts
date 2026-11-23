@@ -1,4 +1,4 @@
-// Runs with `node --test tests/`: connect, as its own process, against a stand-in server that does as each test says.
+// Runs with Vitest: connect, as its own process, against a stand-in server that does as each test says.
 import assert from 'node:assert/strict'
 import { type ChildProcess, spawn } from 'node:child_process'
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
@@ -7,10 +7,10 @@ import { syncBuiltinESMExports } from 'node:module'
 import net, { type AddressInfo } from 'node:net'
 import os, { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { after, test } from 'node:test'
 import tls from 'node:tls'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
+import { afterAll as after, test } from 'vitest'
 import { networkAddresses, reachableAt } from '../plugins/colab/cli/link.mts'
 import { DEAD_AFTER, MAX_LINE, NAME_RULE, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.mts'
 import { newKey, parseInvitation, parseKey, readLines, serverOptions, writeLine } from '../plugins/colab/cli/wire.mts'
@@ -421,7 +421,7 @@ test('others reach this machine’s own server at its network addresses, and any
   const real = os.networkInterfaces
   os.networkInterfaces = () => INTERFACES as unknown as ReturnType<typeof real> // what networkAddresses reads
   syncBuiltinESMExports()
-  t.after(() => {
+  t.onTestFinished(() => {
     os.networkInterfaces = real
     syncBuiltinESMExports()
   })

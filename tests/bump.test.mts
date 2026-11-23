@@ -1,6 +1,6 @@
-// Runs with `node --test tests/`: what a release changes in the files that hold its version and its changes.
+// Runs with Vitest: what a release changes in the files that hold its version and its changes.
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { test } from 'vitest'
 import { bumpManifest, nextVersion, releaseChangelog, tagOf } from '../scripts/bump.mts'
 
 // The manifest's own version, while no tag holds it, is the one being prepared: the tag's check turns it down after.

@@ -1,6 +1,6 @@
-// Runs with `node --test tests/`: what the server, connect and the mod agree on.
+// Runs with Vitest: what the server, connect and the mod agree on.
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { test } from 'vitest'
 import {
   ANY_HOST,
   INVITATION_PREFIX,

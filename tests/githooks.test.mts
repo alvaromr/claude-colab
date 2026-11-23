@@ -1,12 +1,12 @@
-// Runs with `node --test tests/`: the git hooks that keep tags in place and unfinished commits off a remote, and what
+// Runs with Vitest: the git hooks that keep tags in place and unfinished commits off a remote, and what
 // the hooks before a commit and a push run, in repositories of the test's own.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { after, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { afterAll as after, test } from 'vitest'
 
 const dir = mkdtempSync(join(tmpdir(), 'colab-githooks-'))
 after(() => rmSync(dir, { recursive: true, force: true }))

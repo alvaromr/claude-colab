@@ -1,6 +1,6 @@
-// Runs with `node --test tests/`: what the CLI makes of its command line.
+// Runs with Vitest: what the CLI makes of its command line.
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { test } from 'vitest'
 import {
   addressOf,
   MAIN_HELP,

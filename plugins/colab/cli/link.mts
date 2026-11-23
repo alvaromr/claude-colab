@@ -200,9 +200,9 @@ export function connect({
   server.on('error', (err: NodeJS.ErrnoException) => {
     // Without a code: this client's own refusal of a server that shows a certificate, which a test cannot provoke,
     // since Node checks only one its trusted authorities signed.
-    /* node:coverage disable */
+    /* v8 ignore start */
     lastError = err.code ?? err.message
-    /* node:coverage enable */
+    /* v8 ignore stop */
   })
   server.on('close', () => {
     emit({ ev: 'disconnected', ...(lastError ? { error: lastError } : {}) })

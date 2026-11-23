@@ -1,13 +1,13 @@
-// Runs with `node --test tests/`: the claude-colab command end to end, as people run it, in a home of the test's own.
+// Runs with Vitest: the claude-colab command end to end, as people run it, in a home of the test's own.
 import assert from 'node:assert/strict'
 import { type ChildProcess, execFile, spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import net, { type AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { after, test } from 'node:test'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
+import { afterAll as after, test } from 'vitest'
 import { invitation, newKey } from '../plugins/colab/cli/wire.mts'
 
 type Line = Record<string, unknown>

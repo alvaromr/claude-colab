@@ -1,6 +1,6 @@
-// Runs with `node --test tests/`, as the CLI's: which addresses reach which server.
+// Runs with Vitest, as the CLI's: which addresses reach which server.
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { test } from 'vitest'
 import {
   isOwn,
   isSameRoom,

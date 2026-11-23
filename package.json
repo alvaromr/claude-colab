@@ -18,7 +18,7 @@
     "lint": "biome lint --error-on-warnings",
     "lint:sh": "command -v shellcheck >/dev/null || { echo 'No shellcheck: install it apart (Homebrew: brew install shellcheck), since the gate lints the git hooks with it' >&2; exit 1; } && shellcheck .githooks/*",
     "typecheck": "test -f plugins/colab/.claude-plugin/types/tsconfig.json || { echo 'No engine types yet: run claude --plugin-dir plugins/colab once, which writes them to plugins/colab/.claude-plugin/types/' >&2; exit 1; } && tsc -p . && tsc -p tsconfig.cli.json",
-    "test:node": "LC_ALL=es_ES.UTF-8 NODE_OPTIONS=--import=./tests/offline.mts node --test --test-coverage-exclude='tests/**' --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 'tests/**/*.test.mts'",
+    "test:node": "vitest run --coverage",
     "test:matrix": "node scripts/node-matrix.mts",
     "test:mod": "node scripts/test-mod.mts",
     "mutation": "node scripts/mutation.mts",
@@ -29,8 +29,11 @@
   "devDependencies": {
     "@biomejs/biome": "2.6.7",
     "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/vitest-runner": "10.1.1",
     "@types/node": "26.6.6",
+    "@vitest/coverage-v8": "5.1.1",
     "prettier": "3.10.1",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "5.1.1"
   }
 }
