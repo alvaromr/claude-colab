@@ -169,7 +169,8 @@ them. Their reasons:
 - **English** for code, comments, docs and commits; what people and the model read is in both languages, in the
   strings file of its half: a text in one language alone is a bug.
 - **Nothing personal or secret versioned:** no company, person, IP or local path; documentation addresses only. The
-  only exceptions are those of Requirements, 1.
+  only exceptions are those of Requirements, 1. A commit's author and committer address is a public one (GitHub's
+  `users.noreply.github.com`), never a work or personal email: the history is public too.
 - **Conventional Commits,** checked by the `commit-msg` hook.
 - **One change, everything coherent:** code, tests, docs and help move together.
 
@@ -179,15 +180,8 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
 
 ## Known limitations
 
-- Tested between sessions on one machine; next, between two machines: first `ping` and a test TCP port, then a round
-  trip. If they cannot reach each other, another network (such as Tailscale) does it; the tool does not change.
-- **Pending until `alvaromr/claude-colab` is published on GitHub:** the install line in `README.md` and the reporting
-  channel in `SECURITY.md` lead nowhere, and private vulnerability reporting, which GitHub enables per repository,
-  must be turned on in its settings. Until then, the plugin runs from a clone with
-  `claude --plugin-dir plugins/colab`. The history is published whole, the owner's decision; every commit, those to
-  come included, has the owner's public identity as author and committer, the one this clone's
-  `git config --local user.name` and `user.email` hold (a GitHub `users.noreply.github.com` address), never a work or
-  personal email. The first release, `0.1.0`, comes before the first push.
+- Tested between sessions on one machine only, not between two. Two machines that cannot reach each other need
+  another network (such as Tailscale); the tool does not change.
 
 ## Where things live
 
