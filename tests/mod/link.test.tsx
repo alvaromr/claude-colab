@@ -9,6 +9,7 @@ import {
   SERVER_UNKNOWN,
   seed,
   session,
+  startable,
   statusLines,
   toasts,
   until,
@@ -25,7 +26,7 @@ test('opening a server here stops at a check of this machine’s server that fai
     ran.push(String(e.argv[2]))
     return { value: { ...NO_NODE, isStdoutTruncated: false, isStderrTruncated: false } }
   })
-  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' }) // the first drawing starts the mod
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await clock.settle()
   ran.length = 0
 
@@ -62,7 +63,9 @@ test('after a reload, a link connect cannot even start is let go, and the person
   const shown = statusLines(on)
   const state: Record<string, unknown> = { ...fresh(), want: WANTED }
   seed(on, state)
-  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' }) // the first drawing starts the mod
+  const reloaded = startable($, on)
+  await reloaded.start()
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await clock.settle()
 
   await clock.advance(1_000)

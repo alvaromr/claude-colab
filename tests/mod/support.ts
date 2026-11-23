@@ -190,6 +190,27 @@ export async function linkedAna(
 }
 
 /**
+ * What the engine answers the mod's start, with the commands it registers kept in `registered`, and `start`, which
+ * starts the session as the engine does at each load of the mod, a reload included. Called before the test's first
+ * call on `$`, as hooks must be.
+ */
+export function startable($: Parameters<TestBody>[0], on: Parameters<TestBody>[1]) {
+  const registered: string[] = []
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('command.register', (_, e) => {
+    registered.push(e.name)
+
+    return { value: { command: e.name } }
+  })
+  on('tool.register', (_, e) => ({ value: { tool: e.name } }))
+
+  return {
+    registered,
+    start: () => $.session.start({ cwd: '/home/ana/project', surface: 'terminal', isInteractive: true }),
+  }
+}
+
+/**
  * A fresh session with an inbox, its connect played by the test and giving `answers` too, and what it appends to the
  * conversation kept. `cli` is what the CLI answers, which the test may change.
  */

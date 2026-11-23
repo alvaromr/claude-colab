@@ -212,7 +212,7 @@ test('a press of the pane whose work breaks says so in a toast', async ($, on) =
   const told = toasts(on)
   statusLines(on)
   // Nothing answers process.run: running the CLI throws.
-  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' }) // the first drawing starts the mod
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await clock.settle()
 
   await ui.press({ key: 'host' })

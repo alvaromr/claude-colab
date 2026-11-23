@@ -5,11 +5,8 @@ import { checkServer } from './server.ts'
 import { type Engine, speak, T, unattended, unlinked, updateKnown, updateLink, updateSetup } from './state.ts'
 import { registerTools } from './tools.ts'
 
-let hasStarted = false
-
-/** Run by session.start, and by the first drawing where a resumed session drew before session.start reached it. */
+/** Run by session.start, which the engine fires at each load of the mod, a reload included. */
 export async function start($: Engine) {
-  hasStarted = true
   speak(
     languageOf({
       LC_ALL: await $.env.get('LC_ALL'),
@@ -36,13 +33,4 @@ export async function start($: Engine) {
   await resume($)
   await $.command.register({ name: 'colab', description: T.command, argumentHint: T.commandHint })
   await registerTools($)
-}
-
-/** For a drawing, which writes no state: a start it finds missing runs on a timer of its own. */
-export function ensureStarted($: Engine) {
-  if (hasStarted) return
-  hasStarted = true
-  const starting = () => start($).then(() => undefined)
-
-  $.clock.after(0, () => unattended($, T.noStart, starting()))
 }

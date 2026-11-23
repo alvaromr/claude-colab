@@ -8,7 +8,6 @@ import { copyInvitation, create, leave, rejoinRecent } from './rooms.ts'
 import { isOwn, isSameServer } from './addresses.ts'
 import { colorOf, farthestBack, rowsOf } from './chat.ts'
 import { closeServer, machine } from './server.ts'
-import { ensureStarted } from './session.ts'
 import {
   type Answer,
   type Engine,
@@ -407,7 +406,7 @@ async function chatShown(
   return { chat: said.slice(Math.max(0, said.length - back - CHAT_DRAWN), said.length - back), back, reach }
 }
 
-/** The pane's hooks: its drawing, which first makes sure the session started, and its chat's scrolling. */
+/** The pane's hooks: its drawing and its chat's scrolling. */
 export function onPane(on: On) {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     if (e.surface === 'mobile') {
@@ -415,7 +414,6 @@ export function onPane(on: On) {
 
       return <Text dimColor>{T.mobile}</Text>
     }
-    ensureStarted($)
     const parts = await partsOf($, e)
     const current = await readLink($)
 

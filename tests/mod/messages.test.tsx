@@ -1,6 +1,6 @@
 import { expect, mock, test } from 'claude-code/testing'
 
-import { fakeConnect, fresh, linkedAna, PANE, ROOM, seed, until, WANTED } from './support.ts'
+import { fakeConnect, fresh, linkedAna, PANE, ROOM, seed, startable, until, WANTED } from './support.ts'
 
 test('after a reload, what is said waits for the way back into the room instead of failing at once', async ($, on) => {
   const clock = mock.clock(on)
@@ -8,7 +8,9 @@ test('after a reload, what is said waits for the way back into the room instead 
   mock.env(on, { CLAUDE_CODE_MESSAGING_SOCKET: '/tmp/inbox.sock', HOME: '/home/ana' })
   fakeConnect(on) // started again, it never hears from the server: nothing brings the session back
   seed(on, { ...fresh(), want: WANTED })
-  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' }) // the first drawing starts the mod
+  const session = startable($, on)
+  await session.start()
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await clock.settle()
 
   let isAnswered = false
