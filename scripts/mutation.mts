@@ -4,7 +4,7 @@
 // commit holds what it tested.
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 import { MUTATION_TESTS } from '../vitest.config.mts'
@@ -16,7 +16,8 @@ const git = (...args: string[]) => execFileSync('git', args, { cwd: ROOT, encodi
 const lines = (text: string) => text.split('\n').filter(line => line !== '')
 
 const { values } = parseArgs({ options: { full: { type: 'boolean' } } })
-const record = join(ROOT, git('rev-parse', '--git-path', 'colab-mutation').trim())
+// Relative in a repository's own checkout, absolute in a worktree of it.
+const record = resolve(ROOT, git('rev-parse', '--git-path', 'colab-mutation').trim())
 const files = lines(git('ls-files', '--cached', '--others', '--exclude-standard')).filter(file =>
   existsSync(join(ROOT, file)),
 )
