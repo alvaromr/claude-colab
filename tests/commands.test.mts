@@ -236,6 +236,11 @@ test('each request goes to the local connect, by its socket or the default one, 
   assert.deepEqual(refused.answer(), { ok: false, error: 'fuera' })
   assert.equal((await run(['rooms'], { env: { CLAUDE_COLAB_SOCKET: connect.socket } })).code, 0)
   assert.equal(connect.asked.length, requests.length + 2, 'the default socket is the one the environment names')
+
+  // Long enough to come in many pieces, with a character of two bytes split across some of them.
+  const text = `a${'ñ'.repeat(200_000)}`
+  const long = await standIn(() => ({ ok: true, text }))
+  assert.deepEqual((await run(['rooms', '--socket', long.socket])).answer(), { ok: true, text })
 })
 
 test('a request that reaches no connect says why: none there, none listening, or another failure as it came', async () => {

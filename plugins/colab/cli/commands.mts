@@ -111,8 +111,8 @@ export async function main(host: Host) {
         { socketPath, path: `/${op}`, method: 'POST', headers: { 'content-type': 'application/json' } },
         res => {
           let body = ''
-          // Stryker disable next-line StringLiteral: Node reads an empty encoding as utf8
-          res.setEncoding('utf8')
+          // Stryker disable next-line StringLiteral: Node reads an empty encoding as utf8 too
+          res.setEncoding('utf8') // a character split across two pieces is joined whole
           res.on('data', chunk => (body += chunk))
           res.on('end', () => {
             const result = JSON.parse(body)
