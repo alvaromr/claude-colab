@@ -18,7 +18,7 @@ import {
   type Values,
 } from './args.mts'
 import {
-  DEFAULT_SOCKET,
+  defaultSocket,
   HOME,
   loadKey,
   markServer,
@@ -37,6 +37,7 @@ import { ANY_HOST, isName, LOOPBACK, NAME_LENGTH, type Value } from './protocol.
 import { type Defaults, TEXT } from './strings.mts'
 import { parseInvitation, parseKey } from './wire.mts'
 
+const DEFAULT_SOCKET = defaultSocket(process.env)
 const SOCKET_OPTION = { socket: { type: 'string', default: DEFAULT_SOCKET } } as const
 
 type Command = { options: Options; positionals: number } & (

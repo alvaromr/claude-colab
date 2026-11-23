@@ -1,26 +1,22 @@
 // Runs with Vitest: the keys this machine keeps, in a home of the test's own.
 import assert from 'node:assert/strict'
-import { type ChildProcess, spawn, spawnSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import { chmodSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { afterAll as after, test } from 'vitest'
 import { newKey } from '../plugins/colab/cli/wire.mts'
 import { fakeProcess } from './host.mts'
 
-const HOME_MODULE = fileURLToPath(new URL('../plugins/colab/cli/home.mts', import.meta.url))
 const home = mkdtempSync(join(tmpdir(), 'colab-home-'))
-const children: ChildProcess[] = []
 after(() => {
-  for (const child of children) child.kill('SIGKILL')
   rmSync(home, { recursive: true, force: true })
 })
 process.env.HOME = home
 delete process.env.CLAUDE_COLAB_KEY
 delete process.env.CLAUDE_COLAB_SOCKET
 const {
-  DEFAULT_SOCKET,
+  defaultSocket,
   HOME,
   loadKey,
   markServer,
@@ -38,43 +34,11 @@ const SERVER = join(HOME, 'server.json')
 const fileOf = (host: string, port: number) => join(keys, encodeURIComponent(`${host}:${port}`))
 const isThere = (path: string) => lstatSync(path, { throwIfNoEntry: false }) !== undefined
 
-/** Imports home.mts in a process of its own, with this test's home, and runs `script` there. */
-function inChild(script: string, env: Record<string, string> = {}) {
-  const child = spawn(
-    process.execPath,
-    ['--input-type=module', '-e', `import * as home from ${JSON.stringify(HOME_MODULE)}\n${script}`],
-    { env: { ...process.env, ...env } },
-  )
-  children.push(child)
-  let out = ''
-  let complaint = ''
-  child.stdout.setEncoding('utf8')
-  child.stdout.on('data', chunk => {
-    out += chunk
-  })
-  child.stderr.setEncoding('utf8')
-  child.stderr.on('data', chunk => {
-    complaint += chunk
-  })
-  const ended = new Promise<[number | null, NodeJS.Signals | null]>(resolve =>
-    child.once('exit', (code, signal) => resolve([code, signal])),
-  )
-  const said = async (what: string) => {
-    for (const end = Date.now() + 5_000; Date.now() < end; await new Promise(resolve => setTimeout(resolve, 20))) {
-      if (out.includes(what)) return
-    }
-    assert.fail(`no dijo ${what}: ${out}`)
-  }
-  return { child, ended, said, output: () => out, complaint: () => complaint }
-}
-
-test('its files live in a folder of the home, the local socket included unless CLAUDE_COLAB_SOCKET says another', async () => {
+test('its files live in a folder of the home, the local socket included unless CLAUDE_COLAB_SOCKET says another', () => {
   assert.equal(HOME, join(home, '.claude-colab'))
   assert.equal(SERVER_LOG, join(HOME, 'server.log'))
-  assert.equal(DEFAULT_SOCKET, join(HOME, 'colab.sock'))
-  const told = inChild('process.stdout.write(home.DEFAULT_SOCKET)', { CLAUDE_COLAB_SOCKET: join(home, 'otro.sock') })
-  await told.ended
-  assert.equal(told.output(), join(home, 'otro.sock'))
+  assert.equal(defaultSocket({}), join(HOME, 'colab.sock'))
+  assert.equal(defaultSocket({ CLAUDE_COLAB_SOCKET: join(home, 'otro.sock') }), join(home, 'otro.sock'))
 })
 
 test('a socket the system turns down for its path’s length says so; any other failure stays as it came', () => {

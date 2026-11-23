@@ -8,7 +8,9 @@ import { TEXT } from './strings.mts'
 import { newKey, parseKey } from './wire.mts'
 
 export const HOME = join(homedir(), '.claude-colab')
-export const DEFAULT_SOCKET = process.env.CLAUDE_COLAB_SOCKET ?? join(HOME, 'colab.sock')
+/** The local socket a command uses when it is told none: the one `env` names, or the home's. */
+export const defaultSocket = (env: Record<string, string | undefined>) =>
+  env.CLAUDE_COLAB_SOCKET ?? join(HOME, 'colab.sock')
 const KEYS = join(HOME, 'keys')
 const ME = userInfo().uid
 
