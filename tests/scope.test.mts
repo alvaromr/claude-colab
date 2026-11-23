@@ -100,24 +100,35 @@ test('config that changes neither the mutants nor how their tests run re-runs no
   }
 })
 
-test('a new version of Stryker or of the parser it mutates with re-runs all; of any other package, nothing', () => {
-  assert.deepEqual(scope(['pnpm-lock.yaml'], { tools: ['@stryker-mutator/core@10.1.0'] }), {
-    full: 'Stryker or its parser changed',
-  })
+test('a new version of Stryker, of the parser it mutates with or of the test runner re-runs all; of any other package, nothing', () => {
+  for (const tools of [['@stryker-mutator/core@10.1.0'], ['@stryker-mutator/core@10.1.1', 'vitest@5.1.0']]) {
+    assert.deepEqual(scope(['pnpm-lock.yaml'], { tools }), { full: 'Stryker, its parser or the test runner changed' })
+  }
   assert.deepEqual(scope(['pnpm-lock.yaml']), { files: [] })
 })
 
-test('the tools of a lockfile are its Stryker and Babel packages, each once, by version', () => {
+test('the tools of a lockfile are its Stryker, Babel and Vitest packages, each once, by version', () => {
   const lock = [
     'packages:',
     "  '@babel/parser@7.28.5':",
     "  '@stryker-mutator/core@10.1.1':",
+    "  '@vitest/coverage-v8@5.1.1':",
     '  prettier@3.10.1:',
+    '  vite@8.3.8:',
+    '  vitest@5.1.1:',
     'snapshots:',
     "  '@stryker-mutator/core@10.1.1(@types/node@26.6.6)':",
     "      '@stryker-mutator/api': 10.1.1",
+    "  '@vitest/coverage-v8@5.1.1(vitest@5.1.1)':",
+    '  vitest@5.1.1(@types/node@26.6.6):',
+    '      vitest: 5.1.1',
   ].join('\n')
-  assert.deepEqual(toolsOf(lock), ['@babel/parser@7.28.5', '@stryker-mutator/core@10.1.1'])
+  assert.deepEqual(toolsOf(lock), [
+    '@babel/parser@7.28.5',
+    '@stryker-mutator/core@10.1.1',
+    '@vitest/coverage-v8@5.1.1',
+    'vitest@5.1.1',
+  ])
 })
 
 test('a file imports the files its relative specifiers name, static, dynamic or by URL; no package', () => {

@@ -1,6 +1,6 @@
 // What a mutation run mutates (`mutation.mts`), pure: of the modules mutated, those whose mutants a change since the
-// last run that passed can give another result, and all of them when nothing passed yet, Stryker changed, or its
-// config changed how the tests run. Any other mutant gives the result it gave last time, so running it again proves
+// last run that passed can give another result, and all of them when nothing passed yet, Stryker or the test runner
+// changed, or its config changed how the tests run. Any other mutant gives the result it gave last time, so running it again proves
 // nothing new.
 import { matchesGlob, posix } from 'node:path'
 
@@ -14,7 +14,7 @@ export interface Config {
   [key: string]: unknown
 }
 
-/** A mutation setup: its config, the files it mutates, and the tools that make its mutants (`toolsOf`). */
+/** A mutation setup: its config, the files it mutates, and the tools that make and run its mutants (`toolsOf`). */
 export interface Setup {
   config: Config
   mutated: readonly string[]
@@ -26,8 +26,9 @@ export type Imports = Readonly<Record<string, readonly string[]>>
 
 // Config keys that change neither which mutants exist nor how their tests run; `mutate` counts by the files it takes.
 const UNSEEN = new Set(['mutate', 'concurrency', 'reporters', 'thresholds'])
-// Stryker makes the mutants, from what Babel parses: another version of either may make others.
-const TOOLS = /^ {2}'?((?:@stryker-mutator|@babel)\/[^@'(]+@[^'(:]+)/gm
+// Stryker makes the mutants, from what Babel parses, and Vitest runs their tests, which every test imports: another
+// version of any of them may make other mutants, or kill others.
+const TOOLS = /^ {2}'?((?:(?:@stryker-mutator|@babel|@vitest)\/[^@'(]+|vitest)@[^'(:]+)/gm
 const SPECIFIERS = [/\bfrom\s+'([^']+)'/g, /^import\s+'([^']+)'/gm, /\bimport\('([^']+)'\)/g, /\bnew URL\('([^']+)'/g]
 
 /** The files, of `files`, that a pattern of `patterns` takes and no negated one (`!…`) gives back. */
@@ -38,7 +39,7 @@ export const matching = (patterns: readonly string[], files: readonly string[]) 
       !patterns.some(pattern => pattern.startsWith('!') && matchesGlob(file, pattern.slice(1))),
   )
 
-/** The Stryker and Babel packages a lockfile's text resolves, by name and version, each once. */
+/** The Stryker, Babel and Vitest packages a lockfile's text resolves, by name and version, each once. */
 export const toolsOf = (lock: string) => [...new Set(Array.from(lock.matchAll(TOOLS), found => String(found[1])))]
 
 /** The files that `file`, of text `text`, imports by a relative specifier: static, dynamic, or as a URL. */
@@ -70,7 +71,7 @@ export function mutationScope(
   last: { changed: readonly string[]; setup: Setup } | undefined,
 ) {
   if (last === undefined) return { full: 'no earlier result' }
-  if (String(now.tools) !== String(last.setup.tools)) return { full: 'Stryker or its parser changed' }
+  if (String(now.tools) !== String(last.setup.tools)) return { full: 'Stryker, its parser or the test runner changed' }
   const seen = (config: Config) => JSON.stringify(Object.entries(config).filter(([key]) => !UNSEEN.has(key)))
   if (seen(now.config) !== seen(last.setup.config)) return { full: 'stryker.config.mjs changes how the tests run' }
 

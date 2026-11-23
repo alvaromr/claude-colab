@@ -32,9 +32,9 @@ holds how to work on it, and the design with its reasons.
   only the tests that cover it); every surviving mutant is a missing test, or an
   equivalent one recorded in place with its reason. It mutates only the modules whose mutants a change since the last
   run that passed can alter: the change reaches their code, what it imports, or a test that runs them, with its
-  helpers. Config that changes neither the mutants nor how their tests run, and any tool but Stryker and its parser,
-  reach none. Every module, about 18 minutes, only when none passed yet, Stryker or its parser changed, or the config
-  changed how the tests run (`scripts/scope.mts`), or with `--full`. What it runs, and why, is in `stryker.config.mjs`,
+  helpers. Config that changes neither the mutants nor how their tests run, and any tool but Stryker, its parser and
+  Vitest, reach none. Every module, about 18 minutes, only when none passed yet, Stryker, its parser or Vitest
+  changed, or the config changed how the tests run (`scripts/scope.mts`), or with `--full`. What it runs, and why, is in `stryker.config.mjs`,
   and its tests in `vitest.config.mts` (`MUTATION_TESTS`).
 - `pnpm audit:deps`: the audit of the dev dependencies; the plugin itself has none.
 - `pnpm release <x.y.z>`: the release, stopping at the first step that fails. Checks the tree is clean and the tag
