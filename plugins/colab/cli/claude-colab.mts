@@ -4,6 +4,7 @@
 // language of their locale. This file only hands them this process.
 import { spawn } from 'node:child_process'
 import { readFileSync } from 'node:fs'
+import { hostname } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { main } from './commands.mts'
 
@@ -14,6 +15,7 @@ await main({
   stdout: process.stdout,
   stderr: process.stderr,
   stdin: () => readFileSync(0, 'utf8'),
+  hostname,
   exit: code => process.exit(code),
   setExitCode: code => {
     process.exitCode = code
@@ -21,8 +23,7 @@ await main({
   on: (event, listener) => process.on(event, listener),
   kill: (pid, signal) => process.kill(pid, signal),
   ...(process.send && {
-    send: (message, done) => process.send?.(message, done),
-    disconnect: () => process.disconnect?.(),
+    channel: { send: (message, done) => process.send?.(message, done), disconnect: () => process.disconnect?.() },
   }),
   background: (args, output) =>
     spawn(process.execPath, [fileURLToPath(import.meta.url), ...args], {

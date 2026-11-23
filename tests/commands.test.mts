@@ -6,7 +6,7 @@ import { EventEmitter } from 'node:events'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import net, { type AddressInfo, type Server } from 'node:net'
-import { hostname, tmpdir, userInfo } from 'node:os'
+import { tmpdir, userInfo } from 'node:os'
 import { join } from 'node:path'
 import { PassThrough } from 'node:stream'
 import { setTimeout as sleep } from 'node:timers/promises'
@@ -26,14 +26,17 @@ const { main } = await import('../plugins/colab/cli/commands.mts')
 const { HOME, SERVER_LOG, savedKey, saveKey } = await import('../plugins/colab/cli/home.mts')
 const { MAIN_HELP } = await import('../plugins/colab/cli/args.mts')
 const SERVER = join(HOME, 'server.json')
-const MACHINE = hostname().replace(/\..*/s, '').slice(0, NAME_LENGTH)
+// The name of the machine the commands run on, as the network knows it, and as they name it.
+const HOSTNAME = 'portatil.casa.example'
+const MACHINE = 'portatil'
 
 /** A serve --background's process, as the test makes it: it says what the test has it say. */
 type Started = { args: string[]; output: number; child: EventEmitter; unrefs: number }
 
 /**
- * Runs the command `argv` in a process of the test's own, of `pid`, with `env` and `stdin`. `kill` is what it does to
- * a process it signals, and `send`, if given, its channel to a process that started it.
+ * Runs the command `argv` in a process of the test's own, of `pid`, with `env` and `stdin`, on a machine of `hostname`.
+ * `stdin` may be how reading it fails. `kill` is what it does to a process it signals, and `send`, if given, its
+ * channel to a process that started it.
  */
 function cli(
   argv: string[],
@@ -41,12 +44,14 @@ function cli(
     env = {},
     stdin = '',
     pid,
+    hostname = HOSTNAME,
     kill = () => undefined,
     send,
   }: {
     env?: Record<string, string>
-    stdin?: string
+    stdin?: string | Error
     pid?: number
+    hostname?: string
     kill?: (pid: number, signal: string) => void
     send?: (message: Value, done: () => void) => void
   } = {},
@@ -65,10 +70,14 @@ function cli(
     ...fake.host,
     argv,
     stderr,
-    stdin: () => stdin,
+    stdin: () => {
+      if (stdin instanceof Error) throw stdin
+      return stdin
+    },
+    hostname: () => hostname,
     kill,
     setExitCode: code => exitCodes.push(code),
-    ...(send ? { send, disconnect: () => disconnects.push(1) } : {}),
+    ...(send ? { channel: { send, disconnect: () => disconnects.push(1) } } : {}),
     background: (args, output) => {
       const child = new EventEmitter()
       const one = { args, output, child, unrefs: 0 }
@@ -160,6 +169,17 @@ test('any other failure says why on stderr and exits with 1', async () => {
   const unknown = await run(['connect', '192.0.2.10'])
   assert.equal(unknown.code, 1)
   assert.equal(unknown.err, 'No hay clave para 192.0.2.10:4747: guárdala con claude-colab key 192.0.2.10:4747\n')
+  // A failure of the system, with its code, is not one of usage.
+  const unread = await run(['key', '192.0.2.10'], {
+    stdin: Object.assign(new Error('EAGAIN: resource temporarily unavailable, read'), { code: 'EAGAIN' }),
+  })
+  assert.deepEqual([unread.code, unread.err], [1, 'EAGAIN: resource temporarily unavailable, read\n'])
+})
+
+test('a machine’s name longer than a name may be is cut to fit', async () => {
+  const long = 'x'.repeat(NAME_LENGTH + 3)
+  const status = (await run(['status'], { hostname: `${long}.example` })).answer()
+  assert.equal(status.machine, long.slice(0, NAME_LENGTH))
 })
 
 test('a key is saved for the address it is given, and an invitation for each of its addresses', async () => {
@@ -276,6 +296,23 @@ test('serve opens this machine’s server, which status shows, a second serve re
   assert.deepEqual([stopped.code, stopped.answer()], [0, { ok: true, stopped: port }])
   assert.deepEqual(serving.fake.exits, [0], 'the server asked to end ends well')
   assert.deepEqual((await run(['status'])).answer(), { ok: true, running: false, machine: MACHINE })
+})
+
+test('serve opens with the key it saved for its port, unless told to make a new one', async () => {
+  const port = await freePort()
+  const open = async (...more: string[]) => {
+    const serving = cli(['serve', '--host', '127.0.0.1', '--port', String(port), ...more])
+    const { key } = await serving.said()
+    const server = (await serving.left) as Server
+    serving.fake.kill('SIGTERM')
+    await new Promise(resolve => server.close(resolve))
+    return key
+  }
+  const first = await open()
+  assert.equal(await open(), first, 'the same key, which its guests hold')
+  const changed = await open('--new-key')
+  assert.notEqual(changed, first)
+  assert.equal(savedKey('127.0.0.1', port), changed, 'the new one kept')
 })
 
 test('stop says so when there is no server', async () => {

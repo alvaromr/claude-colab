@@ -3,7 +3,7 @@
 import type { ChildProcess } from 'node:child_process'
 import { openSync } from 'node:fs'
 import http from 'node:http'
-import { hostname, userInfo } from 'node:os'
+import { userInfo } from 'node:os'
 import type { Writable } from 'node:stream'
 import {
   addressOf,
@@ -18,10 +18,8 @@ import {
 } from './args.mts'
 import {
   defaultSocket,
-  HOME,
   loadKey,
   markServer,
-  privateFolder,
   runningServer,
   type ServerProcess,
   saveKey,
@@ -39,20 +37,20 @@ import { parseInvitation, parseKey } from './wire.mts'
 
 /**
  * What the commands take from the process they run in: what connect and the server's record take, and besides its
- * arguments (those after the script), where it complains, what it reads, how it signals another process, the exit
- * code it ends with once nothing is left to do, its channel to a process that started it, if any, and how it starts
- * itself apart, as `serve --background` does.
+ * arguments (those after the script), where it complains, what it reads, the machine's name, how it signals another
+ * process, the exit code it ends with once nothing is left to do, how it starts itself apart, as `serve --background`
+ * does, and its channel to a process that started it, if any, which it sends on and lets go.
  */
 export type Host = LinkHost &
   ServerProcess & {
     argv: readonly string[]
     stderr: Writable
     stdin: () => string
+    hostname: () => string
     kill: (pid: number, signal: 'SIGTERM') => void
     setExitCode: (code: number) => void
-    send?: (message: Answer, done: () => void) => void
-    disconnect?: () => void
     background: (args: string[], output: number) => Pick<ChildProcess, 'once' | 'unref'>
+    channel?: { send: (message: Answer, done: () => void) => void; disconnect: () => void }
   }
 
 type Command = { options: Options; positionals: number } & (
@@ -67,11 +65,6 @@ const setting = (values: Values, name: string) => values[name] as string
 // How long stop waits for the server to end.
 const STOP_TIMEOUT = 5_000
 
-/** This machine's name as the network knows it, without its domain: a server's name when none is given. */
-function hostTitle() {
-  return hostname().replace(/\..*/s, '').slice(0, NAME_LENGTH)
-}
-
 /**
  * Runs the command its arguments ask for, and settles once it is done: exited, ended with nothing left to do (code
  * 0), or left running. What it leaves running, a server, is what it answers: a process of its own ends it by ending,
@@ -82,16 +75,19 @@ export async function main(host: Host) {
   const complain = (message: string) => host.stderr.write(`${message}\n`)
   const socket = defaultSocket(host.env)
   const SOCKET_OPTION = { socket: { type: 'string', default: socket } } as const
+  /** This machine's name as the network knows it, without its domain: a server's name when none is given. */
+  const machine = host.hostname().replace(/\..*/s, '').slice(0, NAME_LENGTH)
 
   /** Answers on stdout, or, run by `serve --background`, to the process that started it, which then lets it go. */
   const tell = (result: Answer) => {
-    if (host.send) host.send(result, () => host.disconnect?.())
+    const { channel } = host
+    if (channel) channel.send(result, () => channel.disconnect())
     else print(result)
   }
 
   /** Runs this same serve as a process of its own, left running, and answers with what it says once it listens. */
   const inBackground = (port: number) => {
-    privateFolder(HOME)
+    // In the home's folder, which serve made private asking after a running server.
     const output = openSync(SERVER_LOG, 'a', 0o600)
     const server = host.background(
       host.argv.filter(arg => arg !== '--background'),
@@ -115,6 +111,7 @@ export async function main(host: Host) {
         { socketPath, path: `/${op}`, method: 'POST', headers: { 'content-type': 'application/json' } },
         res => {
           let body = ''
+          // Stryker disable next-line StringLiteral: Node reads an empty encoding as utf8
           res.setEncoding('utf8')
           res.on('data', chunk => (body += chunk))
           res.on('end', () => {
@@ -140,7 +137,7 @@ export async function main(host: Host) {
   const COMMANDS: Record<Name, Command> = {
     serve: {
       options: {
-        name: { type: 'string', default: hostTitle() },
+        name: { type: 'string', default: machine },
         host: { type: 'string', default: ANY_HOST },
         port: { type: 'string' },
         'new-key': { type: 'boolean' },
@@ -179,7 +176,7 @@ export async function main(host: Host) {
           key: savedKey(LOOPBACK, running.port),
           addresses: networkAddresses(),
         }
-        print({ ok: true, running: Boolean(running), machine: hostTitle(), ...found })
+        print({ ok: true, running: Boolean(running), machine, ...found })
       },
     },
     stop: {
@@ -189,6 +186,8 @@ export async function main(host: Host) {
         const running = runningServer()
         if (!running) throw new Error(TEXT.noServer)
         host.kill(running.pid, 'SIGTERM')
+        // Stryker disable next-line ObjectLiteral: only a server that never ends tells the wait apart, after 5 s of
+        // real time, which no fake timer shortens; home.test.mts tests serverEnded's timeout and pace
         await serverEnded({ timeout: STOP_TIMEOUT, every: 100 })
         print({ ok: true, stopped: running.port })
       },
@@ -262,7 +261,7 @@ export async function main(host: Host) {
   }
 
   // What the help shows as each option's default.
-  const DEFAULTS: Defaults = { machine: hostTitle(), user: userInfo().username, log: SERVER_LOG, socket }
+  const DEFAULTS: Defaults = { machine, user: userInfo().username, log: SERVER_LOG, socket }
 
   try {
     const parsed = parse([...host.argv], COMMANDS, DEFAULTS)
