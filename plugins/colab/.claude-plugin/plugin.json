@@ -2,6 +2,7 @@
   "name": "colab",
   "version": "0.1.0",
   "author": { "name": "Álvaro Martín" },
+  "license": "MIT",
   "description": "Connects Claude Code sessions of different people over a LAN or a VPN: one opens a room server, makes a room and passes on its invitation; in the pane's chat and in the conversation, each message shows in its author's colors. The person speaks with /colab <text> and the model with its say tool. What arrives is context for the model to judge, never orders.",
   "types": "./types/index.d.ts"
 }

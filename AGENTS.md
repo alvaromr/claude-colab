@@ -184,7 +184,8 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
 - **Pending until `alvaromr/claude-colab` is published on GitHub:** the install line in `README.md` and the reporting
   channel in `SECURITY.md` lead nowhere, and private vulnerability reporting, which GitHub enables per repository,
   must be turned on in its settings. Until then, the plugin runs from a clone with
-  `claude --plugin-dir plugins/colab`.
+  `claude --plugin-dir plugins/colab`. Just before the first push, the owner's decision: the history is squashed into
+  one initial commit, and only then come the first release and the push, whose mutation runs in full.
 
 ## Where things live
 
