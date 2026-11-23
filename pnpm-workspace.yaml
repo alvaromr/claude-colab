@@ -1,14 +1,14 @@
-# Supply-chain hardening: a release installs only once it is a week old, a package never loses the provenance it
+# Supply-chain hardening: a release installs only once it is four days old, a package never loses the provenance it
 # had, the lockfile must match before any script runs, and no dependency runs an install script.
-minimumReleaseAge: 10080
+minimumReleaseAge: 5760
 trustPolicy: no-downgrade
 verifyDepsBeforeRun: error
 allowBuilds: {}
 overrides:
   # Stryker's typed-rest-client pins qs 6.15.1, which has four moderate advisories (DoS); 6.16.1 fixes them all.
-  # Drop this once a Stryker release a week old pins a fixed qs.
+  # Drop this once a Stryker release four days old pins a fixed qs.
   qs: 6.16.1
   # Stryker pins minimatch ~10.2.4, which has a moderate advisory (DoS, GHSA-g3hv-75wg-m249); 11.0.1 fixes it. 11 drops
   # makeRe and the AST class, which Stryker does not use: it calls minimatch(), match, negate and hasMagic.
-  # Drop this once a Stryker release a week old takes minimatch 11.
+  # Drop this once a Stryker release four days old takes minimatch 11.
   minimatch: 11.0.3
