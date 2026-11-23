@@ -103,12 +103,22 @@ export async function serverEnded({ timeout, every }: { timeout: number; every: 
   }
 }
 
+/**
+ * What markServer takes from the process it runs in: its pid, its exit, and the signals that ask it to end. The
+ * process itself, but for a test, which runs it in its own.
+ */
+export type ServerProcess = {
+  pid: number
+  exit: (code: number) => void
+  on: (event: 'exit' | 'SIGINT' | 'SIGTERM', listener: () => void) => unknown
+}
+
 /** Writes down this process as the machine's room server, and forgets it when the process ends. */
-export function markServer(host: string, port: number, title: string) {
+export function markServer(host: string, port: number, title: string, serving: ServerProcess = process) {
   privateFolder(HOME)
-  writeFileSync(SERVER, `${JSON.stringify({ pid: process.pid, host, port, title })}\n`, { mode: 0o600 })
-  process.on('exit', () => runningServer()?.pid === process.pid && rmSync(SERVER))
-  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => process.exit(0))
+  writeFileSync(SERVER, `${JSON.stringify({ pid: serving.pid, host, port, title })}\n`, { mode: 0o600 })
+  serving.on('exit', () => runningServer()?.pid === serving.pid && rmSync(SERVER))
+  for (const signal of ['SIGINT', 'SIGTERM'] as const) serving.on(signal, () => serving.exit(0))
 }
 
 /** The key saved for that server. */

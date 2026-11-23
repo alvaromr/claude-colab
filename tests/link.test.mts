@@ -1,6 +1,7 @@
-// Runs with Vitest: connect, as its own process, against a stand-in server that does as each test says.
+// Runs with Vitest: connect, in a process of the test's own (tests/host.mts), against a stand-in server that does as
+// each test says. tests/cli.test.mts runs it as the real process, once.
 import assert from 'node:assert/strict'
-import { type ChildProcess, spawn } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { syncBuiltinESMExports } from 'node:module'
@@ -9,17 +10,16 @@ import os, { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import tls from 'node:tls'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { fileURLToPath } from 'node:url'
 import { afterAll as after, test } from 'vitest'
-import { networkAddresses, reachableAt } from '../plugins/colab/cli/link.mts'
+import { connect, networkAddresses, reachableAt } from '../plugins/colab/cli/link.mts'
 import { DEAD_AFTER, MAX_LINE, NAME_RULE, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.mts'
 import { newKey, parseInvitation, parseKey, readLines, serverOptions, writeLine } from '../plugins/colab/cli/wire.mts'
+import { fakeProcess } from './host.mts'
 
 // What connect prints and answers, as these tests read it.
 type Event = { ev: string; error: string; own: boolean; socket: string; from?: string }
 type Answer = { ok: boolean; error: string; invitation: string }
 
-const LINK = fileURLToPath(new URL('../plugins/colab/cli/link.mts', import.meta.url))
 const KEY = newKey()
 // Short pings and waits, for the tests of a server or an inbox gone silent to take little.
 const PING = 100
@@ -36,25 +36,31 @@ const INTERFACES = {
 const { CLAUDE_CODE_MESSAGING_SOCKET, CLAUDE_CODE_MESSAGING_TOKEN, ...withoutInbox } = process.env
 const folder = mkdtempSync(join(tmpdir(), 'colab-'))
 // What the tests started, ended here even when one fails halfway: a connect left running would keep the run open.
-const children: ChildProcess[] = []
+const connects: ReturnType<typeof fakeProcess>[] = []
 const servers: tls.Server[] = []
+const realInterfaces = os.networkInterfaces
 after(() => {
-  for (const child of children) child.kill()
+  for (const one of connects) if (one.exits.length === 0) one.kill()
   for (const server of servers) server.close()
+  os.networkInterfaces = realInterfaces
+  syncBuiltinESMExports()
   rmSync(folder, { recursive: true, force: true })
 })
 let sockets = 0
 
 /**
  * A server with the key that greets as one of this version, unless `hello` says otherwise, and answers each request
- * with what `answer(request, socket)` returns: nothing leaves it unanswered. `requests` holds what it was asked.
+ * with what `answer(request, socket)` returns: nothing leaves it unanswered. `requests` holds what it was asked, and
+ * `linksEnded` waits for every link made to it to end.
  */
 async function standIn({
   hello = {},
   answer = () => ({}),
 }: { hello?: Value; answer?: (request: Value, socket: tls.TLSSocket) => Value | undefined } = {}) {
   const requests: Value[] = []
+  const links: Promise<unknown>[] = []
   const server = tls.createServer(serverOptions(parseKey(KEY)), socket => {
+    links.push(new Promise(resolve => socket.once('close', resolve)))
     socket.unref() // an open link keeps no run alive
     readLines(socket, request => {
       requests.push(request)
@@ -68,10 +74,18 @@ async function standIn({
   })
   await new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(undefined)))
   servers.push(server)
-  return { requests, port: (server.address() as AddressInfo).port, close: () => server.close() }
+  return {
+    requests,
+    port: (server.address() as AddressInfo).port,
+    linksEnded: () => Promise.all(links),
+    close: () => server.close(),
+  }
 }
 
-/** connect as its own process, to `port` as `name`: `events` holds what it prints, `ended` resolves to its exit code. */
+/**
+ * connect, to `port` as `name`, seeing `interfaces` as this machine's: `events` holds what it prints, `exits` the exit
+ * codes it asked for, and `ended` resolves to the first.
+ */
 function connectTo(
   port: number,
   {
@@ -81,43 +95,18 @@ function connectTo(
     interfaces = INTERFACES as object,
   } = {},
 ) {
-  const options = JSON.stringify({
-    host: '127.0.0.1',
-    port,
-    name,
-    socketPath,
-    pingEvery: PING,
-    replyWait: WAIT,
-    inboxWait: WAIT,
-  })
-  const child = spawn(
-    process.execPath,
-    [
-      '--input-type=module',
-      '-e',
-      `import os from 'node:os'
-import { syncBuiltinESMExports } from 'node:module'
-import { connect } from ${JSON.stringify(LINK)}
-os.networkInterfaces = () => (${JSON.stringify(interfaces)})
-syncBuiltinESMExports()
-connect({ ...${options}, key: Buffer.from(process.env.KEY, 'base64url') })`,
-    ],
-    { env: { ...withoutInbox, ...inbox, KEY } },
-  )
+  os.networkInterfaces = () => interfaces as ReturnType<typeof realInterfaces> // what networkAddresses reads
+  syncBuiltinESMExports()
+  const running = fakeProcess({ ...withoutInbox, ...inbox })
   const events: Event[] = []
   let pending = ''
-  let complaint = ''
-  child.stderr.setEncoding('utf8')
-  child.stderr.on('data', chunk => {
-    complaint += chunk
-  })
-  child.stdout.setEncoding('utf8')
-  child.stdout.on('data', chunk => {
+  running.host.stdout.on('data', (chunk: string) => {
     const whole = (pending + chunk).split('\n')
     pending = String(whole.pop())
     events.push(...whole.map(line => JSON.parse(line)))
   })
-  const ended = new Promise(resolve => child.once('exit', resolve))
+  const linking = { host: '127.0.0.1', port, name, socketPath, pingEvery: PING, replyWait: WAIT, inboxWait: WAIT }
+  connect({ ...linking, key: parseKey(KEY) }, running.host)
   const until = async (isIt: (event: Event) => boolean, ms = 5_000) => {
     for (const end = Date.now() + ms; Date.now() < end; await sleep(20)) {
       const found = events.find(isIt)
@@ -125,8 +114,9 @@ connect({ ...${options}, key: Buffer.from(process.env.KEY, 'base64url') })`,
     }
     assert.fail(`no llegó el evento esperado; llegaron: ${JSON.stringify(events)}`)
   }
-  children.push(child)
-  return { child, events, ended, socketPath, until, stop: () => child.kill(), complaint: () => complaint }
+  connects.push(running)
+  const { exits, ended, kill, complaint } = running
+  return { events, exits, ended, socketPath, until, kill, stop: () => kill(), complaint }
 }
 
 /** One request to connect's local socket: its status and its JSON answer. */
@@ -243,7 +233,7 @@ test('the local socket takes the known requests alone, and passes on only their 
   const wide = '€😀'.repeat(10_000) // long enough to come in several chunks, which may split a character
   await ask(ana.socketPath, '/say', { text: wide })
   assert.equal(asked()[0]?.text, wide)
-  assert.equal(ana.child.exitCode, null, 'and connect lives on')
+  assert.deepEqual(ana.exits, [], 'and connect lives on')
   ana.stop()
   server.close()
 })
@@ -406,12 +396,18 @@ test('a server that is not there ends the link with why', async () => {
 
 test('a socket left by a connect that crashed is taken over', async () => {
   const server = await standIn()
-  const crashed = connectTo(server.port)
-  await crashed.until(event => event.ev === 'connected')
-  crashed.child.kill('SIGKILL') // it has no time to remove its socket
+  // What a crash leaves: a socket nothing listens on, from a process killed with no time to remove it.
+  const left = join(folder, 'caido.sock')
+  const crashed = spawn(process.execPath, [
+    '-e',
+    `require('node:net').createServer().listen(${JSON.stringify(left)}, () => console.log('ok'))`,
+  ])
+  await new Promise(resolve => crashed.stdout.once('data', resolve))
+  crashed.kill('SIGKILL')
+  await new Promise(resolve => crashed.once('exit', resolve))
+  assert.equal(existsSync(left), true, 'its socket is left')
 
-  await crashed.ended
-  const next = connectTo(server.port, { socketPath: crashed.socketPath })
+  const next = connectTo(server.port, { socketPath: left })
   await next.until(event => event.ev === 'connected')
   next.stop()
   server.close()
@@ -510,9 +506,10 @@ test('asked to end, connect ends well and takes its socket with it, but not one 
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     const ana = connectTo(server.port)
     await ana.until(event => event.ev === 'connected')
-    ana.child.kill(signal)
+    ana.kill(signal)
     assert.equal(await ana.ended, 0, signal)
     assert.equal(existsSync(ana.socketPath), false, `${signal}: its socket goes`)
+    await server.linksEnded() // and its link with it
   }
 
   const ana = connectTo(server.port)

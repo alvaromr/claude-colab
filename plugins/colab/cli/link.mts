@@ -7,6 +7,7 @@ import http from 'node:http'
 import net from 'node:net'
 import { type NetworkInterfaceInfo, networkInterfaces } from 'node:os'
 import { dirname } from 'node:path'
+import type { Writable } from 'node:stream'
 import tls from 'node:tls'
 import { privateFolder, socketError } from './home.mts'
 import { DEAD_AFTER, isLoopback, MAX_LINE, PING_EVERY, PROTOCOL, type Refusal, type Value } from './protocol.mts'
@@ -50,8 +51,8 @@ function worded(reply: Value): Answer {
  * line with the session's token, then the message as a user line. The session wakes on it, and checks it as any
  * message from another session; it takes it unasked only from its own child processes, as this one is.
  */
-async function postToInbox(text: unknown, wait: number): Promise<Answer> {
-  const { CLAUDE_CODE_MESSAGING_SOCKET: path, CLAUDE_CODE_MESSAGING_TOKEN: token } = process.env
+async function postToInbox(text: unknown, wait: number, env: Host['env']): Promise<Answer> {
+  const { CLAUDE_CODE_MESSAGING_SOCKET: path, CLAUDE_CODE_MESSAGING_TOKEN: token } = env
   if (!path) return { ok: false, error: TEXT.noInbox }
   if (typeof text !== 'string' || !text.trim()) return { ok: false, error: TEXT.refused['no-text']() }
   return new Promise(resolve => {
@@ -97,17 +98,31 @@ export type Linking = {
   inboxWait?: number
 }
 
-export function connect({
-  key,
-  host,
-  port,
-  name,
-  socketPath,
-  pingEvery = PING_EVERY,
-  replyWait = REPLY_TIMEOUT,
-  inboxWait = INBOX_TIMEOUT,
-}: Linking) {
-  const emit = (event: Value) => writeLine(process.stdout, event)
+/**
+ * What connect takes from the process it runs in: where its events go, the environment that names the session's
+ * inbox, its exit, and the signals that ask it to end. The process itself, but for a test, which runs it in its own.
+ */
+export type Host = {
+  stdout: Writable
+  env: Record<string, string | undefined>
+  exit: (code: number) => void
+  on: (event: 'exit' | 'SIGINT' | 'SIGTERM', listener: () => void) => unknown
+}
+
+export function connect(
+  {
+    key,
+    host,
+    port,
+    name,
+    socketPath,
+    pingEvery = PING_EVERY,
+    replyWait = REPLY_TIMEOUT,
+    inboxWait = INBOX_TIMEOUT,
+  }: Linking,
+  io: Host = process,
+) {
+  const emit = (event: Value) => writeLine(io.stdout, event)
   const pending = new Map<unknown, (result: Answer) => void>() // by ref
   let lastRef = 0
   let heard = Date.now() // when the server last sent anything
@@ -146,6 +161,7 @@ export function connect({
     emit(event.ev === 'message' ? { ...event, own: event.from === name } : event)
   })
   let socketId: number | undefined // the inode of the socket this process listens on, so that it removes only its own
+  let pings: NodeJS.Timeout | undefined
   server.on('secureConnect', async () => {
     const hello = await call({ op: 'hello', name })
     // The server closes the link. `reason` tells a taken name apart, for whoever started connect to choose another.
@@ -157,7 +173,7 @@ export function connect({
     // The room this connection is in, with its code, as the server's replies said: what an invitation hands on.
     let here: { label: string; code: string } | undefined
     const local = async (op: string, fields: Value): Promise<Answer> => {
-      if (op === 'inbox') return postToInbox(fields.text, inboxWait)
+      if (op === 'inbox') return postToInbox(fields.text, inboxWait, io.env)
       if (op === 'invite') {
         if (!here) return { ok: false, error: TEXT.refused['not-in-room']() }
         const addresses = reachableAt(host)
@@ -188,7 +204,7 @@ export function connect({
       rooms: hello.rooms,
     })
     // A server silent past its pings is gone: the link ends, and whoever started this process links again.
-    setInterval(() => {
+    pings = setInterval(() => {
       // Stryker disable next-line EqualityOperator: a millisecond either way of the limit tells nothing apart
       if (Date.now() - heard > DEAD_AFTER * pingEvery) {
         lastError = TEXT.serverGone
@@ -204,12 +220,27 @@ export function connect({
     lastError = err.code ?? err.message
     /* v8 ignore stop */
   })
+  // Ends connect: lets go of the link and its pings, then exits. In a process of its own the exit alone would, but a
+  // host that lives on, a test, needs them let go. The local socket is not closed here, since closing it removes
+  // whatever file is at its path, even one that is no longer its own: the exit lets go of it.
+  // Stryker disable BooleanLiteral,ConditionalExpression: in a process of its own the exit follows at once, and no
+  // close comes after it; only a host that lives on sees one, and only after its test has looked
+  let ended = false
+  const end = (code: number) => {
+    ended = true
+    // Stryker disable next-line CallExpression: a process of its own stops them by ending; on a host that lives on, the pings of a link let go reach no one
+    clearInterval(pings)
+    server.destroy()
+    io.exit(code)
+  }
   server.on('close', () => {
+    if (ended) return // asked to end: no disconnection to tell of
+    // Stryker restore BooleanLiteral,ConditionalExpression
     emit({ ev: 'disconnected', ...(lastError ? { error: lastError } : {}) })
-    process.exit(1)
+    end(1)
   })
-  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => process.exit(0))
-  process.on('exit', () => {
+  for (const signal of ['SIGINT', 'SIGTERM'] as const) io.on(signal, () => end(0))
+  io.on('exit', () => {
     if (socketId !== undefined && lstatSync(socketPath, { throwIfNoEntry: false })?.ino === socketId) rmSync(socketPath)
   })
 }

@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll as after, test } from 'vitest'
 import { newKey } from '../plugins/colab/cli/wire.mts'
+import { fakeProcess } from './host.mts'
 
 const HOME_MODULE = fileURLToPath(new URL('../plugins/colab/cli/home.mts', import.meta.url))
 const home = mkdtempSync(join(tmpdir(), 'colab-home-'))
@@ -191,43 +192,37 @@ test('a server record that is no record, or whose process is another user’s, i
   rmSync(SERVER)
 })
 
-test('a server written down, only for its owner, is forgotten when its process ends however it ends', async () => {
+test('a server written down, only for its owner, is forgotten when its process ends however it ends', () => {
+  // Its process is one of the test's own (tests/host.mts), of another pid than the test's.
   for (const ending of ['exit', 'SIGINT', 'SIGTERM'] as const) {
-    const serving = inChild(
-      `home.markServer('127.0.0.1', 4747, 'Prueba')
-process.stdout.write('listo')
-${ending === 'exit' ? 'process.exit(0)' : 'setInterval(() => {}, 1000)'}`,
-    )
-    await serving.said('listo')
-    if (ending !== 'exit') {
+    const serving = fakeProcess()
+    markServer('127.0.0.1', 4747, 'Prueba', serving.host)
+    if (ending === 'exit') serving.host.exit(0)
+    else {
       assert.equal(lstatSync(SERVER).mode & 0o777, 0o600)
-      assert.equal(runningServer()?.pid, serving.child.pid)
-      serving.child.kill(ending)
+      assert.equal(runningServer()?.pid, serving.host.pid)
+      serving.kill(ending)
     }
-    assert.deepEqual(await serving.ended, [0, null], ending)
+    assert.deepEqual(serving.exits, [0], ending)
     assert.equal(isThere(SERVER), false, `${ending}: its file goes`)
   }
 
   // Another took its place meanwhile: the file is no longer its own to remove.
-  const serving = inChild(`home.markServer('127.0.0.1', 4747, 'Prueba')
-process.stdout.write('listo')
-setInterval(() => {}, 1000)`)
-  await serving.said('listo')
+  const serving = fakeProcess()
+  markServer('127.0.0.1', 4747, 'Prueba', serving.host)
   const other = { pid: process.pid, host: '127.0.0.1', port: 4800, title: 'Otro' }
   writeFileSync(SERVER, JSON.stringify(other))
-  serving.child.kill('SIGTERM')
-  await serving.ended
+  serving.kill('SIGTERM')
+  assert.deepEqual(serving.exits, [0])
   assert.deepEqual(runningServer(), other)
   rmSync(SERVER)
 
   // Or its file went: it ends as it would.
-  const gone = inChild(`home.markServer('127.0.0.1', 4747, 'Prueba')
-process.stdout.write('listo')
-setInterval(() => {}, 1000)`)
-  await gone.said('listo')
+  const gone = fakeProcess()
+  markServer('127.0.0.1', 4747, 'Prueba', gone.host)
   rmSync(SERVER)
-  gone.child.kill('SIGTERM')
-  assert.deepEqual(await gone.ended, [0, null])
+  gone.kill('SIGTERM')
+  assert.deepEqual(gone.exits, [0])
   assert.equal(gone.complaint(), '', 'with nothing to say about it')
 })
 

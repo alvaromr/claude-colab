@@ -64,7 +64,7 @@ function keep(args: string[]) {
     }
     assert.fail(`no llegó; llegó: ${JSON.stringify(lines)}`)
   }
-  return { lines, next, ended }
+  return { lines, next, ended, kill: (signal: NodeJS.Signals) => child.kill(signal) }
 }
 
 const freePort = () =>
@@ -148,6 +148,10 @@ test('one serve, two people: a room, its invitation, what they say, and the serv
 
   assert.equal((await run(['leave', '--socket', socket('bob')])).code, 0)
   await ana.next(line => line.ev === 'member' && line.name === 'Bob' && line.action === 'leave')
+  // As its own process, which tests/link.test.mts stands in for: a signal ends it well, its socket gone with it.
+  bob.kill('SIGTERM')
+  assert.equal(await bob.ended, 0, 'connect asked to end ends well')
+  assert.equal(existsSync(socket('bob')), false, 'and takes its socket with it')
 
   assert.equal((await run(['stop'])).code, 0)
   assert.equal(await serving.ended, 0)
