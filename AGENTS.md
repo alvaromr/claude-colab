@@ -76,8 +76,10 @@ connectivity between machines is not the mod's business.
 - `cli/link.mts`: `connect`, one process per session.
 - `cli/home.mts`: the private folder of each machine: local sockets, saved keys, the machine's server.
 - `cli/args.mts`: what the CLI makes of its command line, pure.
-- `cli/claude-colab.mts`: the CLI's entry point, which only wires each command to the modules that act; its `--help`
-  is its only documentation.
+- `cli/commands.mts`: what each command does, given the process it runs in (its arguments, environment, output and
+  exit), so that the tests run it in their own; `--help` is the CLI's only documentation.
+- `cli/claude-colab.mts`: the CLI's entry point, which only hands the commands its process; `tests/cli.test.mts`
+  runs it, as the smoke.
 - The mod, in `hooks/`, its decisions apart from its hooks into the engine. Pure, with no engine, so that Node tests
   them with coverage and mutation: `addresses.ts`, which addresses reach which server, and the servers and rooms kept
   to go back to; `chat.ts`, what a message becomes on its way in, who it is for, how the log keeps it and how much of

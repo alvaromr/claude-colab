@@ -1,7 +1,7 @@
 // What the CLI tells people, in each language colab speaks; TEXT is the one this process's locale asks for.
 import { DEFAULT_PORT, type Language, languageOf, NAME_RULE, type Refusal } from './protocol.mts'
 
-/** The values the help shows as defaults, which only the entry point knows. */
+/** The values the help shows as defaults, which only the commands know (commands.mts). */
 export type Defaults = { machine: string; user: string; log: string; socket: string }
 type Help = { summary: string; usage: string; help: (d: Defaults) => string }
 type Reply = Record<string, unknown>

@@ -1,5 +1,5 @@
 // What the CLI makes of its command line: the command, its options and positionals, and the addresses and ports they
-// name. Pure: the commands themselves, which act, live in the entry point.
+// name. Pure: the commands themselves, which act, live in commands.mts.
 import { parseArgs } from 'node:util'
 import { DEFAULT_PORT, isPort } from './protocol.mts'
 import { type Defaults, TEXT } from './strings.mts'

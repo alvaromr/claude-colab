@@ -10,7 +10,7 @@ export default {
   // where a test's HOME never reaches os.homedir()), and every one of the suite for a mutant of a module's top level,
   // not those Vitest finds related to the module, which it finds none of when it imports them as Node does.
   vitest: { configFile: 'vitest.config.mts', pool: 'forks', related: false },
-  // The entry point only wires the commands to the modules that act: its end-to-end tests cover it.
+  // The entry point only hands the commands (commands.mts) its process: the smoke, tests/cli.test.mts, covers it.
   mutate: [
     'plugins/colab/cli/**/*.mts',
     '!plugins/colab/cli/claude-colab.mts',

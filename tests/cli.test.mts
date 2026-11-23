@@ -1,14 +1,15 @@
-// Runs with Vitest: the claude-colab command end to end, as people run it, in a home of the test's own.
+// Runs with Vitest: the claude-colab command end to end, as people run it, in a home of the test's own; the smoke of
+// what tests/commands.test.mts tests in the test's process: the real process, its signals, its exit codes and its
+// channel to the serve it starts in the background.
 import assert from 'node:assert/strict'
 import { type ChildProcess, execFile, spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import net, { type AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
 import { afterAll as after, test } from 'vitest'
-import { invitation, newKey } from '../plugins/colab/cli/wire.mts'
 
 type Line = Record<string, unknown>
 
@@ -84,13 +85,6 @@ test('arguments: help answers, and what is not a command or an option is a usage
   const junk = await run(['accept'], 'colab:basura')
   assert.equal(junk.code, 1)
   assert.match(junk.stderr, /La invitación no es válida/)
-  const nobody = await run(['rooms', '--socket', join(home, 'nadie.sock')])
-  assert.equal(nobody.code, 1)
-  assert.match(nobody.stderr, /No hay ningún connect escuchando/)
-  // Longer than any system takes, macOS's 253 bytes included: past a name's 255 only through a folder.
-  const tooLong = await run(['rooms', '--socket', join(home, 'x'.repeat(200), `${'x'.repeat(120)}.sock`)])
-  assert.equal(tooLong.code, 1)
-  assert.match(tooLong.stderr, /^La ruta del socket es demasiado larga para este sistema: .*x\.sock\n$/)
 })
 
 test('it speaks English to a locale that is not Spanish, help and errors alike', LIMIT, async () => {
@@ -179,7 +173,7 @@ test('serve in the background answers once it listens, and keeps its key unless 
   assert.notEqual(keys[2], keys[1], '--new-key makes another')
 })
 
-test('serve says why it did not start: a port in use, a bad key, a bad name', LIMIT, async () => {
+test('a serve that cannot open tells the process that started it, and ends with 1', LIMIT, async () => {
   const taken = net.createServer().listen(0, '127.0.0.1')
   taken.unref() // left open by a failure halfway, it keeps no run alive
   await new Promise(resolve => taken.once('listening', resolve))
@@ -189,63 +183,4 @@ test('serve says why it did not start: a port in use, a bad key, a bad name', LI
   assert.equal(inUse.code, 1)
   assert.equal(inUse.answer.error, `El puerto ${port} lo usa otro programa`)
   taken.close()
-
-  const elsewhere = await run(serve('--background', '--host', '192.0.2.1', '--port', port))
-  assert.equal(elsewhere.code, 1)
-  assert.match(String(elsewhere.answer.error), /EADDRNOTAVAIL/, 'an address that is not this machine’s')
-
-  // A key file left broken by hand: the key saved for this server is no key.
-  mkdirSync(join(home, '.claude-colab', 'keys'), { recursive: true, mode: 0o700 })
-  writeFileSync(join(home, '.claude-colab', 'keys', encodeURIComponent(`127.0.0.1:${port}`)), 'corta\n', {
-    mode: 0o600,
-  })
-  const badKey = await run(serve('--background', '--port', port))
-  assert.equal(badKey.code, 1)
-  assert.match(badKey.stderr, new RegExp(`El servidor del puerto ${port} terminó sin escuchar`))
-
-  assert.equal((await run(['serve', '--name', ''])).code, 2)
-  assert.equal((await run(['status'])).answer.running, false)
-})
-
-test('stop says so when there is no server', LIMIT, async () => {
-  assert.match((await run(['stop'])).stderr, /No hay ningún servidor abierto/)
-})
-
-test('a key is saved for the address it is given, and an invitation for each of its addresses', LIMIT, async () => {
-  const key = newKey()
-  for (const [address, saved] of [
-    ['192.0.2.9', '192.0.2.9:4747'],
-    ['192.0.2.9:5000', '192.0.2.9:5000'],
-    ['2001:db8::9', '2001:db8::9:4747'],
-    ['[2001:db8::9]:5000', '2001:db8::9:5000'],
-  ] as const) {
-    assert.equal((await run(['key', address], key)).answer.saved, saved)
-  }
-  const invited = invitation({
-    addresses: ['192.0.2.9', '2001:db8::9'],
-    port: 4747,
-    key,
-    room: '1',
-    code: 'a'.repeat(24),
-  })
-  assert.deepEqual((await run(['accept'], invited)).answer.servers, ['192.0.2.9:4747', '[2001:db8::9]:4747'])
-
-  const unknown = await run(['connect', '192.0.2.10'])
-  assert.equal(unknown.code, 1)
-  assert.match(unknown.stderr, /No hay clave para 192\.0\.2\.10:4747/)
-})
-
-test('a request to a local socket that is not a connect says why', LIMIT, async () => {
-  const notSocket = join(home, 'fichero')
-  writeFileSync(notSocket, '')
-  assert.match((await run(['rooms', '--socket', notSocket])).stderr, /ENOTSOCK/)
-
-  // A socket left behind by a process that died: nobody listens there.
-  const left = join(home, 'dejado.sock')
-  const holder = spawn(process.execPath, ['-e', `require('node:net').createServer().listen(${JSON.stringify(left)})`])
-  started.push(holder)
-  for (const end = Date.now() + 5_000; !existsSync(left) && Date.now() < end;) await sleep(20)
-  holder.kill('SIGKILL')
-  await new Promise(resolve => holder.once('exit', resolve))
-  assert.match((await run(['rooms', '--socket', left])).stderr, /No hay ningún connect escuchando/)
 })

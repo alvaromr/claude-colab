@@ -16,6 +16,7 @@ const STRYKER = process.env.STRYKER_MUTATOR_WORKER !== undefined
  */
 export const MUTATION_TESTS = [
   'tests/args.test.mts',
+  'tests/commands.test.mts',
   'tests/rooms.test.mts',
   'tests/hub.test.mts',
   'tests/link.test.mts',
