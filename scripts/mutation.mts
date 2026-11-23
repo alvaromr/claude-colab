@@ -7,6 +7,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
+import { MUTATION_TESTS } from '../vitest.config.mts'
 import { type Config, importsOf, matching, mutationScope, type Setup, toolsOf } from './scope.mts'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -50,7 +51,7 @@ async function last() {
 
 // What the run tests is the tree as it starts: a commit made while it runs is not covered by it.
 const tested = git('status', '--porcelain') === '' ? git('rev-parse', 'HEAD') : undefined
-const scope = values.full ? { full: 'asked for' } : mutationScope(now, imports, await last())
+const scope = values.full ? { full: 'asked for' } : mutationScope(now, MUTATION_TESTS, imports, await last())
 if ('full' in scope) {
   say(`every module (${scope.full})`)
   execFileSync('pnpm', ['exec', 'stryker', 'run'], { cwd: ROOT, stdio: 'inherit' })

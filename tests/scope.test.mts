@@ -27,18 +27,19 @@ const config = {
   mutate: ['plugins/colab/cli/**/*.mts', 'plugins/colab/hooks/chat.ts'],
   testRunner: 'vitest',
   vitest: { configFile: 'vitest.config.mts' },
-  testFiles: ['tests/hub.test.mts', 'tests/rooms.test.mts', 'tests/mod/*.test.mts'],
   concurrency: 3,
   reporters: ['progress'],
   thresholds: { break: 100 },
 }
+// The test files the mutation run runs, as Vitest's config names them.
+const tests = ['tests/hub.test.mts', 'tests/rooms.test.mts', 'tests/mod/chat.test.mts']
 const now: Setup = { config, mutated: [protocol, wire, rooms, hub, chat], tools: ['@stryker-mutator/core@10.1.1'] }
 /** The scope when `changed` changed since the last passing run, whose setup was `now` but for `before`. */
 const scope = (changed: string[], before: Partial<Setup> = {}) =>
-  mutationScope(now, imports, { changed, setup: { ...now, ...before } })
+  mutationScope(now, tests, imports, { changed, setup: { ...now, ...before } })
 
 test('with no earlier result, the run is full', () => {
-  assert.deepEqual(mutationScope(now, imports, undefined), { full: 'no earlier result' })
+  assert.deepEqual(mutationScope(now, tests, imports, undefined), { full: 'no earlier result' })
 })
 
 test('a change no mutant runs, nor its tests, re-runs nothing', () => {
@@ -65,9 +66,8 @@ test('a changed module re-runs the mutants of every module whose code or tests r
 })
 
 test('with no test file named, a mutant runs its module alone, and what that imports', () => {
-  const bare = { ...now, config: { ...config, testFiles: [] } }
   const withGone = { ...imports, [hub]: [wire, rooms, 'plugins/colab/cli/gone.mts'] }
-  assert.deepEqual(mutationScope(bare, withGone, { changed: [rooms, 'tests/hub.test.mts'], setup: bare }), {
+  assert.deepEqual(mutationScope(now, [], withGone, { changed: [rooms, 'tests/hub.test.mts'], setup: now }), {
     files: [rooms, hub],
   })
 })
@@ -92,7 +92,6 @@ test('config that changes neither the mutants nor how their tests run re-runs no
   assert.deepEqual(scope(['stryker.config.mjs'], unseen), { files: [] })
   for (const before of [
     { ...config, timeoutMS: 9000 },
-    { ...config, testFiles: ['tests/hub.test.mts'] },
     { ...config, vitest: { configFile: 'other.config.mts' } },
   ]) {
     assert.deepEqual(scope(['stryker.config.mjs'], { config: before }), {

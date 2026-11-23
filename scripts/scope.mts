@@ -5,12 +5,11 @@
 import { matchesGlob, posix } from 'node:path'
 
 /**
- * What Stryker is told: what to mutate, the test files it runs and Vitest's config, which names what every test
+ * What Stryker is told: what to mutate, and Vitest's config, which names the test files it runs and what every test
  * loads first; besides keys that change neither.
  */
 export interface Config {
   mutate: readonly string[]
-  testFiles: readonly string[]
   vitest: { configFile: string }
   [key: string]: unknown
 }
@@ -61,11 +60,12 @@ function closure(files: readonly string[], imports: Imports) {
 }
 
 /**
- * The files to mutate, of `now.mutated`, given the files `changed` since the last passing run and its setup (`last`,
- * `undefined` if none passed); or why every one is.
+ * The files to mutate, of `now.mutated`, whose run runs the test files `tests`, given the files `changed` since the
+ * last passing run and its setup (`last`, `undefined` if none passed); or why every one is.
  */
 export function mutationScope(
   now: Setup,
+  tests: readonly string[],
   imports: Imports,
   last: { changed: readonly string[]; setup: Setup } | undefined,
 ) {
@@ -74,7 +74,6 @@ export function mutationScope(
   const seen = (config: Config) => JSON.stringify(Object.entries(config).filter(([key]) => !UNSEEN.has(key)))
   if (seen(now.config) !== seen(last.setup.config)) return { full: 'stryker.config.mjs changes how the tests run' }
 
-  const tests = matching(now.config.testFiles, Object.keys(imports))
   const changed = new Set(last.changed)
   // A mutant runs its module, what it imports, Vitest's config with what it loads before every test, and every test
   // file that reaches it, with what that imports.

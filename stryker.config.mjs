@@ -1,24 +1,15 @@
 // Mutation testing of what Node tests (`pnpm mutation`), cli/ and the mod's pure modules: every surviving mutant is a
 // missing test, or an equivalent one recorded in place with its reason.
 export default {
-  // Vitest, as `pnpm test:node` runs it, with its config: each mutant runs only the tests that cover it.
+  // Vitest, with its config, which picks the fast suite (MUTATION_TESTS): each mutant runs only the tests that cover
+  // it, and one of a module's top level, which runs before any test, all of them.
   testRunner: 'vitest',
-  vitest: { configFile: 'vitest.config.mts' },
-  // The fast suite: tests/cli.test.mts drives the real CLI end to end, a process per command, so running it per
-  // mutant would cost far more than it proves; those of the scripts run no mutated code.
-  testFiles: [
-    'tests/args.test.mts',
-    'tests/rooms.test.mts',
-    'tests/hub.test.mts',
-    'tests/link.test.mts',
-    'tests/home.test.mts',
-    'tests/wire.test.mts',
-    'tests/protocol.test.mts',
-    'tests/strings.test.mts',
-    'tests/mod/addresses.test.mts',
-    'tests/mod/chat.test.mts',
-    'tests/mod/linking.test.mts',
-  ],
+  // Named, since pnpm keeps it out of the folders where Stryker looks for its plugins by itself.
+  plugins: ['@stryker-mutator/vitest-runner'],
+  // As `pnpm test:node` runs them: each test file in a process of its own (forks, not the runner's default threads,
+  // where a test's HOME never reaches os.homedir()), and every one of the suite for a mutant of a module's top level,
+  // not those Vitest finds related to the module, which it finds none of when it imports them as Node does.
+  vitest: { configFile: 'vitest.config.mts', pool: 'forks', related: false },
   // The entry point only wires the commands to the modules that act: its end-to-end tests cover it.
   mutate: [
     'plugins/colab/cli/**/*.mts',
