@@ -184,11 +184,10 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
 - **Pending until `alvaromr/claude-colab` is published on GitHub:** the install line in `README.md` and the reporting
   channel in `SECURITY.md` lead nowhere, and private vulnerability reporting, which GitHub enables per repository,
   must be turned on in its settings. Until then, the plugin runs from a clone with
-  `claude --plugin-dir plugins/colab`. Just before the first push, the owner's decision: the history is squashed into
-  one initial commit, `feat: initial public release`, whose author and committer are the owner's public identity, the
-  one this clone's `git config --local user.name` and `user.email` hold (a GitHub `users.noreply.github.com` address),
-  never a work or personal email; only then come the first release, `0.1.0`, whose mutation runs in full, and the
-  push.
+  `claude --plugin-dir plugins/colab`. The history is published whole, the owner's decision; every commit, those to
+  come included, has the owner's public identity as author and committer, the one this clone's
+  `git config --local user.name` and `user.email` hold (a GitHub `users.noreply.github.com` address), never a work or
+  personal email. The first release, `0.1.0`, comes before the first push.
 
 ## Where things live
 
