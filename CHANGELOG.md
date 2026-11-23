@@ -5,6 +5,8 @@ The version follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-23
+
 ### Added
 
 - The mod `colab`: a pane (`/colab`) to open a room server, make rooms, invite by another channel and chat, with each
