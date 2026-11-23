@@ -1,8 +1,8 @@
 // Runs with `node --test tests/`: what the CLI tells people, in each language.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { languageOf } from '../cli/protocol.mts'
-import { TEXT, TEXTS } from '../cli/strings.mts'
+import { languageOf } from '../plugins/colab/cli/protocol.mts'
+import { TEXT, TEXTS } from '../plugins/colab/cli/strings.mts'
 
 // What any text's words may take: a refusal's fields, the help's defaults, or a value of its own.
 const SAMPLE = { name: 'N', max: 9, label: 'L', to: 'T', op: 'O', machine: 'M', user: 'U', log: 'G', socket: 'S' }

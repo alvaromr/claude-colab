@@ -6,9 +6,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { newKey } from '../cli/wire.mts'
+import { newKey } from '../plugins/colab/cli/wire.mts'
 
-const HOME_MODULE = fileURLToPath(new URL('../cli/home.mts', import.meta.url))
+const HOME_MODULE = fileURLToPath(new URL('../plugins/colab/cli/home.mts', import.meta.url))
 const home = mkdtempSync(join(tmpdir(), 'colab-home-'))
 const children: ChildProcess[] = []
 after(() => {
@@ -31,7 +31,7 @@ const {
   serverEnded,
   serverKey,
   socketError,
-} = await import('../cli/home.mts')
+} = await import('../plugins/colab/cli/home.mts')
 const keys = join(HOME, 'keys')
 const SERVER = join(HOME, 'server.json')
 const fileOf = (host: string, port: number) => join(keys, encodeURIComponent(`${host}:${port}`))

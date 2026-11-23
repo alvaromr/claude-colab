@@ -3,9 +3,9 @@ import assert from 'node:assert/strict'
 import net, { type AddressInfo } from 'node:net'
 import { after, before, test } from 'node:test'
 import tls from 'node:tls'
-import { serve } from '../cli/hub.mts'
-import { DEAD_AFTER, MAX_LINE, MAX_TEXT, PROTOCOL, type Value } from '../cli/protocol.mts'
-import { clientOptions, newKey, parseKey, readLines, writeLine } from '../cli/wire.mts'
+import { serve } from '../plugins/colab/cli/hub.mts'
+import { DEAD_AFTER, MAX_LINE, MAX_TEXT, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.mts'
+import { clientOptions, newKey, parseKey, readLines, writeLine } from '../plugins/colab/cli/wire.mts'
 
 // What the server answers and pushes, as these tests read it.
 type Shown = { code: string; label: string; members: string[]; busy: string[] }

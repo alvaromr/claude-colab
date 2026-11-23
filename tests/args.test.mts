@@ -10,9 +10,9 @@ import {
   parseAddress,
   parsePort,
   UsageError,
-} from '../cli/args.mts'
-import { DEFAULT_PORT } from '../cli/protocol.mts'
-import { TEXT } from '../cli/strings.mts'
+} from '../plugins/colab/cli/args.mts'
+import { DEFAULT_PORT } from '../plugins/colab/cli/protocol.mts'
+import { TEXT } from '../plugins/colab/cli/strings.mts'
 
 const DEFAULTS = { machine: 'equipo', user: 'ana', log: '/home/ana/server.log', socket: '/home/ana/colab.sock' }
 type Spec = { options: Options; positionals: number }

@@ -16,5 +16,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["cli", "scripts", "tests/*.mts", "tests/mod/*.test.mts"]
+  "include": ["plugins/colab/cli", "scripts", "tests/*.mts", "tests/mod/*.test.mts"]
 }

@@ -3,9 +3,17 @@ import assert from 'node:assert/strict'
 import { PassThrough } from 'node:stream'
 import { test } from 'node:test'
 import type { PeerCertificate, TLSSocket } from 'node:tls'
-import { MAX_LINE } from '../cli/protocol.mts'
-import { clientOptions, invitation, newKey, parseInvitation, parseKey, readLines, serverOptions } from '../cli/wire.mts'
-import type { Value } from '../cli/protocol.mts'
+import { MAX_LINE } from '../plugins/colab/cli/protocol.mts'
+import {
+  clientOptions,
+  invitation,
+  newKey,
+  parseInvitation,
+  parseKey,
+  readLines,
+  serverOptions,
+} from '../plugins/colab/cli/wire.mts'
+import type { Value } from '../plugins/colab/cli/protocol.mts'
 
 const key = parseKey(newKey())
 const encoded = (value: unknown) => `colab:${Buffer.from(JSON.stringify(value)).toString('base64url')}`

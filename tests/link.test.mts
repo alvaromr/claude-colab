@@ -11,15 +11,15 @@ import { after, test } from 'node:test'
 import tls from 'node:tls'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
-import { networkAddresses, reachableAt } from '../cli/link.mts'
-import { DEAD_AFTER, MAX_LINE, NAME_RULE, PROTOCOL, type Value } from '../cli/protocol.mts'
-import { newKey, parseInvitation, parseKey, readLines, serverOptions, writeLine } from '../cli/wire.mts'
+import { networkAddresses, reachableAt } from '../plugins/colab/cli/link.mts'
+import { DEAD_AFTER, MAX_LINE, NAME_RULE, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.mts'
+import { newKey, parseInvitation, parseKey, readLines, serverOptions, writeLine } from '../plugins/colab/cli/wire.mts'
 
 // What connect prints and answers, as these tests read it.
 type Event = { ev: string; error: string; own: boolean; socket: string; from?: string }
 type Answer = { ok: boolean; error: string; invitation: string }
 
-const LINK = fileURLToPath(new URL('../cli/link.mts', import.meta.url))
+const LINK = fileURLToPath(new URL('../plugins/colab/cli/link.mts', import.meta.url))
 const KEY = newKey()
 // Short pings and waits, for the tests of a server or an inbox gone silent to take little.
 const PING = 100

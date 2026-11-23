@@ -132,10 +132,10 @@ test('a commit of docs alone checks only their format and the repo guard; any ot
   const { bare, root } = repository()
   for (const [files, runs] of [
     [
-      ['README.md', 'docs/decisions/1.md', 'LICENSE'],
+      ['README.md', 'docs/decisions/1.md', 'LICENSE', 'plugins/colab/.claude-plugin/icon.png'],
       ['format', 'guard'],
     ],
-    [['README.md', 'cli/a.mts'], ['check']],
+    [['README.md', 'plugins/colab/cli/a.mts'], ['check']],
     [[], ['check']],
   ] as const) {
     bare('rm', '-q', '-r', '--cached', '--ignore-unmatch', '.')

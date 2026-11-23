@@ -11,16 +11,19 @@ holds how to work on it, and the design with its reasons.
   no `WIP`, `fixup!` or `squash!` commit in it, then the slow checks.
 - `shellcheck`, installed apart (Homebrew: `brew install shellcheck`): the gate lints the git hooks with it, and stops
   and says so without it. Not a dev dependency: its npm package downloads the program when it runs, unchecked.
-- `claude --plugin-dir .`, once after cloning: loading the mod, Claude Code writes the types it is checked against
-  into `.claude-plugin/types/`, which git ignores. Until then the gate stops at the types and says so.
+- `claude --plugin-dir plugins/colab`, once after cloning: loading the mod, Claude Code writes the types it is checked
+  against into `plugins/colab/.claude-plugin/types/`, which git ignores. Until then the gate stops at the types and
+  says so.
 - `pnpm check`: the gate, which the pre-commit hook runs: the Node it runs on beside the one `.node-version` pins,
-  format, lint, the git hooks' lint, types, the repo guard, the Node tests with 100 % coverage, and the mod's tests in the engine.
+  format, lint, the git hooks' lint, types, the repo guard, the Node tests with 100 % coverage, and the mod's tests in
+  the engine.
 - `pnpm check:slow`: the checks too slow for each commit, which a push and a release run: the audit, the Node matrix
   and mutation.
 - `pnpm fix`: formats, applies the lint fixes, and runs the gate.
 - `pnpm test:node`: the tests Node runs, those of `cli/` and of the mod's pure modules, with coverage, and with no
   network but loopback (`tests/offline.mts`, which they and every process they start load). `pnpm test:mod`: the
-  mod's tests in the engine (`claude plugin test`).
+  mod's tests in the engine (`claude plugin test`), on a copy of the plugin with `tests/mod` inside: the engine runs
+  only tests in the plugin's folder, and follows no link out of it.
 - `pnpm test:matrix`: the Node tests on every Node the project supports: the oldest that `engines` takes and the one
   `.node-version` pins, downloaded from nodejs.org and checked against their SHA-256 sums.
 - `pnpm mutation`: mutation testing of what Node tests (Stryker); every surviving mutant is a missing test, or an
@@ -34,12 +37,12 @@ holds how to work on it, and the design with its reasons.
   copy: `claude plugin validate`, the CLI's `--help` and `status`. Then writes both files, commits and tags
   (`colab--v<x.y.z>`, by `claude plugin tag`). It never pushes.
 - `pnpm release:dry-run <x.y.z>`: the same up to the smoke, changing nothing.
-- Run the mod: `claude --plugin-dir .`. Run the CLI: `node cli/claude-colab.mts --help`.
+- Run the mod: `claude --plugin-dir plugins/colab`. Run the CLI: `node plugins/colab/cli/claude-colab.mts --help`.
 
 ## Requirements
 
 1. **Generic and public:** nothing versioned names a company, a person, an IP or a local path, bar the author's name (never an
-   email) in `.claude-plugin/plugin.json` and the repository's GitHub owner (`alvaromr/claude-colab`) where it is
+   email) in the plugin's `plugin.json` and the repository's GitHub owner (`alvaromr/claude-colab`) where it is
    reached; `pnpm guard` checks it.
 2. **Network-agnostic:** it works on a LAN or over any VPN.
 3. **Security is a requirement:** an authenticated, encrypted channel, and no secret in the repo.
@@ -48,8 +51,10 @@ holds how to work on it, and the design with its reasons.
 
 ## Architecture
 
-The repo's root is the plugin: the mod `colab` and the CLI `claude-colab`. A third-party plugin may not be named
-`claude-…`. Everyone installs it; connectivity between machines is not the mod's business.
+The plugin is `plugins/colab/`, the marketplace's source and all an install copies: the mod `colab` and the CLI
+`claude-colab`, which the mod runs. The tests, the scripts and the gate's tools stay at the repo's root, out of what is
+installed. The paths below are the plugin's. A third-party plugin may not be named `claude-…`. Everyone installs it;
+connectivity between machines is not the mod's business.
 
 - `cli/protocol.mts`: what the server, `connect` and the mod agree on (version, port, timings, limits, names, the
   language of a locale, the codes of the server's refusals). Pure: the mod, which has no Node, imports it, and
@@ -178,14 +183,16 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
   trip. If they cannot reach each other, another network (such as Tailscale) does it; the tool does not change.
 - **Pending until `alvaromr/claude-colab` is published on GitHub:** the install line in `README.md` and the reporting
   channel in `SECURITY.md` lead nowhere, and private vulnerability reporting, which GitHub enables per repository,
-  must be turned on in its settings. Until then, the plugin runs from a clone with `claude --plugin-dir`.
+  must be turned on in its settings. Until then, the plugin runs from a clone with
+  `claude --plugin-dir plugins/colab`.
 
 ## Where things live
 
 - `README.md`: install and use. `SECURITY.md`: what colab protects, and reporting a vulnerability. `CHANGELOG.md`:
   changes per version. `CONTRIBUTING.md`: points here. `docs/decisions/`: the deliberate deviations, one per file.
-- `.claude-plugin/plugin.json`: the plugin's manifest and its version, the only one. `.claude-plugin/marketplace.json`:
-  the marketplace that lists it.
-- `scripts/`: the repo guard, and the release (`release.mts`, with what it changes in the files in `bump.mts`).
-- `cli/protocol.mts`: the values both halves agree on. `types/index.d.ts`: the mod's state.
+- `plugins/colab/`: the plugin, all an install copies. Its `.claude-plugin/plugin.json`: its manifest and its version,
+  the only one. `.claude-plugin/marketplace.json`, at the root: the marketplace that lists it.
+- `scripts/`: the repo guard, the mod's tests on a copy of the plugin (`test-mod.mts`), and the release
+  (`release.mts`, with what it changes in the files in `bump.mts`).
+- In the plugin, `cli/protocol.mts`: the values both halves agree on. `types/index.d.ts`: the mod's state.
 - `stryker.config.mjs`, `biome.jsonc`, `.prettierrc.json`, `tsconfig.json`, `tsconfig.cli.json`: the gate's tools.

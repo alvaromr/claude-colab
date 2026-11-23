@@ -2,8 +2,8 @@
 // deliver is kept per link; codes and the time are the test's own. `hub.test.mts` tests them through the real server.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { Value } from '../cli/protocol.mts'
-import { type Client, type Result, roomsOf } from '../cli/rooms.mts'
+import type { Value } from '../plugins/colab/cli/protocol.mts'
+import { type Client, type Result, roomsOf } from '../plugins/colab/cli/rooms.mts'
 
 const AT = new Date('2026-11-20T10:00:00Z')
 

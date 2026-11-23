@@ -1,7 +1,7 @@
 // Runs with `node --test tests/`, as the CLI's: what connect and the CLI say, and what the mod makes of it.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { DEAD_AFTER, PING_EVERY } from '../../cli/protocol.mts'
+import { DEAD_AFTER, PING_EVERY } from '../../plugins/colab/cli/protocol.mts'
 import {
   answerOf,
   done,
@@ -13,7 +13,7 @@ import {
   nextWait,
   RETRY_FIRST,
   splitLines,
-} from '../../hooks/linking.ts'
+} from '../../plugins/colab/hooks/linking.ts'
 
 const ON = { status: 'on', server: '192.0.2.5:4747', title: 'T', name: 'Ana', color: 0, socket: '/s' } as const
 const HERE = { code: 'c'.repeat(24), label: '1' }

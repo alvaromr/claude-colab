@@ -8,11 +8,11 @@ import { join } from 'node:path'
 import { after, test } from 'node:test'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
-import { invitation, newKey } from '../cli/wire.mts'
+import { invitation, newKey } from '../plugins/colab/cli/wire.mts'
 
 type Line = Record<string, unknown>
 
-const CLI = fileURLToPath(new URL('../cli/claude-colab.mts', import.meta.url))
+const CLI = fileURLToPath(new URL('../plugins/colab/cli/claude-colab.mts', import.meta.url))
 const home = mkdtempSync(join(tmpdir(), 'colab-cli-'))
 const env = { ...process.env, HOME: home, CLAUDE_COLAB_SOCKET: '' }
 const started: ChildProcess[] = []

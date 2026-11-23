@@ -13,7 +13,13 @@ export default {
       'tests/mod/addresses.test.mts tests/mod/chat.test.mts tests/mod/linking.test.mts',
   },
   // The entry point only wires the commands to the modules that act: its end-to-end tests cover it.
-  mutate: ['cli/**/*.mts', '!cli/claude-colab.mts', 'hooks/addresses.ts', 'hooks/chat.ts', 'hooks/linking.ts'],
+  mutate: [
+    'plugins/colab/cli/**/*.mts',
+    '!plugins/colab/cli/claude-colab.mts',
+    'plugins/colab/hooks/addresses.ts',
+    'plugins/colab/hooks/chat.ts',
+    'plugins/colab/hooks/linking.ts',
+  ],
   // Stryker would read them with TypeScript's JS API, which TypeScript 7 no longer has; the tests run without them.
   ignorePatterns: ['tsconfig.json', 'tsconfig.cli.json'],
   // Off, and with it incremental mode: a command is one test to Stryker, which could then tell neither which tests

@@ -13,7 +13,7 @@ import {
   rowsOf,
   shownTo,
   withGap,
-} from '../../hooks/chat.ts'
+} from '../../plugins/colab/hooks/chat.ts'
 
 const HERE = { code: 'c'.repeat(24), label: '1' }
 const ON = { status: 'on', name: 'Ana' }

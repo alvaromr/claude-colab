@@ -10,7 +10,9 @@ import { fileURLToPath } from 'node:url'
 import { bumpManifest, nextVersion, releaseChangelog, tagOf } from './bump.mts'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
-const MANIFEST = '.claude-plugin/plugin.json'
+// The plugin's folder, the marketplace's source: what an install copies.
+const PLUGIN = 'plugins/colab'
+const MANIFEST = `${PLUGIN}/.claude-plugin/plugin.json`
 const CHANGELOG = 'CHANGELOG.md'
 
 const say = (line: string) => process.stdout.write(`release: ${line}\n`)
@@ -93,7 +95,7 @@ function release() {
     run('git', ['checkout', '--', ...Object.keys(changes)])
     throw error
   }
-  run('claude', ['plugin', 'tag', '--message', `${name} %s`, ROOT])
+  run('claude', ['plugin', 'tag', '--message', `${name} %s`, join(ROOT, PLUGIN)])
   say(`released ${tag}; nothing is pushed`)
 }
 

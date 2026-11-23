@@ -1,7 +1,15 @@
 // Runs with `node --test tests/`, as the CLI's: which addresses reach which server.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { isOwn, isSameRoom, isSameServer, localAt, remembered, withLeft, without } from '../../hooks/addresses.ts'
+import {
+  isOwn,
+  isSameRoom,
+  isSameServer,
+  localAt,
+  remembered,
+  withLeft,
+  without,
+} from '../../plugins/colab/hooks/addresses.ts'
 
 const OWN = { address: '0.0.0.0:4747', addresses: ['192.0.2.5', '2001:db8::5'] }
 

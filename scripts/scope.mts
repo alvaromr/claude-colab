@@ -14,10 +14,13 @@ export const SHARED = [
   'tests/offline.mts',
 ]
 
-/** The module a test file tests, by name: `tests/<x>.test.mts` tests `cli/<x>.mts`, `tests/mod/<x>.test.*` `hooks/<x>.*`. */
+/**
+ * The module a test file tests, by name: `tests/<x>.test.mts` tests the plugin's `cli/<x>.mts`, `tests/mod/<x>.test.*`
+ * its `hooks/<x>.*`.
+ */
 const testedBy = (test: string) => {
   const found = /^tests\/(mod\/)?([^/]+)\.test\.[^.]+$/.exec(test)
-  return found && `${found[1] ? 'hooks' : 'cli'}/${found[2]}.`
+  return found && `plugins/colab/${found[1] ? 'hooks' : 'cli'}/${found[2]}.`
 }
 
 /**

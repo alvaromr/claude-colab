@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-  "files": { "includes": ["**", "!.claude-plugin/types"] },
+  "files": { "includes": ["**", "!plugins/colab/.claude-plugin/types"] },
   // Prettier formats; Biome only lints.
   "formatter": { "enabled": false },
   "assist": { "enabled": false },
@@ -32,7 +32,7 @@
     // The architecture: the mod runs where there is no Node, and of the CLI reads only what both agree on, which
     // imports nothing; the CLI knows nothing of the mod.
     {
-      "includes": ["hooks/**", "types/**"],
+      "includes": ["plugins/colab/hooks/**", "plugins/colab/types/**"],
       "linter": {
         "rules": {
           "style": {
@@ -53,7 +53,7 @@
       },
     },
     {
-      "includes": ["cli/**"],
+      "includes": ["plugins/colab/cli/**"],
       "linter": {
         "rules": {
           "style": {
@@ -68,7 +68,7 @@
       },
     },
     {
-      "includes": ["cli/protocol.mts"],
+      "includes": ["plugins/colab/cli/protocol.mts"],
       "linter": {
         "rules": {
           "style": {
@@ -86,7 +86,7 @@
     },
     {
       // The mod's pure modules, which Node tests: no engine, nor anything else but the protocol, pure too.
-      "includes": ["hooks/addresses.ts", "hooks/chat.ts", "hooks/linking.ts"],
+      "includes": ["plugins/colab/hooks/addresses.ts", "plugins/colab/hooks/chat.ts", "plugins/colab/hooks/linking.ts"],
       "linter": {
         "rules": {
           "style": {
@@ -107,7 +107,7 @@
     },
     {
       // The rules of the rooms are pure: their sockets are hub.mts's.
-      "includes": ["cli/rooms.mts"],
+      "includes": ["plugins/colab/cli/rooms.mts"],
       "linter": {
         "rules": {
           "style": {
@@ -123,7 +123,7 @@
     },
     {
       // The CLI's entry point answers on stdout and stderr: that is its interface, not logging.
-      "includes": ["cli/claude-colab.mts"],
+      "includes": ["plugins/colab/cli/claude-colab.mts"],
       "linter": { "rules": { "suspicious": { "noConsole": "off" } } },
     },
   ],

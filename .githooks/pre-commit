@@ -2,7 +2,7 @@
 # The gate, before every commit: the same one that runs anywhere else. A commit of docs alone (Markdown, docs/, the
 # license, the icon), which no type, lint or test reads, runs only what checks them: their format and the repo guard.
 staged=$(git diff --cached --name-only --diff-filter=d) || exit 1
-if [ -n "$staged" ] && ! printf '%s\n' "$staged" | grep -qvE '(\.md$|^docs/|^LICENSE$|^\.claude-plugin/icon\.png$)'; then
+if [ -n "$staged" ] && ! printf '%s\n' "$staged" | grep -qvE '(\.md$|^docs/|^LICENSE$|^plugins/colab/\.claude-plugin/icon\.png$)'; then
   echo 'pre-commit: docs alone, so their format and the repo guard'
   exec sh -c 'pnpm format && pnpm guard'
 fi

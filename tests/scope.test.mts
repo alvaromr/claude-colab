@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { mutationScope, SHARED } from '../scripts/scope.mts'
 
-const mutated = ['cli/hub.mts', 'cli/rooms.mts', 'hooks/chat.ts']
+const mutated = ['plugins/colab/cli/hub.mts', 'plugins/colab/cli/rooms.mts', 'plugins/colab/hooks/chat.ts']
 
 test('with no earlier result, the run is full', () => {
   assert.deepEqual(mutationScope(undefined, mutated), { full: 'no earlier result' })
@@ -11,7 +11,7 @@ test('with no earlier result, the run is full', () => {
 
 test('a change to what every mutant depends on makes the run full, and says which', () => {
   for (const file of SHARED) {
-    assert.deepEqual(mutationScope(['cli/hub.mts', file], mutated), { full: `${file} changed` })
+    assert.deepEqual(mutationScope(['plugins/colab/cli/hub.mts', file], mutated), { full: `${file} changed` })
   }
 })
 
@@ -20,8 +20,8 @@ test('a changed module, or a changed test of one, is mutated; nothing else is', 
     mutationScope(
       [
         'README.md',
-        'cli/rooms.mts',
-        'hooks/pane.tsx',
+        'plugins/colab/cli/rooms.mts',
+        'plugins/colab/hooks/pane.tsx',
         'tests/hub.test.mts',
         'tests/mod/chat.test.mts',
         'tests/mod/pane.test.tsx',
@@ -30,7 +30,7 @@ test('a changed module, or a changed test of one, is mutated; nothing else is', 
       ],
       mutated,
     ),
-    { files: ['cli/hub.mts', 'cli/rooms.mts', 'hooks/chat.ts'] },
+    { files: ['plugins/colab/cli/hub.mts', 'plugins/colab/cli/rooms.mts', 'plugins/colab/hooks/chat.ts'] },
   )
-  assert.deepEqual(mutationScope(['README.md', 'hooks/pane.tsx'], mutated), { files: [] })
+  assert.deepEqual(mutationScope(['README.md', 'plugins/colab/hooks/pane.tsx'], mutated), { files: [] })
 })
