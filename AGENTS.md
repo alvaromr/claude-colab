@@ -17,8 +17,8 @@ holds how to work on it, and the design with its reasons.
 - `pnpm check`: the gate, which the pre-commit hook runs: the Node it runs on beside the one `.node-version` pins,
   format, lint, the git hooks' lint, types, the repo guard, the Node tests with 100 % coverage, and the mod's tests in
   the engine.
-- `pnpm check:slow`: the checks too slow for each commit, which a push and a release run: the audit, the Node matrix
-  and mutation.
+- `pnpm check:slow`: the checks too slow for each commit, which a push and a release run: the audit and the Node
+  matrix.
 - `pnpm fix`: formats, applies the lint fixes, and runs the gate.
 - `pnpm test:node`: the tests Node runs, those of `cli/` and of the mod's pure modules, by Vitest with V8 coverage,
   the processes they start included, and with no network but loopback (`tests/offline.mts`, which they and every
@@ -28,14 +28,8 @@ holds how to work on it, and the design with its reasons.
   only tests in the plugin's folder, and follows no link out of it.
 - `pnpm test:matrix`: the Node tests on every Node the project supports: the oldest that `engines` takes and the one
   `.node-version` pins, downloaded from nodejs.org and checked against their SHA-256 sums.
-- `pnpm mutation`: mutation testing of what Node tests (Stryker, with its Vitest runner, which runs each mutant against
-  only the tests that cover it); every surviving mutant is a missing test, or an
-  equivalent one recorded in place with its reason. It mutates only the modules whose mutants a change since the last
-  run that passed can alter: the change reaches their code, what it imports, or a test that runs them, with its
-  helpers. Config that changes neither the mutants nor how their tests run, and any tool but Stryker, its parser and
-  Vitest, reach none. Every module, about 18 minutes, only when none passed yet, Stryker, its parser or Vitest
-  changed, or the config changed how the tests run (`scripts/scope.mts`), or with `--full`. What it runs, and why,
-  is in `stryker.config.mjs`, and its tests in `vitest.config.mts` (`MUTATION_TESTS`).
+- `pnpm mutation [--full]`: optional, run by hand to find missing tests, never by a hook, the gate or a release:
+  mutation testing (Stryker) of what Node tests, set up in `stryker.config.mjs` and `scripts/mutation.mts`.
 - `pnpm audit:deps`: the audit of the dev dependencies; the plugin itself has none.
 - `pnpm release <x.y.z>`: the release, stopping at the first step that fails. Checks the tree is clean and the tag
   new, runs the gate and the slow checks, then installs the release (the version bumped in `plugin.json`,
@@ -204,4 +198,5 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
 - `scripts/`: the repo guard, the mod's tests on a copy of the plugin (`test-mod.mts`), and the release
   (`release.mts`, with what it changes in the files in `bump.mts`).
 - In the plugin, `cli/protocol.ts`: the values both halves agree on. `types/index.d.ts`: the mod's state.
-- `vitest.config.mts`, `stryker.config.mjs`, `biome.jsonc`, `.prettierrc.json`, `tsconfig.json`, `tsconfig.cli.json`: the gate's tools.
+- `vitest.config.mts`, `biome.jsonc`, `.prettierrc.json`, `tsconfig.json`, `tsconfig.cli.json`: the gate's tools.
+  `stryker.config.mjs`: the optional mutation run's.
