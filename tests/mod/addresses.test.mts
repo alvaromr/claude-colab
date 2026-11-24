@@ -1,16 +1,11 @@
 // Runs with Vitest, as the CLI's: which addresses reach which server.
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
-import {
-  isOwn,
-  isSameRoom,
-  isSameServer,
-  localAt,
-  remembered,
-  withLeft,
-  without,
-} from '../../plugins/colab/hooks/addresses.ts'
+import { isLoopback, LOOPBACK } from '../../plugins/colab/cli/protocol.ts'
+import { addressesOf, remembered } from '../../plugins/colab/hooks/addresses.ts'
 
+// This machine's addresses, as the mod reads them: by the protocol's loopback.
+const { isOwn, isSameRoom, isSameServer, localAt, withLeft, without } = addressesOf({ loopback: LOOPBACK, isLoopback })
 const OWN = { address: '0.0.0.0:4747', addresses: ['192.0.2.5', '2001:db8::5'] }
 
 test('this machine is reached by loopback, or by one of its own addresses, at any port', () => {
@@ -53,6 +48,13 @@ test('two addresses reach one server when they are the same, or both reach this 
 test('this machine reaches a server it listens with by loopback, at the port it listens on', () => {
   assert.equal(localAt('0.0.0.0:4800'), '127.0.0.1:4800')
   assert.equal(localAt('[::]:4800'), '127.0.0.1:4800')
+})
+
+test('loopback is what the machine it is given says it is', () => {
+  const machine = addressesOf({ loopback: 'aqui', isLoopback: host => host.startsWith('aqui') })
+  assert.equal(machine.localAt('0.0.0.0:4800'), 'aqui:4800')
+  assert.equal(machine.isOwn('aqui:4747', null), true)
+  assert.equal(machine.isOwn('127.0.0.1:4747', null), false)
 })
 
 test('two rooms left are one when they have one code on one server', () => {

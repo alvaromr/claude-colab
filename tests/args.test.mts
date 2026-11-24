@@ -11,7 +11,7 @@ import {
   parsePort,
   UsageError,
 } from '../plugins/colab/cli/args.mts'
-import { DEFAULT_PORT } from '../plugins/colab/cli/protocol.mts'
+import { DEFAULT_PORT } from '../plugins/colab/cli/protocol.ts'
 import { TEXT } from '../plugins/colab/cli/strings.mts'
 
 const DEFAULTS = { machine: 'equipo', user: 'ana', log: '/home/ana/server.log', socket: '/home/ana/colab.sock' }

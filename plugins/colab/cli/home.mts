@@ -3,7 +3,7 @@ import { lstatSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } f
 import { homedir, userInfo } from 'node:os'
 import { dirname, join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { LOOPBACK } from './protocol.mts'
+import { LOOPBACK } from './protocol.ts'
 import { TEXT } from './strings.mts'
 import { newKey, parseKey } from './wire.mts'
 

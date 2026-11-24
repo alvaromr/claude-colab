@@ -11,7 +11,7 @@ import { join } from 'node:path'
 import { PassThrough } from 'node:stream'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { afterAll as after, test } from 'vitest'
-import { NAME_LENGTH, type Value } from '../plugins/colab/cli/protocol.mts'
+import { NAME_LENGTH, type Value } from '../plugins/colab/cli/protocol.ts'
 import { invitation, newKey } from '../plugins/colab/cli/wire.mts'
 import { fakeProcess } from './host.mts'
 

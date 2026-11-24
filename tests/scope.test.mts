@@ -4,7 +4,7 @@ import { test } from 'vitest'
 import { importsOf, matching, mutationScope, toolsOf, type Setup } from '../scripts/scope.mts'
 
 const [protocol, wire, rooms, hub, chat] = [
-  'plugins/colab/cli/protocol.mts',
+  'plugins/colab/cli/protocol.ts',
   'plugins/colab/cli/wire.mts',
   'plugins/colab/cli/rooms.mts',
   'plugins/colab/cli/hub.mts',

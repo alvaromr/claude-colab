@@ -1,7 +1,7 @@
 // Runs with Vitest: what the CLI tells people, in each language.
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
-import { languageOf } from '../plugins/colab/cli/protocol.mts'
+import { languageOf } from '../plugins/colab/cli/protocol.ts'
 import { TEXT, TEXTS } from '../plugins/colab/cli/strings.mts'
 
 // What any text's words may take: a refusal's fields, the help's defaults, or a value of its own.

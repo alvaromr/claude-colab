@@ -1,8 +1,7 @@
-import { isName } from '../cli/protocol.mts'
+import { isName } from '../cli/protocol'
 import type { Place, Recent } from '../types'
-import { withLeft, without } from './addresses.ts'
-import { withGap } from './chat.ts'
-import { request } from './local.ts'
+import { withGap } from './chat'
+import { request } from './local'
 import {
   type Answer,
   complain,
@@ -22,8 +21,10 @@ import {
   updateChatWheel,
   updateLog,
   updateRecent,
-} from './state.ts'
-import { isNumbered } from './strings.ts'
+  withLeft,
+  without,
+} from './state'
+import { isNumbered } from './strings'
 
 // How many rooms left behind the pane offers to go back to.
 const RECENT_SIZE = 5

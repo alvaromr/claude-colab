@@ -1,7 +1,6 @@
 // Runs with Vitest, as the CLI's: what connect and the CLI say, and what the mod makes of it.
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
-import { DEAD_AFTER, PING_EVERY } from '../../plugins/colab/cli/protocol.mts'
 import {
   answerOf,
   done,
@@ -45,12 +44,13 @@ test('a link that dropped is tried again, each wait twice the last, up to half a
 })
 
 test('a refused name lets the link go; a taken one only once it cannot be this session’s own old link', () => {
-  const ghost = (DEAD_AFTER + 1) * PING_EVERY
-  assert.equal(isLetGo(undefined, 0, 10), false, 'not refused: tried again')
-  for (const reason of ['bad-name', 'claude-name'] as const) assert.equal(isLetGo(reason, 0, 1), true, reason)
-  assert.equal(isLetGo('name-taken', undefined, 5), true, 'taken with no drop before it: someone else’s')
-  assert.equal(isLetGo('name-taken', 1_000, 1_000 + ghost), false, 'within the wait: maybe its own')
-  assert.equal(isLetGo('name-taken', 1_000, 1_001 + ghost), true, 'past it: someone else’s')
+  // A server that pings every 100 ms and drops a link after 2 unheard: past 3 pings, the name is someone else's.
+  const pings = { every: 100, deadAfter: 2 }
+  assert.equal(isLetGo(undefined, 0, 10, pings), false, 'not refused: tried again')
+  for (const reason of ['bad-name', 'claude-name'] as const) assert.equal(isLetGo(reason, 0, 1, pings), true, reason)
+  assert.equal(isLetGo('name-taken', undefined, 5, pings), true, 'taken with no drop before it: someone else’s')
+  assert.equal(isLetGo('name-taken', 1_000, 1_300, pings), false, 'within the wait: maybe its own')
+  assert.equal(isLetGo('name-taken', 1_000, 1_301, pings), true, 'past it: someone else’s')
 })
 
 test('the conversation is told of someone else coming into or leaving this session’s room alone', () => {

@@ -1,17 +1,18 @@
 import type { On, RenderInput, ResolveInput } from 'claude-code'
 
-import { DEFAULT_PORT, INVITATION_PREFIX, isName, isPort } from '../cli/protocol.mts'
+import { DEFAULT_PORT, INVITATION_PREFIX, isName, isPort } from '../cli/protocol'
 import type { Line, Link, Setup } from '../types'
-import { acceptInvitation, connect, disconnect, hostHere } from './link.ts'
-import { sayFromPane } from './messages.ts'
-import { copyInvitation, create, leave, rejoinRecent } from './rooms.ts'
-import { isOwn, isSameServer } from './addresses.ts'
-import { colorOf, farthestBack, rowsOf, scrolledBack, wheeled } from './chat.ts'
-import { closeServer, machine } from './server.ts'
+import { acceptInvitation, connect, disconnect, hostHere } from './link'
+import { sayFromPane } from './messages'
+import { copyInvitation, create, leave, rejoinRecent } from './rooms'
+import { colorOf, farthestBack, rowsOf, scrolledBack, wheeled } from './chat'
+import { closeServer, machine } from './server'
 import {
   type Answer,
   type Engine,
   failed,
+  isOwn,
+  isSameServer,
   readChatWheel,
   readColors,
   readHelp,
@@ -29,7 +30,7 @@ import {
   updateHelp,
   updateSetup,
   updateTurnedDown,
-} from './state.ts'
+} from './state'
 
 export const PANE = 'colab'
 export const TITLE = 'Colab'

@@ -10,7 +10,7 @@ import { dirname } from 'node:path'
 import type { Writable } from 'node:stream'
 import tls from 'node:tls'
 import { privateFolder, socketError } from './home.mts'
-import { DEAD_AFTER, isLoopback, MAX_LINE, PING_EVERY, PROTOCOL, type Refusal, type Value } from './protocol.mts'
+import { DEAD_AFTER, isLoopback, MAX_LINE, PING_EVERY, PROTOCOL, type Refusal, type Value } from './protocol.ts'
 import { TEXT } from './strings.mts'
 import { clientOptions, invitation, readLines, writeLine } from './wire.mts'
 

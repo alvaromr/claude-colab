@@ -2,7 +2,7 @@
 import { randomBytes } from 'node:crypto'
 import type { Duplex, Writable } from 'node:stream'
 import type { ConnectionOptions, TlsOptions } from 'node:tls'
-import { INVITATION_PREFIX, isCode, isName, MAX_LINE, type Value } from './protocol.mts'
+import { INVITATION_PREFIX, isCode, isName, MAX_LINE, type Value } from './protocol.ts'
 import { TEXT } from './strings.mts'
 
 const IDENTITY = 'claude-colab'

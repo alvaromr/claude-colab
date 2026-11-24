@@ -12,7 +12,7 @@ import {
   languageOf,
   NAME_LENGTH,
   NAME_RULE,
-} from '../plugins/colab/cli/protocol.mts'
+} from '../plugins/colab/cli/protocol.ts'
 
 test('a server listens on every interface unless told, is reached here by loopback, and invites with colab:', () => {
   assert.deepEqual([ANY_HOST, LOOPBACK, INVITATION_PREFIX], ['0.0.0.0', '127.0.0.1', 'colab:'])

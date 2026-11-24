@@ -1,4 +1,4 @@
-import { type Answer, type Engine, failed, readLink, T } from './state.ts'
+import { type Answer, type Engine, failed, readLink, T } from './state'
 
 /** One request to this session's connect process, over its local socket. */
 export async function request($: Engine, op: string, args: Record<string, unknown> = {}): Promise<Answer> {

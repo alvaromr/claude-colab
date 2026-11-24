@@ -1,5 +1,5 @@
 // What the mod tells people and the model, in each language colab speaks; the mod picks one by the session's locale.
-import { DEFAULT_PORT, type Language, NAME_RULE } from '../cli/protocol.mts'
+import { DEFAULT_PORT, type Language, NAME_RULE } from '../cli/protocol'
 
 /** A room as people read it: a numbered one by its number, a named one by its name. */
 type RoomWords = (label: string) => string

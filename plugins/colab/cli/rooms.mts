@@ -8,7 +8,7 @@
 // Each connection gets a `color`, the lowest number no one connected has, so that clients can tell people apart.
 // A refusal is a `reason` with the fields it needs, never text: each client words it in its own person's language.
 // Pure: what it sends goes out through `deliver`, and new codes and the time come from whoever runs it.
-import { isCode, isName, MAX_TEXT, PROTOCOL, type Refusal, type Value } from './protocol.mts'
+import { isCode, isName, MAX_TEXT, PROTOCOL, type Refusal, type Value } from './protocol.ts'
 // Rooms are not closed when they empty: this bounds the memory anyone with the key could fill by making them.
 const MAX_ROOMS = 256
 // Clients show what someone's Claude writes as «Claude de <name>»: no person may take a name that reads like that.

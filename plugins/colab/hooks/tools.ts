@@ -1,11 +1,11 @@
 import type { Caught, Next, On } from 'claude-code'
 
-import { ANY_HOST, DEFAULT_PORT } from '../cli/protocol.mts'
-import { acceptInvitation, connect, disconnect } from './link.ts'
-import { say } from './messages.ts'
-import { create, invite, leave, roomList } from './rooms.ts'
-import { closeServer, openServer } from './server.ts'
-import { type Answer, done, type Engine, readSetup, T } from './state.ts'
+import { ANY_HOST, DEFAULT_PORT } from '../cli/protocol'
+import { acceptInvitation, connect, disconnect } from './link'
+import { say } from './messages'
+import { create, invite, leave, roomList } from './rooms'
+import { closeServer, openServer } from './server'
+import { type Answer, done, type Engine, readSetup, T } from './state'
 
 export type Input = Record<string, unknown>
 const text = (input: Input, field: string) => (typeof input[field] === 'string' ? input[field].trim() : '')

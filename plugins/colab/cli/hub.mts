@@ -2,7 +2,7 @@
 // `reply` with it; changes are pushed to everyone as events.
 import type { AddressInfo } from 'node:net'
 import tls from 'node:tls'
-import { DEAD_AFTER, PING_EVERY, type Value } from './protocol.mts'
+import { DEAD_AFTER, PING_EVERY, type Value } from './protocol.ts'
 import { type Client, type Result, roomsOf } from './rooms.mts'
 import { newCode, readLines, serverOptions, writeLine } from './wire.mts'
 

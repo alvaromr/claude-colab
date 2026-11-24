@@ -1,9 +1,9 @@
-import { languageOf } from '../cli/protocol.mts'
+import { languageOf } from '../cli/protocol'
 import type { Known, Setup } from '../types'
-import { resume } from './link.ts'
-import { checkServer } from './server.ts'
-import { type Engine, speak, T, unattended, unlinked, updateKnown, updateLink, updateSetup } from './state.ts'
-import { registerTools } from './tools.ts'
+import { resume } from './link'
+import { checkServer } from './server'
+import { type Engine, speak, T, unattended, unlinked, updateKnown, updateLink, updateSetup } from './state'
+import { registerTools } from './tools'
 
 /** Run by session.start, which the engine fires at each load of the mod, a reload included. */
 export async function start($: Engine) {

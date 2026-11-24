@@ -1,10 +1,11 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface } from 'claude-code'
 
-import type { Language } from '../cli/protocol.mts'
+import { isLoopback, LOOPBACK, type Language } from '../cli/protocol'
 import type { Hosted, Known, Line, Link, Place, Recent, Room, Setup } from '../types'
-import type { Answer } from './linking.ts'
-import { TEXTS } from './strings.ts'
+import { addressesOf } from './addresses'
+import type { Answer } from './linking'
+import { TEXTS } from './strings'
 
 export type Engine = EngineInterface
 
@@ -143,7 +144,9 @@ export function updateLog($: Engine, change: (value: Line[]) => Line[]) {
   return update($, log, change)
 }
 
-export { type Answer, done, failed } from './linking.ts'
+export { type Answer, done, failed } from './linking'
+/** This machine's addresses, by the protocol's loopback: what every part tells servers and rooms apart by. */
+export const { isOwn, isSameServer, localAt, withLeft, without } = addressesOf({ loopback: LOOPBACK, isLoopback })
 
 /**
  * A failure of the link or of the inbox, which no press is waiting on: kept in sight on the status line until the

@@ -42,8 +42,12 @@
                 "patterns": [
                   { "group": ["node:*"], "message": "The mod runs where there is no Node." },
                   {
-                    "group": ["../cli/*", "!../cli/protocol.mts"],
-                    "message": "Of the CLI, the mod imports only protocol.mts, what both agree on.",
+                    "group": ["../cli/*", "!../cli/protocol"],
+                    "message": "Of the CLI, the mod imports only protocol.ts, what both agree on.",
+                  },
+                  {
+                    "group": ["**/*.ts", "**/*.tsx", "**/*.mts"],
+                    "message": "claude plugin validate checks the mod's files with no TS extensions allowed: import them with none.",
                   },
                 ],
               },
@@ -68,7 +72,7 @@
       },
     },
     {
-      "includes": ["plugins/colab/cli/protocol.mts"],
+      "includes": ["plugins/colab/cli/protocol.ts"],
       "linter": {
         "rules": {
           "style": {
@@ -76,7 +80,7 @@
               "level": "error",
               "options": {
                 "patterns": [
-                  { "group": ["**"], "message": "protocol.mts imports nothing: the mod, with no Node, imports it." },
+                  { "group": ["**"], "message": "protocol.ts imports nothing: the mod, with no Node, imports it." },
                 ],
               },
             },
@@ -85,7 +89,8 @@
       },
     },
     {
-      // The mod's pure modules, which Node tests: no engine, nor anything else but the protocol, pure too.
+      // The mod's pure modules, which Node tests: they import nothing, since an import would need the extension that
+      // claude plugin validate refuses; what they need of the protocol, their callers hand them.
       "includes": ["plugins/colab/hooks/addresses.ts", "plugins/colab/hooks/chat.ts", "plugins/colab/hooks/linking.ts"],
       "linter": {
         "rules": {
@@ -95,8 +100,8 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["**", "!../cli/protocol.mts"],
-                    "message": "A pure module of the mod imports only the protocol: Node tests it.",
+                    "group": ["**"],
+                    "message": "A pure module of the mod imports nothing: Node runs it, claude plugin validate checks it.",
                   },
                 ],
               },
@@ -114,7 +119,7 @@
             "noRestrictedImports": {
               "level": "error",
               "options": {
-                "patterns": [{ "group": ["**", "!./protocol.mts"], "message": "rooms.mts is pure: no I/O." }],
+                "patterns": [{ "group": ["**", "!./protocol.ts"], "message": "rooms.mts is pure: no I/O." }],
               },
             },
           },

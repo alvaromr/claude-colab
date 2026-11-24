@@ -14,6 +14,7 @@ export default {
   mutate: [
     'plugins/colab/cli/**/*.mts',
     '!plugins/colab/cli/claude-colab.mts',
+    'plugins/colab/cli/protocol.ts',
     'plugins/colab/hooks/addresses.ts',
     'plugins/colab/hooks/chat.ts',
     'plugins/colab/hooks/linking.ts',

@@ -1,6 +1,7 @@
 // What connect and the CLI say, and what the mod makes of it: how a link that ends is made again or let go, and what
 // a command answered. Pure, with no engine: Node tests it, with coverage and mutation.
-import { DEAD_AFTER, PING_EVERY, type Refusal } from '../cli/protocol.mts'
+// It imports nothing: an import would need its file's extension, which Node takes and `claude plugin validate` does
+// not. What it needs of the protocol, its callers hand it.
 
 export type Answer = { ok: boolean; error?: string; text?: string }
 
@@ -10,9 +11,6 @@ export const done = (text: string): Answer => ({ ok: true, text })
 // The wait before linking again after a drop, doubling up to the last.
 export const RETRY_FIRST = 1_000
 const RETRY_LAST = 30_000
-// How long after a drop or a reload a taken name may still be this session's own link, not yet seen gone: past the
-// server's pings and one more, it is someone else's.
-const GHOST_WAIT = (DEAD_AFTER + 1) * PING_EVERY
 
 /** The wait before the next try, after one that waited `wait`. */
 export const nextWait = (wait: number) => Math.min(wait * 2, RETRY_LAST)
@@ -37,10 +35,17 @@ export const failureOf = (code: string) =>
 /**
  * Whether a link that ended is let go, not made again: a name the server turned down is turned down on every try, so
  * the person picks another. A taken one alone may be this session's own old link for a while after a drop, until the
- * server lets it go.
+ * server lets it go: past its `pings`, every so many ms, which drop a link after so many unheard, and one more, it
+ * is someone else's.
  */
-export const isLetGo = (refused: Refusal | undefined, droppedAt: number | undefined, now: number) =>
-  refused !== undefined && !(refused === 'name-taken' && now - (droppedAt ?? Number.NEGATIVE_INFINITY) <= GHOST_WAIT)
+export const isLetGo = (
+  refused: string | undefined, // the protocol's Refusal
+  droppedAt: number | undefined,
+  now: number,
+  pings: { every: number; deadAfter: number },
+) =>
+  refused !== undefined &&
+  !(refused === 'name-taken' && now - (droppedAt ?? Number.NEGATIVE_INFINITY) <= (pings.deadAfter + 1) * pings.every)
 
 /** Whether someone else came into or left the room this session is in, which the conversation is told. */
 export const isOthersMove = (

@@ -31,7 +31,7 @@ import {
 } from './home.mts'
 import { serve } from './hub.mts'
 import { type Answer, connect, type Host as LinkHost, networkAddresses } from './link.mts'
-import { ANY_HOST, isName, LOOPBACK, NAME_LENGTH, type Value } from './protocol.mts'
+import { ANY_HOST, isName, LOOPBACK, NAME_LENGTH, type Value } from './protocol.ts'
 import { type Defaults, TEXT } from './strings.mts'
 import { parseInvitation, parseKey } from './wire.mts'
 

@@ -1,11 +1,11 @@
 import type { Register } from 'claude-code'
 
-import { markBusy, say, sentLine } from './messages.ts'
-import { bubble, onPane, PANE, TITLE } from './pane.tsx'
-import { checkServer } from './server.ts'
-import { start } from './session.ts'
-import { MARK, readColors, readLink, readLog, T, unattended } from './state.ts'
-import { type Input, onTools } from './tools.ts'
+import { markBusy, say, sentLine } from './messages'
+import { bubble, onPane, PANE, TITLE } from './pane'
+import { checkServer } from './server'
+import { start } from './session'
+import { MARK, readColors, readLink, readLog, T, unattended } from './state'
+import { type Input, onTools } from './tools'
 
 // The number a received message carries into the conversation: its line in the log, which its row is drawn from.
 const NUMBERED = /\[colab\] #(\d+)/

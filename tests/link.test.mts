@@ -12,7 +12,7 @@ import tls from 'node:tls'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { afterAll as after, test } from 'vitest'
 import { connect, networkAddresses, reachableAt } from '../plugins/colab/cli/link.mts'
-import { DEAD_AFTER, MAX_LINE, NAME_RULE, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.mts'
+import { DEAD_AFTER, MAX_LINE, NAME_RULE, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.ts'
 import { newKey, parseInvitation, parseKey, readLines, serverOptions, writeLine } from '../plugins/colab/cli/wire.mts'
 import { fakeProcess } from './host.mts'
 

@@ -62,9 +62,13 @@ The plugin is `plugins/colab/`, the marketplace's source and all an install copi
 installed. The paths below are the plugin's. A third-party plugin may not be named `claude-…`. Everyone installs it;
 connectivity between machines is not the mod's business.
 
-- `cli/protocol.mts`: what the server, `connect` and the mod agree on (version, port, timings, limits, names, the
+- `cli/protocol.ts`: what the server, `connect` and the mod agree on (version, port, timings, limits, names, the
   language of a locale, the codes of the server's refusals). Pure: the mod, which has no Node, imports it, and
-  `tsconfig.json` type-checks it without Node's types, which keeps it so.
+  `tsconfig.json` type-checks it without Node's types, which keeps it so. A `.ts`, not a `.mts`, like the mod's
+  files: `claude plugin validate` type-checks every file the mod reaches with options of its own, which allow no
+  import that ends in a TypeScript extension, and an import without one finds no `.mts`. So the mod imports its files
+  with no extension, which Node does not take: the mod's pure modules, which Node runs, import nothing, and take
+  what they need of the protocol from their callers.
 - `cli/strings.mts` and `hooks/strings.ts`: what each half tells people and the model, in Spanish and English. The
   language is the locale's: the first of `LC_ALL`, `LC_MESSAGES` and `LANG` that is set, as POSIX reads it, so colab
   speaks as the machine's commands do. The mod reads it once, at `session.start`: a pane drawn before it starts is in
@@ -96,9 +100,9 @@ connectivity between machines is not the mod's business.
   change only by the named steps there (`wantLink`, `enteredRoom`, `leftRoom`, `unlinked`, `letGoLink`), which keep
   them agreeing.
 
-The lint enforces the boundaries (`biome.jsonc`): the mod imports nothing of Node and, of `cli/`, only
-`protocol.mts`; `protocol.mts` imports nothing; the mod's pure modules and `rooms.mts` import only `protocol.mts`;
-the CLI imports nothing of the mod.
+The lint enforces the boundaries (`biome.jsonc`): the mod imports nothing of Node, of `cli/` only `protocol.ts`,
+and nothing by a TypeScript extension; `protocol.ts` and the mod's pure modules import nothing, and `rooms.mts`
+only `protocol.ts`; the CLI imports nothing of the mod.
 
 ### The mod
 
@@ -199,5 +203,5 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
   the only one. `.claude-plugin/marketplace.json`, at the root: the marketplace that lists it.
 - `scripts/`: the repo guard, the mod's tests on a copy of the plugin (`test-mod.mts`), and the release
   (`release.mts`, with what it changes in the files in `bump.mts`).
-- In the plugin, `cli/protocol.mts`: the values both halves agree on. `types/index.d.ts`: the mod's state.
+- In the plugin, `cli/protocol.ts`: the values both halves agree on. `types/index.d.ts`: the mod's state.
 - `vitest.config.mts`, `stryker.config.mjs`, `biome.jsonc`, `.prettierrc.json`, `tsconfig.json`, `tsconfig.cli.json`: the gate's tools.

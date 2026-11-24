@@ -1,6 +1,5 @@
-import { localAt } from './addresses.ts'
-import { answerOf, hostedOf } from './linking.ts'
-import { type Answer, complained, done, type Engine, failed, T, updateHosted } from './state.ts'
+import { answerOf, hostedOf } from './linking'
+import { type Answer, complained, done, type Engine, failed, localAt, T, updateHosted } from './state'
 
 const CLI = 'cli/claude-colab.mts'
 

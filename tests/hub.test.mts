@@ -4,7 +4,7 @@ import net, { type AddressInfo } from 'node:net'
 import tls from 'node:tls'
 import { afterAll as after, beforeAll as before, test } from 'vitest'
 import { serve } from '../plugins/colab/cli/hub.mts'
-import { DEAD_AFTER, MAX_LINE, MAX_TEXT, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.mts'
+import { DEAD_AFTER, MAX_LINE, MAX_TEXT, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.ts'
 import { clientOptions, newKey, parseKey, readLines, writeLine } from '../plugins/colab/cli/wire.mts'
 
 // What the server answers and pushes, as these tests read it.

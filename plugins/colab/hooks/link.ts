@@ -1,17 +1,19 @@
-import { ANY_HOST, DEFAULT_PORT, isName, isPort, type Refusal } from '../cli/protocol.mts'
+import { ANY_HOST, DEAD_AFTER, DEFAULT_PORT, isName, isPort, PING_EVERY, type Refusal } from '../cli/protocol'
 import type { Known, Link, Place, Room, Setup } from '../types'
-import { isOwn, localAt, remembered } from './addresses.ts'
-import { failureOf, isLetGo, isOthersMove, nextWait, RETRY_FIRST, splitLines } from './linking.ts'
-import { type Message, show } from './messages.ts'
-import { backInRoom, expectBack, join, rejoin, settleBackNow } from './rooms.ts'
-import { checkServer, cli, openServer, runCli } from './server.ts'
+import { remembered } from './addresses'
+import { failureOf, isLetGo, isOthersMove, nextWait, RETRY_FIRST, splitLines } from './linking'
+import { type Message, show } from './messages'
+import { backInRoom, expectBack, join, rejoin, settleBackNow } from './rooms'
+import { checkServer, cli, openServer, runCli } from './server'
 import {
   type Answer,
   complain,
   done,
   type Engine,
   failed,
+  isOwn,
   letGoLink,
+  localAt,
   readError,
   readHosted,
   readKnown,
@@ -29,7 +31,7 @@ import {
   updateRooms,
   updateSetup,
   wantLink,
-} from './state.ts'
+} from './state'
 
 type Event =
   | { ev: 'connected'; name: string; color: number; server: string; title: string; socket: string; rooms: Room[] }
@@ -145,7 +147,7 @@ async function follow($: Engine, argv: string[], inbox: Inbox) {
   // The link may have ended with this machine's server, closed from another session.
   unattended($, T.serverUnknown, checkServer($))
   if (complaint) await complain($, complaint)
-  if (isLetGo(refused, droppedAt, await $.clock.now())) {
+  if (isLetGo(refused, droppedAt, await $.clock.now(), { every: PING_EVERY, deadAfter: DEAD_AFTER })) {
     await letGo($)
     if (refused === 'name-taken') await complain($, T.nameTaken)
   }

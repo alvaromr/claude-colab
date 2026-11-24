@@ -1,7 +1,7 @@
 import type { Author, Line, Place } from '../types'
-import { appended, cleaned, isForMe, lineOf, membersIn, quoted, shownTo } from './chat.ts'
-import { request } from './local.ts'
-import { backInRoom } from './rooms.ts'
+import { appended, cleaned, isForMe, lineOf, membersIn, quoted, shownTo } from './chat'
+import { request } from './local'
+import { backInRoom } from './rooms'
 import {
   type Answer,
   complain,
@@ -17,7 +17,7 @@ import {
   updateChatWheel,
   updateColors,
   updateLog,
-} from './state.ts'
+} from './state'
 
 /** A message of the room as connect hands it on: its room's code, and the label people read. */
 export type Message = Place & {
