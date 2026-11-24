@@ -110,8 +110,7 @@ export const scrolledBack = (moves: readonly number[], reach: number) =>
  * `count` messages it goes nowhere.
  */
 export function wheeled(moves: readonly number[], by: number, count: number) {
-  const last = moves.at(-1)
-  const next =
-    last !== undefined && Math.sign(last) === Math.sign(by) ? [...moves.slice(0, -1), last + by] : [...moves, by]
+  const last = moves.at(-1) ?? 0 // none goes no way, which no move of the wheel does
+  const next = Math.sign(last) === Math.sign(by) ? [...moves.slice(0, -1), last + by] : [...moves, by]
   return scrolledBack(next, Math.max(0, count - 1)) === 0 ? [] : next
 }
