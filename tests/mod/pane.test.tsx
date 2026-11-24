@@ -86,6 +86,48 @@ test('scrolled back as far as it goes, the chat holds to its oldest message, who
   await ui.unmount()
 })
 
+test('scrolled back past where it goes, a move down shows a newer message at once', async ($, on) => {
+  const state: Record<string, unknown> = {
+    ...SEEDED,
+    log: Array.from({ length: 20 }, (_, i) => fromBob(i + 1, `mensaje ${i + 1}`)),
+  }
+  on('state.get', (_, e, next) => (e.key in state ? { value: { value: state[e.key], version: 1 } } : next(e)))
+  on('ui.scroll', () => ({}))
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  const newer = async () => {
+    const line = await ui.find({ type: 'Text', text: /newer message/ })
+    return Number(/(\d+) newer/.exec(line?.text ?? '')?.[1])
+  }
+
+  await $.ui.scroll({ component: 'Pane', requestId: PANE.requestId, offset: 0, by: -99 } as never)
+  await $.ui.scroll({ component: 'Pane', requestId: PANE.requestId, offset: 0, by: -99 } as never)
+  const top = await newer()
+  expect(top).toBeGreaterThan(1)
+  await $.ui.scroll({ component: 'Pane', requestId: PANE.requestId, offset: 0, by: 3 } as never)
+  expect(await newer()).toBe(top - 1)
+  await ui.unmount()
+})
+
+test('a drawing of the pane writes nothing, and the wheel moves it from the first', async ($, on) => {
+  const state: Record<string, unknown> = {
+    ...SEEDED,
+    log: Array.from({ length: 20 }, (_, i) => fromBob(i + 1, `mensaje ${i + 1}`)),
+  }
+  on('state.get', (_, e, next) => (e.key in state ? { value: { value: state[e.key], version: 1 } } : next(e)))
+  on('ui.scroll', () => ({}))
+  const written: string[] = []
+  on('state.set', (_, e, next) => {
+    written.push(e.key)
+    return next(e)
+  })
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+
+  expect(written).toEqual([])
+  await $.ui.scroll({ component: 'Pane', requestId: PANE.requestId, offset: 0, by: -3 } as never)
+  expect(await ui.find({ type: 'Text', text: '↓ 1 newer message: scroll down with the wheel' })).toBeDefined()
+  await ui.unmount()
+})
+
 test('the chat does not scroll back past its oldest message: no blank above it', async ($, on) => {
   const state: Record<string, unknown> = {
     ...SEEDED,

@@ -6,13 +6,13 @@ import { acceptInvitation, connect, disconnect, hostHere } from './link.ts'
 import { sayFromPane } from './messages.ts'
 import { copyInvitation, create, leave, rejoinRecent } from './rooms.ts'
 import { isOwn, isSameServer } from './addresses.ts'
-import { colorOf, farthestBack, rowsOf } from './chat.ts'
+import { colorOf, farthestBack, rowsOf, scrolledBack, wheeled } from './chat.ts'
 import { closeServer, machine } from './server.ts'
 import {
   type Answer,
   type Engine,
   failed,
-  readChatBack,
+  readChatWheel,
   readColors,
   readHelp,
   readHosted,
@@ -25,7 +25,7 @@ import {
   readSetup,
   readTurnedDown,
   T,
-  updateChatBack,
+  updateChatWheel,
   updateHelp,
   updateSetup,
   updateTurnedDown,
@@ -35,8 +35,6 @@ export const PANE = 'colab'
 export const TITLE = 'Colab'
 // How many of the messages the pane's chat keeps it draws at most: those that fit its height show.
 const CHAT_DRAWN = 40
-// How far back the chat may scroll, as the last drawing of the pane measured it; the wheel stops there.
-let chatReach = 0
 // The pane's drawing, as the engine asks for it: with the body's size.
 type PaneInput = RenderInput<'Pane'>
 
@@ -358,7 +356,7 @@ async function linkedView($: Engine, e: PaneInput, parts: Parts, current: Extrac
 
 /**
  * The messages the chat has room for, `back` from the latest, and how far back it may go: the rows of everything but
- * the chat, as the pane wraps them, leave it the rest of the body's height. The reach is kept for the wheel.
+ * the chat, as the pane wraps them, leave it the rest of the body's height, and the wheel's moves lead back within it.
  */
 async function chatShown(
   $: Engine,
@@ -394,14 +392,14 @@ async function chatShown(
     (isHelping ? 1 : 0) +
     (isHelping ? notes.reduce((rows, text) => rows + rowsOf(text, columns), 0) : 0) +
     1 + // the field to write in
-    ((await readChatBack($)) > 0 ? 1 : 0) + // the line of the newer messages
     2 // the gaps between the parts
-  const height = e.props.scroll?.bodyRows ?? 30
-  // Back no further than where the oldest messages still fill the chat: no blank above them.
-  const reach = farthestBack(said, columns, height - fixed, T.gap)
-  const back = Math.min(await readChatBack($), reach)
-
-  chatReach = reach
+  const rows = (e.props.scroll?.bodyRows ?? 30) - fixed
+  const moves = await readChatWheel($)
+  // Back no further than where the oldest messages still fill the chat: no blank above them. Scrolled back, the
+  // line of the newer messages takes a row of the chat's.
+  const reachIn = (room: number) => farthestBack(said, columns, room, T.gap)
+  const reach = reachIn(scrolledBack(moves, reachIn(rows)) > 0 ? rows - 1 : rows)
+  const back = scrolledBack(moves, reach)
 
   return { chat: said.slice(Math.max(0, said.length - back - CHAT_DRAWN), said.length - back), back, reach }
 }
@@ -428,11 +426,12 @@ export function onPane(on: On) {
     const here = await readRoom($)
 
     if (here === null || (await readLink($)).status !== 'on') return next(e)
-    // About one message every three rows the wheel moves; up, by < 0, goes back to older ones, as far as the last
-    // drawing found room for.
+    // About one message every three rows the wheel moves; up, by < 0, goes back to older ones. How far back that
+    // leads, the drawing reckons, which alone knows how much of the chat has room.
     const step = Math.sign(e.by) * Math.max(1, Math.round(Math.abs(e.by) / 3))
+    const count = (await readLog($)).filter(line => line.code === here.code).length
 
-    await updateChatBack($, back => Math.min(Math.max(0, back - step), chatReach))
+    await updateChatWheel($, moves => wheeled(moves, -step, count))
 
     return {}
   })

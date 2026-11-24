@@ -89,8 +89,11 @@ declare module 'claude-code' {
       help: boolean
       /** What each field of the pane turned down, by its key: kept in it for the person to mend, until it takes one. */
       turnedDown: Record<string, string>
-      /** How many of the room's latest messages the chat has scrolled past, 0 showing the latest. */
-      chatBack: number
+      /**
+       * The wheel's moves over the chat since it last showed the room's latest message, in turn: each so many
+       * messages back (> 0) or forward. How far back that leads, the drawing reckons, which alone knows the room.
+       */
+      chatWheel: number[]
     }
   }
 }

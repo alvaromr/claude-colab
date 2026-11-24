@@ -14,7 +14,7 @@ import {
   readRoom,
   readRooms,
   T,
-  updateChatBack,
+  updateChatWheel,
   updateColors,
   updateLog,
 } from './state.ts'
@@ -74,7 +74,7 @@ export async function sentLine($: Engine, text: string, by: Author, to?: unknown
 
 /** What the person writes in the pane's chat: the model is told, as it is of what they say with /colab. */
 export async function sayFromPane($: Engine, text: string): Promise<Answer> {
-  await updateChatBack($, () => 0) // back to the latest, where what is said shows
+  await updateChatWheel($, () => []) // back to the latest, where what is said shows
   fromPane.push(text)
   const sent = await say($, text, 'person')
 

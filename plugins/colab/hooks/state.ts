@@ -35,7 +35,7 @@ const known = atom({ plugin: 'colab', key: 'known' } as const, [])
 const recent = atom({ plugin: 'colab', key: 'recent' } as const, [])
 const help = atom({ plugin: 'colab', key: 'help' } as const, false)
 const turnedDown = atom({ plugin: 'colab', key: 'turnedDown' } as const, {})
-const chatBack = atom({ plugin: 'colab', key: 'chatBack' } as const, 0)
+const chatWheel = atom({ plugin: 'colab', key: 'chatWheel' } as const, [])
 const colors = atom({ plugin: 'colab', key: 'colors' } as const, {})
 const want = atom({ plugin: 'colab', key: 'want' } as const, null)
 const log = atom({ plugin: 'colab', key: 'log' } as const, [])
@@ -94,11 +94,11 @@ export function readTurnedDown($: Engine) {
 export function updateTurnedDown($: Engine, change: (value: Record<string, string>) => Record<string, string>) {
   return update($, turnedDown, change)
 }
-export function readChatBack($: Engine) {
-  return read($, chatBack)
+export function readChatWheel($: Engine) {
+  return read($, chatWheel)
 }
-export function updateChatBack($: Engine, change: (value: number) => number) {
-  return update($, chatBack, change)
+export function updateChatWheel($: Engine, change: (value: number[]) => number[]) {
+  return update($, chatWheel, change)
 }
 export function readColors($: Engine) {
   return read($, colors)

@@ -19,7 +19,7 @@ import {
   readWant,
   START_TIMEOUT,
   T,
-  updateChatBack,
+  updateChatWheel,
   updateLog,
   updateRecent,
 } from './state.ts'
@@ -73,7 +73,7 @@ export async function rejoin($: Engine, place: Place) {
 
 /** Notes the room this session is now in, to go back to it after a reload or a drop. */
 async function enter($: Engine, place: Place) {
-  await updateChatBack($, () => 0)
+  await updateChatWheel($, () => [])
   // Back in a room this session was in: what was said meanwhile never reached it, and the chat says so, once until
   // the room says something again.
   await updateLog($, all => withGap(all, place, LOG_SIZE))

@@ -11,7 +11,9 @@ import {
   membersIn,
   quoted,
   rowsOf,
+  scrolledBack,
   shownTo,
+  wheeled,
   withGap,
 } from '../../plugins/colab/hooks/chat.ts'
 
@@ -116,4 +118,29 @@ test('the chat scrolls back only as far as the older messages still fill its row
   assert.equal(farthestBack(lines, 20, 15, 'hueco'), 0, 'all of them fill it')
   assert.equal(farthestBack(lines, 4, 10, 'h'.repeat(9)), 2, 'a gap wrapped takes its rows')
   assert.equal(farthestBack([], 20, 1, 'hueco'), 0)
+})
+
+test('the chat shows each move of the wheel in turn, held between the latest and as far back as it goes', () => {
+  assert.equal(scrolledBack([], 5), 0, 'unmoved, the latest')
+  assert.equal(scrolledBack([3], 5), 3)
+  assert.equal(scrolledBack([9], 5), 5, 'no further back than it goes')
+  assert.equal(scrolledBack([9, -1], 5), 4, 'and from there, forward at once')
+  assert.equal(scrolledBack([2, -5], 5), 0, 'no further forward than the latest')
+  assert.equal(scrolledBack([2, -5, 1], 5), 1, 'and from there, back at once')
+  assert.equal(scrolledBack([3, -1], 0), 0, 'nowhere to go when it all fits')
+})
+
+test('the wheel keeps its moves, a move the same way as the last joined to it, and none once at the latest', () => {
+  assert.deepEqual(wheeled([], 2, 10), [2])
+  assert.deepEqual(wheeled([2], 1, 10), [3], 'the same way')
+  assert.deepEqual(wheeled([3], -1, 10), [3, -1], 'the other way')
+  assert.deepEqual(wheeled([3, -1], -1, 10), [3, -2])
+  assert.deepEqual(wheeled([3, -2], -1, 10), [], 'back at the latest, whatever the chat has room for')
+  assert.deepEqual(wheeled([3], -5, 10), [])
+  assert.deepEqual(wheeled([], -1, 10), [], 'forward from the latest')
+  // Past its oldest message no chat goes, whatever its size: from there forward is forward.
+  assert.deepEqual(wheeled([20], -5, 10), [20, -5])
+  assert.deepEqual(wheeled([20, -5], -4, 10), [])
+  assert.deepEqual(wheeled([], 1, 1), [], 'one message: nowhere back to go')
+  assert.deepEqual(wheeled([], 1, 0), [])
 })

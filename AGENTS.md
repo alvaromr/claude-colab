@@ -34,8 +34,8 @@ holds how to work on it, and the design with its reasons.
   run that passed can alter: the change reaches their code, what it imports, or a test that runs them, with its
   helpers. Config that changes neither the mutants nor how their tests run, and any tool but Stryker, its parser and
   Vitest, reach none. Every module, about 18 minutes, only when none passed yet, Stryker, its parser or Vitest
-  changed, or the config changed how the tests run (`scripts/scope.mts`), or with `--full`. What it runs, and why, is in `stryker.config.mjs`,
-  and its tests in `vitest.config.mts` (`MUTATION_TESTS`).
+  changed, or the config changed how the tests run (`scripts/scope.mts`), or with `--full`. What it runs, and why,
+  is in `stryker.config.mjs`, and its tests in `vitest.config.mts` (`MUTATION_TESTS`).
 - `pnpm audit:deps`: the audit of the dev dependencies; the plugin itself has none.
 - `pnpm release <x.y.z>`: the release, stopping at the first step that fails. Checks the tree is clean and the tag
   new, runs the gate and the slow checks, then installs the release (the version bumped in `plugin.json`,
@@ -82,14 +82,14 @@ connectivity between machines is not the mod's business.
   runs it, as the smoke.
 - The mod, in `hooks/`, its decisions apart from its hooks into the engine. Pure, with no engine, so that Node tests
   them with coverage and mutation: `addresses.ts`, which addresses reach which server, and the servers and rooms kept
-  to go back to; `chat.ts`, what a message becomes on its way in, who it is for, how the log keeps it and how much of
-  the chat it takes; `linking.ts`, what connect and the CLI say, and whether a link that ends is made again. On the
-  engine, which they hand their work to: `register.tsx`, its entry point, with the conversation's rows; `session.ts`,
-  its start; `link.ts`, the link: connect's process and its events; `rooms.ts`, the session's rooms, and the way back
-  into one after a reload or a drop; `messages.ts`, the chat; `local.ts`, the requests to connect; `server.ts`, this
-  machine's server; `pane.tsx`, the pane; `tools.ts`, the tools; `state.ts`, its state and what every part shares.
-  `types/index.d.ts`: the contract of its state, which the engine wants whole in one file: the pure modules take
-  plain shapes instead.
+  to go back to; `chat.ts`, what a message becomes on its way in, who it is for, how the log keeps it, how much of
+  the chat it takes and how far back the wheel's moves lead it; `linking.ts`, what connect and the CLI say, and
+  whether a link that ends is made again. On the engine, which they hand their work to: `register.tsx`, its entry
+  point, with the conversation's rows; `session.ts`, its start; `link.ts`, the link: connect's process and its events;
+  `rooms.ts`, the session's rooms, and the way back into one after a reload or a drop; `messages.ts`, the chat;
+  `local.ts`, the requests to connect; `server.ts`, this machine's server; `pane.tsx`, the pane; `tools.ts`, the
+  tools; `state.ts`, its state and what every part shares. `types/index.d.ts`: the contract of its state, which the
+  engine wants whole in one file: the pure modules take plain shapes instead.
 - The engine reads and writes a value of the state only in the file that declares its atom, and follows `$` past an
   import only into a function declaration: each value is declared once, in `state.ts`, and reached through its
   `read…` and `update…` functions there. The link and room the person asked for, and the room the session is in,

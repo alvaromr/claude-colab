@@ -1,5 +1,6 @@
-// What a message of the room becomes on its way in, who it is for, how the chat's log keeps it, and how much of the
-// pane's chat it takes. Pure, with no engine: Node tests it, with coverage and mutation.
+// What a message of the room becomes on its way in, who it is for, how the chat's log keeps it, how much of the
+// pane's chat it takes and how far back the wheel's moves lead it. Pure, with no engine: Node tests it, with coverage
+// and mutation.
 
 /** A line of the chat's log, as far as its order and its gaps need. */
 type Logged = { n: number; code: string; gap?: true }
@@ -93,4 +94,24 @@ export function farthestBack(lines: { text: string; gap?: true }[], columns: num
   }
 
   return 0
+}
+
+/**
+ * How many of the newest messages the chat has scrolled past after the wheel's `moves`, each so many messages back
+ * (> 0) or forward, taken in turn and held between the latest and `reach`: as far as the drawing finds it goes, so that
+ * a move the other way shows at once.
+ */
+export const scrolledBack = (moves: readonly number[], reach: number) =>
+  moves.reduce((back, by) => Math.min(Math.max(0, back + by), reach), 0)
+
+/**
+ * The wheel's `moves` with one more, `by` messages back: joined to the last when the same way, which changes nothing
+ * of where they lead; none once they lead to the latest, whatever the chat has room for, since past the oldest of its
+ * `count` messages it goes nowhere.
+ */
+export function wheeled(moves: readonly number[], by: number, count: number) {
+  const last = moves.at(-1)
+  const next =
+    last !== undefined && Math.sign(last) === Math.sign(by) ? [...moves.slice(0, -1), last + by] : [...moves, by]
+  return scrolledBack(next, Math.max(0, count - 1)) === 0 ? [] : next
 }
