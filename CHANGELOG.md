@@ -5,6 +5,8 @@ The version follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-26
+
 ### Fixed
 
 - `claude plugin validate` passes with no warnings: the mod's files import one another with no TypeScript extension.
