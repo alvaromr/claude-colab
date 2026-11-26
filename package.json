@@ -4,7 +4,7 @@
   "description": "Development tasks of the colab mod and the claude-colab CLI; the plugin itself has no dependencies.",
   "license": "MIT",
   "type": "module",
-  "packageManager": "pnpm@12.4.2",
+  "packageManager": "pnpm@12.22.0",
   "engines": {
     "node": ">=26"
   },
@@ -27,7 +27,7 @@
     "audit:deps": "pnpm audit"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.7",
+    "@biomejs/biome": "2.6.8",
     "@stryker-mutator/core": "10.1.1",
     "@stryker-mutator/vitest-runner": "10.1.1",
     "@types/node": "26.6.6",
