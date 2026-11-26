@@ -7,7 +7,7 @@
       "name": "colab",
       "source": {
         "source": "git-subdir",
-        "url": "alvaromr/claude-colab",
+        "url": "https://github.com/alvaromr/claude-colab.git",
         "path": "plugins/colab",
         "ref": "colab--v0.1.1"
       }

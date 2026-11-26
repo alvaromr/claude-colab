@@ -5,6 +5,11 @@ The version follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The marketplace reaches the plugin by HTTPS: an install no longer needs an SSH key on GitHub nor GitHub's host key
+  in `known_hosts`, and a release refuses any other URL.
+
 ## [0.1.1] - 2026-11-26
 
 ### Fixed

@@ -1,5 +1,6 @@
 // Runs with Vitest: what a release changes in the files that hold its version and its changes.
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { test } from 'vitest'
 import {
   bumpManifest,
@@ -38,11 +39,33 @@ test('the manifest changes only in its version, wherever the field sits', () => 
 test('the marketplace changes only in the tag or the repository its plugin comes from', () => {
   const source = (ref: string, url: string) =>
     `{\n  "plugins": [\n    {\n      "name": "colab",\n      "source": { "source": "git-subdir", "url": "${url}", "path": "plugins/colab", "ref": "${ref}" }\n    }\n  ]\n}\n`
-  const marketplace = source('colab--v0.1.0', 'alvaromr/claude-colab')
-  assert.equal(pinMarketplace(marketplace, 'colab--v0.2.0'), source('colab--v0.2.0', 'alvaromr/claude-colab'))
+  const repository = 'https://github.com/alvaromr/claude-colab.git'
+  const marketplace = source('colab--v0.1.0', repository)
+  assert.equal(pinMarketplace(marketplace, 'colab--v0.2.0'), source('colab--v0.2.0', repository))
   assert.equal(sourceMarketplace(marketplace, 'file:///tmp/clone'), source('colab--v0.1.0', 'file:///tmp/clone'))
-  assert.throws(() => pinMarketplace('{ "plugins": [] }', 'colab--v0.2.0'), /marketplace\.json has no ref/)
+  assert.throws(() => pinMarketplace(`{ "url": "${repository}" }`, 'colab--v0.2.0'), /marketplace\.json has no ref/)
   assert.throws(() => sourceMarketplace('{ "plugins": [] }', 'file:///tmp/clone'), /marketplace\.json has no url/)
+})
+
+// Claude Code clones a `git-subdir` plugin by its URL as written, and turns `owner/repo` into an SSH URL: the clone
+// fails for anyone without an SSH key on GitHub or GitHub's host key in known_hosts.
+test('the marketplace reaches its plugin by HTTPS, which anyone can clone, and a release keeps it so', () => {
+  const source = (url: string) => `{ "plugins": [{ "source": { "url": "${url}", "ref": "colab--v0.1.0" } }] }`
+  for (const url of [
+    'alvaromr/claude-colab',
+    'ssh://github.com/alvaromr/claude-colab.git',
+    'https://github.com/alvaromr/claude-colab',
+    'http://github.com/alvaromr/claude-colab.git',
+  ]) {
+    assert.throws(
+      () => pinMarketplace(source(url), 'colab--v0.2.0'),
+      /https:\/\/github\.com\/<owner>\/<repo>\.git/,
+      url,
+    )
+  }
+  assert.throws(() => pinMarketplace('{ "plugins": [{ "ref": "colab--v0.1.0" }] }', 'colab--v0.2.0'), /no url/)
+  const ours = readFileSync(new URL('../.claude-plugin/marketplace.json', import.meta.url), 'utf8')
+  assert.doesNotThrow(() => pinMarketplace(ours, 'colab--v0.2.0'))
 })
 
 test('the changelog’s Unreleased becomes the version, dated, under an empty Unreleased', () => {

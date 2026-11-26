@@ -2,6 +2,7 @@
 // writes them.
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/
 const UNRELEASED = '## [Unreleased]\n'
+const HTTPS_REPOSITORY = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\.git$/
 
 /** `wanted`, once it is a plain x.y.z not below `current`, the manifest's own while no tag holds it; throws otherwise. */
 export function nextVersion(current: string, wanted: string) {
@@ -22,9 +23,19 @@ function withField(text: string, file: string, field: string, value: string) {
 export const bumpManifest = (manifest: string, version: string) =>
   withField(manifest, 'plugin.json', 'version', version)
 
-/** marketplace.json's text with its plugin from the release's `tag`: what an install gets. */
-export const pinMarketplace = (marketplace: string, tag: string) =>
-  withField(marketplace, 'marketplace.json', 'ref', tag)
+/**
+ * marketplace.json's text with its plugin from the release's `tag`: what an install gets. Throws unless the plugin's
+ * repository is a full HTTPS URL: Claude Code clones it as written, and turns `owner/repo` into an SSH URL, which only
+ * those with an SSH key on GitHub and its host key known can clone.
+ */
+export function pinMarketplace(marketplace: string, tag: string) {
+  const url = /"url": "([^"]*)"/.exec(marketplace)?.[1]
+  if (url === undefined) throw new Error('marketplace.json has no url')
+  if (!HTTPS_REPOSITORY.test(url)) {
+    throw new Error(`marketplace.json’s url must be https://github.com/<owner>/<repo>.git, not “${url}”`)
+  }
+  return withField(marketplace, 'marketplace.json', 'ref', tag)
+}
 
 /** marketplace.json's text with its plugin from the repository at `url`: the release's clone, for its smoke. */
 export const sourceMarketplace = (marketplace: string, url: string) =>
