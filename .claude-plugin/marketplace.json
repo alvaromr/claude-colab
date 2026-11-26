@@ -2,5 +2,15 @@
   "name": "claude-colab",
   "description": "The colab plugin: rooms where Claude Code sessions of different people pass each other messages.",
   "owner": { "name": "alvaromr" },
-  "plugins": [{ "name": "colab", "source": "./plugins/colab" }]
+  "plugins": [
+    {
+      "name": "colab",
+      "source": {
+        "source": "git-subdir",
+        "url": "alvaromr/claude-colab",
+        "path": "plugins/colab",
+        "ref": "colab--v0.1.0"
+      }
+    }
+  ]
 }

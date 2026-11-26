@@ -33,8 +33,9 @@ holds how to work on it, and the design with its reasons.
 - `pnpm audit:deps`: the audit of the dev dependencies; the plugin itself has none.
 - `pnpm release <x.y.z>`: the release, stopping at the first step that fails. Checks the tree is clean and the tag
   new, runs the gate and the slow checks, then installs the release (the version bumped in `plugin.json`,
-  `CHANGELOG.md`'s Unreleased moved under it) from its marketplace into a home of its own and smokes the installed
-  copy: `claude plugin validate`, the CLI's `--help` and `status`. Then writes both files, commits and tags
+  `CHANGELOG.md`'s Unreleased moved under it, the marketplace pinned to its tag) from its marketplace into a home of
+  its own, taking the plugin from a clone tagged as the release will be, and smokes the installed copy: its licence,
+  `claude plugin validate`, the CLI's `--help` and `status`. Then writes the three files, commits and tags
   (`colab--v<x.y.z>`, by `claude plugin tag`). It never pushes.
 - `pnpm release:dry-run <x.y.z>`: the same up to the smoke, changing nothing.
 - Run the mod: `claude --plugin-dir plugins/colab`. Run the CLI: `node plugins/colab/cli/claude-colab.mts --help`.
@@ -194,7 +195,9 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
 - `README.md`: install and use. `SECURITY.md`: what colab protects, and reporting a vulnerability. `CHANGELOG.md`:
   changes per version. `CONTRIBUTING.md`: points here. `docs/decisions/`: the deliberate deviations, one per file.
 - `plugins/colab/`: the plugin, all an install copies. Its `.claude-plugin/plugin.json`: its manifest and its version,
-  the only one. `.claude-plugin/marketplace.json`, at the root: the marketplace that lists it.
+  the only one. `.claude-plugin/marketplace.json`, at the root: the marketplace that lists it, from the tag of its
+  latest release, so that an install gets that release and never the default branch. `LICENSE`, in the plugin too,
+  since an install takes only its folder (`docs/decisions/12`).
 - `scripts/`: the repo guard, the mod's tests on a copy of the plugin (`test-mod.mts`), and the release
   (`release.mts`, with what it changes in the files in `bump.mts`).
 - In the plugin, `cli/protocol.ts`: the values both halves agree on. `types/index.d.ts`: the mod's state.

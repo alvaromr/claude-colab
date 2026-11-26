@@ -11,12 +11,24 @@ export function nextVersion(current: string, wanted: string) {
   return wanted
 }
 
-/** plugin.json's text with `version` as its version, and nothing else changed. */
-export function bumpManifest(manifest: string, version: string) {
-  const field = /"version": "[^"]*"/
-  if (!field.test(manifest)) throw new Error('plugin.json has no version')
-  return manifest.replace(field, `"version": "${version}"`)
+/** The JSON `text` of `file` with its first string `field` set to `value`, and nothing else changed. */
+function withField(text: string, file: string, field: string, value: string) {
+  const pattern = new RegExp(`"${field}": "[^"]*"`)
+  if (!pattern.test(text)) throw new Error(`${file} has no ${field}`)
+  return text.replace(pattern, `"${field}": "${value}"`)
 }
+
+/** plugin.json's text with `version` as its version. */
+export const bumpManifest = (manifest: string, version: string) =>
+  withField(manifest, 'plugin.json', 'version', version)
+
+/** marketplace.json's text with its plugin from the release's `tag`: what an install gets. */
+export const pinMarketplace = (marketplace: string, tag: string) =>
+  withField(marketplace, 'marketplace.json', 'ref', tag)
+
+/** marketplace.json's text with its plugin from the repository at `url`: the release's clone, for its smoke. */
+export const sourceMarketplace = (marketplace: string, url: string) =>
+  withField(marketplace, 'marketplace.json', 'url', url)
 
 /** CHANGELOG.md's text with what Unreleased holds moved under `version`, dated, and Unreleased left empty. */
 export function releaseChangelog(changelog: string, version: string, date: string) {

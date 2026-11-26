@@ -8,6 +8,8 @@ The version follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - `claude plugin validate` passes with no warnings: the mod's files import one another with no TypeScript extension.
+- An install gets the latest release, by its tag, not the default branch labelled with that release's version; the
+  installed copy holds the licence text.
 
 ## [0.1.0] - 2026-11-23
 

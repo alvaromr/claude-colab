@@ -1,7 +1,14 @@
 // Runs with Vitest: what a release changes in the files that hold its version and its changes.
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
-import { bumpManifest, nextVersion, releaseChangelog, tagOf } from '../scripts/bump.mts'
+import {
+  bumpManifest,
+  nextVersion,
+  pinMarketplace,
+  releaseChangelog,
+  sourceMarketplace,
+  tagOf,
+} from '../scripts/bump.mts'
 
 // The manifest's own version, while no tag holds it, is the one being prepared: the tag's check turns it down after.
 test('the next version is a plain x.y.z, not below the current one', () => {
@@ -26,6 +33,16 @@ test('the manifest changes only in its version, wherever the field sits', () => 
     '{\n  "name": "colab",\n  "version": "0.2.0",\n  "author": { "name": "A" }\n}\n',
   )
   assert.throws(() => bumpManifest('{ "name": "colab" }', '0.2.0'), /no version/)
+})
+
+test('the marketplace changes only in the tag or the repository its plugin comes from', () => {
+  const source = (ref: string, url: string) =>
+    `{\n  "plugins": [\n    {\n      "name": "colab",\n      "source": { "source": "git-subdir", "url": "${url}", "path": "plugins/colab", "ref": "${ref}" }\n    }\n  ]\n}\n`
+  const marketplace = source('colab--v0.1.0', 'alvaromr/claude-colab')
+  assert.equal(pinMarketplace(marketplace, 'colab--v0.2.0'), source('colab--v0.2.0', 'alvaromr/claude-colab'))
+  assert.equal(sourceMarketplace(marketplace, 'file:///tmp/clone'), source('colab--v0.1.0', 'file:///tmp/clone'))
+  assert.throws(() => pinMarketplace('{ "plugins": [] }', 'colab--v0.2.0'), /marketplace\.json has no ref/)
+  assert.throws(() => sourceMarketplace('{ "plugins": [] }', 'file:///tmp/clone'), /marketplace\.json has no url/)
 })
 
 test('the changelog’s Unreleased becomes the version, dated, under an empty Unreleased', () => {
