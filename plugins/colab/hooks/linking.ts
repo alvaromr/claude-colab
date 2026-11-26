@@ -1,7 +1,6 @@
 // What connect and the CLI say, and what the mod makes of it: how a link that ends is made again or let go, and what
 // a command answered. Pure, with no engine: Node tests it, with coverage and mutation.
-// It imports nothing: an import would need its file's extension, which Node takes and `claude plugin validate` does
-// not. What it needs of the protocol, its callers hand it.
+// It imports nothing (`AGENTS.md`, Architecture): what it needs of the protocol, its callers hand it.
 
 export type Answer = { ok: boolean; error?: string; text?: string }
 

@@ -11,8 +11,8 @@ type Left = { code: string; server: string }
 const portOf = (server: string) => server.slice(server.lastIndexOf(':') + 1)
 
 /**
- * The addresses of `machine`, which the mod hands the protocol's: this module imports nothing, since an import would
- * need its file's extension, which Node takes and `claude plugin validate` does not.
+ * The addresses of `machine`, which the mod hands the protocol's: this module imports nothing (`AGENTS.md`,
+ * Architecture).
  */
 export function addressesOf({ loopback, isLoopback }: Machine) {
   // This machine, as an address: by loopback, or by one of its network addresses, which its own server's

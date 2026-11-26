@@ -11,7 +11,7 @@ const TLS = { minVersion: 'TLSv1.3', ciphers: 'TLS_AES_128_GCM_SHA256:TLS_CHACHA
 
 export const newKey = () => randomBytes(32).toString('base64url')
 
-// A room's code: whoever has it may go in. Only its members and their invitations hold it.
+// A new room's code, as `isCode` takes it (protocol.ts).
 export const newCode = () => randomBytes(18).toString('base64url')
 
 /**
