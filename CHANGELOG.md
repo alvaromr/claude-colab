@@ -5,6 +5,8 @@ The version follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-26
+
 ### Changed
 
 - Native Windows is not supported: there, the CLI, the pane, `/colab` and the tools stop at once and say to use Claude
