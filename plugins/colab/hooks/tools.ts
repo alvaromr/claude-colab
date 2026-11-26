@@ -5,7 +5,7 @@ import { acceptInvitation, connect, disconnect } from './link'
 import { say } from './messages'
 import { create, invite, leave, roomList } from './rooms'
 import { closeServer, openServer } from './server'
-import { type Answer, done, type Engine, readSetup, T } from './state'
+import { type Answer, done, type Engine, isNativeWindows, readSetup, T } from './state'
 
 export type Input = Record<string, unknown>
 const text = (input: Input, field: string) => (typeof input[field] === 'string' ? input[field].trim() : '')
@@ -62,6 +62,13 @@ const reply = (answer: Answer) => (answer.ok ? { result: answer.text ?? T.done }
  * each hook names its tool and its handler here, and a test checks that every tool of TOOLS has one.
  */
 export function onTools(on: On) {
+  // Outermost, as registered first: on native Windows no tool's own hook runs.
+  const anyTool = new RegExp(
+    `^(${Object.keys(TOOLS)
+      .map(name => toolName(name as keyof typeof TOOLS))
+      .join('|')})$`,
+  )
+  on('tool.call', { tool: anyTool }, nativeWindowsTool).catch(broke)
   on('tool.call', { tool: tool('say') }, sayTool).catch(broke)
   on('tool.call', { tool: tool('serve') }, serveTool).catch(broke)
   on('tool.call', { tool: tool('stop_serving') }, stopServingTool).catch(broke)
@@ -77,6 +84,11 @@ export function onTools(on: On) {
 /** A hook that broke: what the model is told, unless the engine beneath it was what broke. */
 function broke<E extends { tool: string }>(_$: Engine, e: E, next: Next<'tool.call', E> & Caught) {
   return next.called ? next(e) : { deny: T.toolBroke(e.tool) }
+}
+
+/** Every tool of TOOLS, on native Windows: turned down with why, before it runs anything. */
+function nativeWindowsTool<E extends { tool: string }>(_$: Engine, e: E, next: Next<'tool.call', E>) {
+  return isNativeWindows ? { deny: T.nativeWindows } : next(e)
 }
 
 async function sayTool($: Engine, e: Input) {

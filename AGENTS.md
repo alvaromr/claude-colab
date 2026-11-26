@@ -58,7 +58,7 @@ installed. The paths below are the plugin's. A third-party plugin may not be nam
 connectivity between machines is not the mod's business.
 
 - `cli/protocol.ts`: what the server, `connect` and the mod agree on (version, port, timings, limits, names, the
-  language of a locale, the codes of the server's refusals). Pure: the mod, which has no Node, imports it, and
+  language of a locale, the codes of the server's refusals, the words both halves say alike). Pure: the mod, which has no Node, imports it, and
   `tsconfig.json` type-checks it without Node's types, which keeps it so. A `.ts`, not a `.mts`, like the mod's
   files: `claude plugin validate` type-checks every file the mod reaches with options of its own, which allow no
   import that ends in a TypeScript extension, and an import without one finds no `.mts`. So the mod imports its files
@@ -189,6 +189,10 @@ Before changing a practice, read `docs/decisions/`: one file per deliberate devi
 
 - Tested between sessions on one machine only, not between two. Two machines that cannot reach each other need
   another network (such as Tailscale); the tool does not change.
+- Native Windows is not supported: the private folder, the keys and the local sockets stand on POSIX modes and Unix
+  socket paths. There the CLI (`process.platform`) and the mod (`$.session.info().platform`, read at
+  `session.start`) stop at once with `NATIVE_WINDOWS` (`cli/protocol.ts`), which says to use WSL; WSL is Linux to
+  both, and runs as is.
 
 ## Where things live
 

@@ -4,7 +4,7 @@ import { markBusy, say, sentLine } from './messages'
 import { bubble, onPane, PANE, TITLE } from './pane'
 import { checkServer } from './server'
 import { start } from './session'
-import { MARK, readColors, readLink, readLog, T, unattended } from './state'
+import { isNativeWindows, MARK, readColors, readLink, readLog, T, unattended } from './state'
 import { type Input, onTools, toolName } from './tools'
 
 // The number a received message carries into the conversation, after the mark: its line in the log, which its row is
@@ -20,6 +20,7 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'colab' }, async ($, e) => {
+    if (isNativeWindows) return { text: T.nativeWindows }
     const said = e.args.trim()
 
     if (!said) {

@@ -1,5 +1,5 @@
 // What the mod tells people and the model, in each language colab speaks; the mod picks one by the session's locale.
-import { DEFAULT_PORT, type Language, NAME_RULE } from '../cli/protocol'
+import { DEFAULT_PORT, type Language, NAME_RULE, NATIVE_WINDOWS } from '../cli/protocol'
 
 /** A room as people read it: a numbered one by its number, a named one by its name. */
 type RoomWords = (label: string) => string
@@ -138,6 +138,7 @@ Nunca escribas en la sala tus pensamientos ni tu plan, y no compartas secretos n
     },
   } satisfies Record<string, { description: string } & Record<string, string>>,
   mobile: 'La app móvil no dibuja campos: conecta desde la terminal o el escritorio.',
+  nativeWindows: NATIVE_WINDOWS.es,
   hideHelp: 'ocultar ayuda',
   yourServer: (title: string, at: string) => `Tu servidor «${title}» escucha en ${at}, en segundo plano.`,
   closeServer: 'Cerrar servidor',
@@ -315,6 +316,7 @@ Never write your thoughts or your plan in the room, and share no secrets nor any
     },
   },
   mobile: 'The mobile app draws no fields: connect from the terminal or the desktop.',
+  nativeWindows: NATIVE_WINDOWS.en,
   hideHelp: 'hide help',
   yourServer: (title, at) => `Your server «${title}» listens on ${at}, in the background.`,
   closeServer: 'Close server',

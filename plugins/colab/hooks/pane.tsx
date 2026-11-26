@@ -11,6 +11,7 @@ import {
   type Answer,
   type Engine,
   failed,
+  isNativeWindows,
   isOwn,
   isSameServer,
   readChatWheel,
@@ -408,10 +409,12 @@ async function chatShown(
 /** The pane's hooks: its drawing and its chat's scrolling. */
 export function onPane(on: On) {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    if (e.surface === 'mobile') {
+    const cannot = e.surface === 'mobile' ? T.mobile : isNativeWindows ? T.nativeWindows : undefined
+
+    if (cannot !== undefined) {
       const { Text } = $.ui.resolve(e)
 
-      return <Text dimColor>{T.mobile}</Text>
+      return <Text dimColor>{cannot}</Text>
     }
     const parts = await partsOf($, e)
     const current = await readLink($)

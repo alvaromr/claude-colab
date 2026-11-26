@@ -23,6 +23,15 @@ export function speak(language: Language) {
   T = TEXTS[language]
 }
 
+// Whether the session runs on native Windows, where colab does not: its CLI stands on POSIX. WSL is not it. Start
+// reads it, as it reads the language: until then, not.
+export let isNativeWindows = false
+
+/** Runs on `platform`, as the engine names it, from now on. */
+export function standOn(platform: string | undefined) {
+  isNativeWindows = platform === 'windows'
+}
+
 // The engine reads and writes a value only where its atom is declared: each file of the mod reaches these through
 // the functions below, the one place each is declared.
 const link = atom({ plugin: 'colab', key: 'link' } as const, { status: 'off' })

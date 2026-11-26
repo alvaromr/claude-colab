@@ -1,5 +1,13 @@
 // What the CLI tells people, in each language colab speaks; TEXT is the one this process's locale asks for.
-import { DEFAULT_PORT, HOME_FOLDER, type Language, languageOf, NAME_RULE, type Refusal } from './protocol.ts'
+import {
+  DEFAULT_PORT,
+  HOME_FOLDER,
+  type Language,
+  languageOf,
+  NAME_RULE,
+  NATIVE_WINDOWS,
+  type Refusal,
+} from './protocol.ts'
 
 /** The values the help shows as defaults, which only the commands know (commands.mts). */
 export type Defaults = { machine: string; user: string; log: string; socket: string }
@@ -40,6 +48,7 @@ const es = {
   unknownRequest: (what: string) => `Petición desconocida: ${what}`,
   notJson: 'El cuerpo no es JSON',
   notObject: 'El cuerpo no es un objeto JSON',
+  nativeWindows: NATIVE_WINDOWS.es,
   notPrivateFolder: (folder: string) =>
     `${folder} tiene que ser solo tuyo (chmod 700): guarda sockets y claves de claude-colab`,
   notPrivateParent: (folder: string) =>
@@ -199,6 +208,7 @@ const en: typeof es = {
   unknownRequest: what => `Unknown request: ${what}`,
   notJson: 'The body is not JSON',
   notObject: 'The body is not a JSON object',
+  nativeWindows: NATIVE_WINDOWS.en,
   notPrivateFolder: folder => `${folder} must be yours alone (chmod 700): it holds claude-colab's sockets and keys`,
   notPrivateParent: folder =>
     `${folder}, above claude-colab's folder, can be changed by others: let only you or root write in it (chmod go-w), or make it sticky (chmod +t)`,

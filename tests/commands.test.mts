@@ -47,6 +47,7 @@ function cli(
     hostname = HOSTNAME,
     kill = () => undefined,
     send,
+    platform = 'linux',
   }: {
     env?: Record<string, string>
     stdin?: string | Error
@@ -54,6 +55,7 @@ function cli(
     hostname?: string
     kill?: (pid: number, signal: string) => void
     send?: (message: Value, done: () => void) => void
+    platform?: NodeJS.Platform
   } = {},
 ) {
   const fake = fakeProcess(env, pid)
@@ -69,6 +71,7 @@ function cli(
   const left = main({
     ...fake.host,
     argv,
+    platform,
     stderr,
     stdin: () => {
       if (stdin instanceof Error) throw stdin
@@ -174,6 +177,18 @@ test('any other failure says why on stderr and exits with 1', async () => {
     stdin: Object.assign(new Error('EAGAIN: resource temporarily unavailable, read'), { code: 'EAGAIN' }),
   })
   assert.deepEqual([unread.code, unread.err], [1, 'EAGAIN: resource temporarily unavailable, read\n'])
+})
+
+test('on native Windows every command, its help too, stops at once and says to use WSL instead', async () => {
+  for (const argv of [[], ['--help'], ['status'], ['serve', '--background'], ['volar']]) {
+    const windows = cli(argv, { platform: 'win32' })
+    await windows.left
+    assert.deepEqual(
+      [windows.fake.exits, windows.out(), windows.err(), windows.started],
+      [[1], '', 'colab no funciona en Windows nativo: usa Claude Code y colab dentro de WSL\n', []],
+      argv.join(' '),
+    )
+  }
 })
 
 test('a machine’s name longer than a name may be is cut to fit', async () => {

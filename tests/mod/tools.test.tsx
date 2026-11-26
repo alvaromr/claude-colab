@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
-import { linkedAna, session } from './support.ts'
+import { linkedAna, session, standOn } from './support.ts'
 
 test('the say tool refuses while nothing is linked', async $ => {
   const ran = await $.tool.call({ tool: 'mcp__colab__say', text: 'hola' })
@@ -35,6 +35,7 @@ const field = (type: string, about: string) => ({ type, description: expect.stri
 async function registeredTools($: Parameters<TestBody>[0], on: Parameters<TestBody>[1]) {
   const { clock } = session(on)
   const registered: { name: string }[] = []
+  standOn(on)
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('command.register', (_, e) => ({ value: { command: e.name } }))
   on('tool.register', (_, e) => {

@@ -33,6 +33,12 @@ export const languageOf = ({ LC_ALL, LC_MESSAGES, LANG }: Locale): Language =>
   // Stryker disable next-line StringLiteral: with no locale any text but a Spanish one gives English, as '' does
   /^es([_.@]|$)/i.test(LC_ALL || LC_MESSAGES || LANG || '') ? 'es' : 'en'
 
+// What the CLI and the mod say on native Windows, where neither runs: both stop at once with it. WSL is Linux to both.
+export const NATIVE_WINDOWS: Record<Language, string> = {
+  es: 'colab no funciona en Windows nativo: usa Claude Code y colab dentro de WSL',
+  en: 'colab does not run on native Windows: use Claude Code and colab inside WSL',
+}
+
 // Why the server turns a request down, with the fields its reply adds for the client's words.
 export type Refusal =
   | 'bad-name' // the name breaks NAME_RULE

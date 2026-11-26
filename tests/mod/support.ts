@@ -189,13 +189,21 @@ export async function linkedAna(
   return linked
 }
 
+type Platform = 'macos' | 'windows' | 'wsl' | 'linux'
+
+/** Answers the session's info as the engine does on `platform`, which the mod reads as it starts. */
+export function standOn(on: Parameters<TestBody>[1], platform: Platform = 'macos') {
+  on('session.info', () => ({ value: { transcriptPath: '/home/ana/.claude/session.jsonl', platform } }))
+}
+
 /**
  * What the engine answers the mod's start, with the commands it registers kept in `registered`, and `start`, which
- * starts the session as the engine does at each load of the mod, a reload included. Called before the test's first
- * call on `$`, as hooks must be.
+ * starts the session as the engine does at each load of the mod, a reload included, on `platform`. Called before the
+ * test's first call on `$`, as hooks must be.
  */
-export function startable($: Parameters<TestBody>[0], on: Parameters<TestBody>[1]) {
+export function startable($: Parameters<TestBody>[0], on: Parameters<TestBody>[1], platform?: Platform) {
   const registered: string[] = []
+  standOn(on, platform)
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('command.register', (_, e) => {
     registered.push(e.name)

@@ -17,7 +17,8 @@ settings. People in one room may use different languages.
 - **Claude Code 2.1.224 or later:** colab delivers messages through the session's inbox, which arrived in that version
   with cross-session messaging ([Claude Code's changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 - **Node.js 26 or later**, on the `PATH` as `node`.
-- **macOS or Linux:** each session talks to its link process over a Unix socket. Windows is untested.
+- **macOS, Linux, or WSL on Windows:** each session talks to its link process over a Unix socket, in a folder only its
+  user may open. Native Windows is not supported: there, colab says to run Claude Code and colab inside WSL.
 - **Network:** the machine that opens the server must be reachable over TCP from the others, on its port. A LAN works,
   or any VPN that does not isolate its clients from each other.
 

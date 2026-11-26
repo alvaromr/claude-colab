@@ -39,11 +39,13 @@ import { parseInvitation, parseKey } from './wire.mts'
  * What the commands take from the process they run in: what connect and the server's record take, and besides its
  * arguments (those after the script), where it complains, what it reads, the machine's name, how it signals another
  * process, the exit code it ends with once nothing is left to do, how it starts itself apart, as `serve --background`
- * does, and its channel to a process that started it, if any, which it sends on and lets go.
+ * does, and its channel to a process that started it, if any, which it sends on and lets go; and the system it runs
+ * on, as Node names it.
  */
 export type Host = LinkHost &
   ServerProcess & {
     argv: readonly string[]
+    platform: NodeJS.Platform
     stderr: Writable
     stdin: () => string
     hostname: () => string
@@ -73,6 +75,12 @@ const STOP_TIMEOUT = 5_000
 export async function main(host: Host) {
   const print = (result: unknown) => host.stdout.write(`${JSON.stringify(result)}\n`)
   const complain = (message: string) => host.stderr.write(`${message}\n`)
+  // Its private folder, its local sockets and its keys stand on POSIX modes and paths, which native Windows lacks. WSL
+  // is Linux to Node, and runs it as it is.
+  if (host.platform === 'win32') {
+    complain(TEXT.nativeWindows)
+    return host.exit(1)
+  }
   const socket = defaultSocket(host.env)
   const SOCKET_OPTION = { socket: { type: 'string', default: socket } } as const
   /** This machine's name as the network knows it, without its domain: a server's name when none is given. */

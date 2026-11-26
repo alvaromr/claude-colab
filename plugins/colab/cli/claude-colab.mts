@@ -11,6 +11,7 @@ import { main } from './commands.mts'
 await main({
   pid: process.pid,
   argv: process.argv.slice(2),
+  platform: process.platform,
   env: process.env,
   stdout: process.stdout,
   stderr: process.stderr,

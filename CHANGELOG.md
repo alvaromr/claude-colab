@@ -5,6 +5,12 @@ The version follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Native Windows is not supported: there, the CLI, the pane, `/colab` and the tools stop at once and say to use Claude
+  Code and colab inside WSL, instead of failing on the private folder's `chmod 700`. WSL, macOS and Linux run as
+  before.
+
 ### Fixed
 
 - The marketplace reaches the plugin by HTTPS: an install no longer needs an SSH key on GitHub nor GitHub's host key
