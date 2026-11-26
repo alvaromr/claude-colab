@@ -1,4 +1,13 @@
-import { ANY_HOST, DEAD_AFTER, DEFAULT_PORT, isName, isPort, PING_EVERY, type Refusal } from '../cli/protocol'
+import {
+  ANY_HOST,
+  DEAD_AFTER,
+  DEFAULT_PORT,
+  HOME_FOLDER,
+  isName,
+  isPort,
+  PING_EVERY,
+  type Refusal,
+} from '../cli/protocol'
 import type { Known, Link, Place, Room, Setup } from '../types'
 import { remembered } from './addresses'
 import { failureOf, isLetGo, isOthersMove, nextWait, RETRY_FIRST, splitLines } from './linking'
@@ -123,7 +132,7 @@ async function readyToConnect($: Engine, server: string, name: string): Promise<
 
 /** Starts connect, which `readyToConnect` cleared, as `connect` says. */
 async function launch($: Engine, server: string, name: string, inbox: Inbox, target?: Place): Promise<Answer> {
-  const socket = `${await $.env.get('HOME')}/.claude-colab/s-${Math.random().toString(36).slice(2, 10)}.sock`
+  const socket = `${await $.env.get('HOME')}/${HOME_FOLDER}/s-${Math.random().toString(36).slice(2, 10)}.sock`
   const as = name || (await $.process.run(['whoami'])).stdout.trim()
   const linked = new Promise<Answer>(resolve => (settleConnect = resolve))
 

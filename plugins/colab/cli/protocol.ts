@@ -7,6 +7,9 @@ export const ANY_HOST = '0.0.0.0'
 export const LOOPBACK = '127.0.0.1'
 /** Whether `host` is this machine by loopback: any 127 address, localhost, or ::1, bracketed or not. */
 export const isLoopback = (host: string) => /^(127\.|localhost$|\[::1\]$|::1$)/.test(host)
+// The private folder of each machine, in its user's home: the CLI keeps its keys and sockets there, and the mod
+// puts each connect's socket there.
+export const HOME_FOLDER = '.claude-colab'
 // What every invitation starts with: the pane and the CLI tell one apart by it.
 export const INVITATION_PREFIX = 'colab:'
 /** Whether `n` is a TCP port a server can listen on: a whole number from 1 to 65535. */

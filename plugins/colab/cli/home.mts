@@ -3,11 +3,11 @@ import { lstatSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } f
 import { homedir, userInfo } from 'node:os'
 import { dirname, join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { LOOPBACK } from './protocol.ts'
+import { HOME_FOLDER, LOOPBACK } from './protocol.ts'
 import { TEXT } from './strings.mts'
 import { newKey, parseKey } from './wire.mts'
 
-export const HOME = join(homedir(), '.claude-colab')
+export const HOME = join(homedir(), HOME_FOLDER)
 /** The local socket a command uses when it is told none: the one `env` names, or the home's. */
 export const defaultSocket = (env: Record<string, string | undefined>) =>
   env.CLAUDE_COLAB_SOCKET ?? join(HOME, 'colab.sock')

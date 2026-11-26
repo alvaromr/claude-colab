@@ -45,11 +45,14 @@ export async function registerTools($: Engine) {
   }
 }
 
+/** A tool of TOOLS by its full name, which the engine calls it by. */
+export const toolName = (name: keyof typeof TOOLS) => `mcp__colab__${name}`
+
 /**
  * The tool of TOOLS a hook answers, by its full name: a hook can only match a tool that TOOLS describes. A pattern,
  * since the engine's types know only the tools in front, not the deferred ones.
  */
-const tool = (name: keyof typeof TOOLS) => new RegExp(`^mcp__colab__${name}$`)
+const tool = (name: keyof typeof TOOLS) => new RegExp(`^${toolName(name)}$`)
 
 /** What the model is told of an answer. */
 const reply = (answer: Answer) => (answer.ok ? { result: answer.text ?? T.done } : { deny: answer.error ?? T.failed })

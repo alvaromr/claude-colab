@@ -1,5 +1,5 @@
 // What the CLI tells people, in each language colab speaks; TEXT is the one this process's locale asks for.
-import { DEFAULT_PORT, type Language, languageOf, NAME_RULE, type Refusal } from './protocol.ts'
+import { DEFAULT_PORT, HOME_FOLDER, type Language, languageOf, NAME_RULE, type Refusal } from './protocol.ts'
 
 /** The values the help shows as defaults, which only the commands know (commands.mts). */
 export type Defaults = { machine: string; user: string; log: string; socket: string }
@@ -100,7 +100,7 @@ Siempre da "machine": el nombre que toma el servidor si se abre sin --name.`,
       summary: 'guarda la clave de un servidor, leída de la entrada estándar',
       usage: 'claude-colab key <ip>[:<puerto>] < fichero-con-la-clave',
       help: () => `Lee la clave de la entrada estándar (en la terminal: pégala y pulsa Ctrl+D) y la guarda solo para ti, en
-~/.claude-colab/keys. connect la usa para ese servidor. ${KEY_ES}`,
+~/${HOME_FOLDER}/keys. connect la usa para ese servidor. ${KEY_ES}`,
     },
     connect: {
       summary: 'se conecta a un servidor de salas y escucha lo que llega',
@@ -256,7 +256,7 @@ Always gives "machine": the name the server takes when opened without --name.`,
       summary: 'saves a server’s key, read from standard input',
       usage: 'claude-colab key <ip>[:<port>] < file-with-the-key',
       help: () => `Reads the key from standard input (in a terminal: paste it and press Ctrl+D) and saves it for you alone, in
-~/.claude-colab/keys. connect uses it for that server. ${KEY_EN}`,
+~/${HOME_FOLDER}/keys. connect uses it for that server. ${KEY_EN}`,
     },
     connect: {
       summary: 'connects to a room server and listens to what arrives',

@@ -5,11 +5,12 @@ import { bubble, onPane, PANE, TITLE } from './pane'
 import { checkServer } from './server'
 import { start } from './session'
 import { MARK, readColors, readLink, readLog, T, unattended } from './state'
-import { type Input, onTools } from './tools'
+import { type Input, onTools, toolName } from './tools'
 
-// The number a received message carries into the conversation: its line in the log, which its row is drawn from.
-const NUMBERED = /\[colab\] #(\d+)/
-const SAY = 'mcp__colab__say'
+// The number a received message carries into the conversation, after the mark: its line in the log, which its row is
+// drawn from.
+const NUMBERED = new RegExp(`${MARK.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}#(\\d+)`)
+const SAY = toolName('say')
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
