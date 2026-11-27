@@ -9,7 +9,7 @@
         "source": "git-subdir",
         "url": "https://github.com/alvaromr/claude-colab.git",
         "path": "plugins/colab",
-        "ref": "colab--v0.1.2"
+        "ref": "colab--v0.2.0"
       }
     }
   ]

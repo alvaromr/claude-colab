@@ -5,6 +5,8 @@ The version follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-27
+
 ### Added
 
 - Whoever goes into a room late gets what was said there before: the server keeps each room's newest messages, up
