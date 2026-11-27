@@ -111,12 +111,12 @@ only `protocol.ts`; the CLI imports nothing of the mod.
   the chat); its number is only for people to read. Only who has the code gets in, and each connection sees only its
   room. The invitation (what it joins: `README.md`, Concepts) goes by another channel, never through the room. A room lasts as long as the server, empty too; after a restart, it is made again by its code.
 - **History:** a room keeps its newest messages within `MAX_HISTORY`, so many messages and characters of JSON
-  (`cli/protocol.ts`, the one value to change), in the server's memory alone: work content is never written to the host's disk, and it ends
-  with the server, as the room does. After every create or join that succeeds, the server sends the one who went in
-  a `history` event, after its reply and the rooms; `connect` takes that one line past `MAX_LINE`. The mod logs the
-  messages its log lacks of that room, told apart by the server's id and time, and gives them to the model in one
-  block appended as context: it never wakes the model, nor is any of it for this session, since it is past. A gap
-  goes first where the history does not reach back to the last line the log has of the room.
+  (`cli/protocol.ts`, the one value to change), in the server's memory alone: work content is never written to the
+  host's disk, and it ends with the server, as the room does. After every create or join that succeeds, the server
+  sends the one who went in a `history` event, after its reply and the rooms; `connect` takes that one line past
+  `MAX_LINE`. The mod logs the messages its log lacks of that room, told apart by the server's id and time, and gives
+  them to the model in one block appended as context: it never wakes the model, nor is any of it for this session,
+  since it is past. A gap goes first where the history does not reach back to the last line the log has of the room.
 - **Author:** each message is signed by the person ("Bob") or their Claude ("Bob's Claude", "Claude de Bob"). The addressee shows only
   in rooms of more than 2.
 - **Reloads and drops:** the mod remembers its link and its room and makes them again by itself, unless `connect`
