@@ -4,11 +4,12 @@
 // A room is its code, random and secret: joining takes it, so the server's key gets one to the server, not into its
 // rooms, and a connection sees only the room it is in. The room's `label`, a number, is only for people to read.
 // A room lives as long as the server, empty too, so that those with its code can come back to it; past `maxRooms`, the
-// oldest empty one makes way for a new one.
+// oldest empty one makes way for a new one. It keeps its newest messages, up to MAX_HISTORY, and whoever goes in gets
+// them, so that one who comes late reads what was said before; they die with the server, as the rooms do.
 // Each connection gets a `color`, the lowest number no one connected has, so that clients can tell people apart.
 // A refusal is a `reason` with the fields it needs, never text: each client words it in its own person's language.
 // Pure: what it sends goes out through `deliver`, and new codes and the time come from whoever runs it.
-import { isCode, isName, MAX_TEXT, PROTOCOL, type Refusal, type Value } from './protocol.ts'
+import { isCode, isName, MAX_HISTORY, MAX_TEXT, PROTOCOL, type Refusal, type Value } from './protocol.ts'
 // Rooms are not closed when they empty: this bounds the memory anyone with the key could fill by making them.
 const MAX_ROOMS = 256
 // Clients show what someone's Claude writes as «Claude de <name>»: no person may take a name that reads like that.
@@ -16,7 +17,8 @@ const CLAUDES_NAME = /(^|\s)claude\s+de(\s|$)/iu
 /** A name as people read it, whatever its case or its letters' width. */
 const readsAs = (name: string) => name.normalize('NFKC').toLowerCase()
 
-type Room<L> = { code: string; label: string; members: Set<Client<L>> }
+// `said`: its newest messages, oldest first, that fit in MAX_HISTORY characters of JSON, as `size` counts them.
+type Room<L> = { code: string; label: string; members: Set<Client<L>>; said: Value[]; size: number }
 // `link`: how `deliver` reaches it. `busy`: whether its Claude is at work.
 export type Client<L> = { name: string; color: number; link: L; room: Room<L> | null; busy: boolean }
 // A request past hello, its text fields checked as text.
@@ -33,6 +35,8 @@ export type Rules<L> = {
 }
 
 const CHANGES_ROOMS = new Set(['create', 'join', 'leave', 'busy'])
+// What takes one into a room: its history follows.
+const ENTERS = new Set(['create', 'join'])
 
 export function roomsOf<L>({ title, maxRooms = MAX_ROOMS, deliver, newCode, now }: Rules<L>) {
   const clients = new Map<string, Client<L>>()
@@ -83,7 +87,7 @@ export function roomsOf<L>({ title, maxRooms = MAX_ROOMS, deliver, newCode, now 
       if (refused) return refused
       if (!makeRoom()) return { reason: 'rooms-full', max: maxRooms }
       const made = code ?? newCode()
-      rooms.set(made, { code: made, label: name ?? String(++lastNumber), members: new Set() })
+      rooms.set(made, { code: made, label: name ?? String(++lastNumber), members: new Set(), said: [], size: 0 })
       return join(me, made)
     },
     join: (me, { code }) => join(me, code),
@@ -106,19 +110,26 @@ export function roomsOf<L>({ title, maxRooms = MAX_ROOMS, deliver, newCode, now 
         return { reason: 'not-member', to, label: me.room.label }
       }
       const message = {
-        ev: 'message',
         ...shown(me.room),
         id: ++lastId,
         from: me.name,
         by: by === 'claude' ? 'claude' : 'person',
         color: me.color,
-        to, // left out of the line when undefined
+        ...(to === undefined ? {} : { to }),
         text,
         at: now().toISOString(),
       }
-      toRoom(me.room, message)
+      keep(me.room, message)
+      toRoom(me.room, { ev: 'message', ...message })
       return { id: message.id }
     },
+  }
+
+  /** Keeps `message` in its room's history, and lets go of the oldest that no longer fit. */
+  function keep(room: Room<L>, message: Value) {
+    room.said.push(message)
+    room.size += JSON.stringify(message).length
+    while (room.size > MAX_HISTORY) room.size -= JSON.stringify(room.said.shift()).length
   }
 
   function join(me: Client<L>, code: string | undefined): Result {
@@ -171,7 +182,12 @@ export function roomsOf<L>({ title, maxRooms = MAX_ROOMS, deliver, newCode, now 
       const run = Object.hasOwn(OPS, op) ? OPS[op] : undefined
       const result: Result = run ? run(me, request as Request) : { reason: 'unknown-op', op }
       answer(result)
-      if (!result.reason && CHANGES_ROOMS.has(op)) pushRooms()
+      if (result.reason) return
+      if (CHANGES_ROOMS.has(op)) pushRooms()
+      // Once in, with its members known, the history of the room it went into.
+      // Stryker disable next-line ConditionalExpression: for the type checker; whoever went into a room is in one
+      if (ENTERS.has(op) && me.room !== null)
+        deliver(me.link, { ev: 'history', ...shown(me.room), messages: [...me.room.said] })
     },
 
     /** A connection gone: out of its room, its name free, and everyone told. */

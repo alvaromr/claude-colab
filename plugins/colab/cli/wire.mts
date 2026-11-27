@@ -74,8 +74,8 @@ export const clientOptions = (key: Buffer): ConnectionOptions => ({
   checkServerIdentity: (_host, cert) => (cert.raw ? new Error(TEXT.certificate) : undefined),
 })
 
-/** Calls `onValue` with each JSON line the socket sends; destroys it on bad JSON or a line over MAX_LINE. */
-export function readLines(socket: Duplex, onValue: (value: Value) => void) {
+/** Calls `onValue` with each JSON line the socket sends; destroys it on bad JSON or a line over `longest`. */
+export function readLines(socket: Duplex, onValue: (value: Value) => void, longest = MAX_LINE) {
   let buffer = ''
   // Stryker disable next-line StringLiteral: an empty encoding is utf8 too
   socket.setEncoding('utf8')
@@ -94,7 +94,7 @@ export function readLines(socket: Duplex, onValue: (value: Value) => void) {
       if (value === null || typeof value !== 'object' || Array.isArray(value)) return socket.destroy()
       onValue(value as Value)
     }
-    if (buffer.length > MAX_LINE) socket.destroy()
+    if (buffer.length > longest) socket.destroy()
   })
 }
 

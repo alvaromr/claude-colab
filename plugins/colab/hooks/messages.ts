@@ -1,5 +1,5 @@
 import type { Author, Line, Place } from '../types'
-import { appended, cleaned, isForMe, lineOf, membersIn, quoted, shownTo } from './chat'
+import { appended, cleaned, isForMe, lineOf, membersIn, quoted, shownTo, withHistory } from './chat'
 import { request } from './local'
 import { backInRoom } from './rooms'
 import {
@@ -22,6 +22,7 @@ import {
 /** A message of the room as connect hands it on: its room's code, and the label people read. */
 export type Message = Place & {
   id: number
+  at: string
   from: string
   by?: Author
   color?: number
@@ -128,6 +129,44 @@ export async function show($: Engine, message: Message) {
   const added = await $.session.append({ message: { type: 'user', content: [{ type: 'text', text }] } })
 
   if (added.deny !== undefined) await complain($, T.noContext(line.n, added.deny))
+}
+
+/**
+ * What the server keeps of a room, which comes on going in: the chat gets what it lacks, and the model too, in one
+ * block of context. It never wakes the model, and none of it is for this session: it is past, whoever it was for.
+ */
+export async function showHistory($: Engine, history: Place & { messages: Message[] }) {
+  const people = membersIn(await readRooms($), history.code)
+  const label = cleaned(history.label)
+  let fresh: Line[] = []
+
+  // A color the chat knows is newer than one of the history's.
+  await updateColors($, all => ({
+    ...Object.fromEntries(history.messages.map(message => [cleaned(message.from), message.color ?? 0])),
+    ...all,
+  }))
+  await updateLog($, all => {
+    const added = withHistory(
+      all,
+      history,
+      history.messages.map(message => lineOf(message, people)),
+      LOG_SIZE,
+    )
+
+    fresh = added.fresh
+
+    return added.log
+  })
+  if (fresh.length === 0) return
+  const told = fresh.map(line => {
+    const from = T.pastAuthor({ from: line.from, isClaude: line.by === 'claude', own: line.own, to: line.to })
+
+    return `#${line.n} · ${from}:\n${quoted(line.text)}`
+  })
+  const text = [`${MARK}${T.earlier(label)}`, ...told].join('\n\n')
+  const added = await $.session.append({ message: { type: 'user', content: [{ type: 'text', text }] } })
+
+  if (added.deny !== undefined) await complain($, T.noEarlier(label, added.deny))
 }
 
 /** Posts `text` into this session's inbox, which wakes the model; a failure shows in the pane. */

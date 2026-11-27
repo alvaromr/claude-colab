@@ -1,6 +1,5 @@
 import { isName } from '../cli/protocol'
 import type { Place, Recent } from '../types'
-import { withGap } from './chat'
 import { request } from './local'
 import {
   type Answer,
@@ -9,7 +8,6 @@ import {
   type Engine,
   enteredRoom,
   failed,
-  LOG_SIZE,
   leftRoom,
   readHosted,
   readLink,
@@ -19,7 +17,6 @@ import {
   START_TIMEOUT,
   T,
   updateChatWheel,
-  updateLog,
   updateRecent,
   withLeft,
   without,
@@ -72,12 +69,12 @@ export async function rejoin($: Engine, place: Place) {
   settleBackNow()
 }
 
-/** Notes the room this session is now in, to go back to it after a reload or a drop. */
+/**
+ * Notes the room this session is now in, to go back to it after a reload or a drop. What was said there meanwhile
+ * comes with the room's history, which the server sends on going in.
+ */
 async function enter($: Engine, place: Place) {
   await updateChatWheel($, () => [])
-  // Back in a room this session was in: what was said meanwhile never reached it, and the chat says so, once until
-  // the room says something again.
-  await updateLog($, all => withGap(all, place, LOG_SIZE))
   await enteredRoom($, place)
 }
 

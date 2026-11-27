@@ -11,7 +11,7 @@ import {
 import type { Known, Link, Place, Room, Setup } from '../types'
 import { remembered } from './addresses'
 import { failureOf, isLetGo, isOthersMove, nextWait, RETRY_FIRST, splitLines } from './linking'
-import { type Message, show } from './messages'
+import { type Message, show, showHistory } from './messages'
 import { backInRoom, expectBack, join, rejoin, settleBackNow } from './rooms'
 import { checkServer, cli, openServer, runCli } from './server'
 import {
@@ -47,6 +47,7 @@ type Event =
   | { ev: 'rooms'; rooms: Room[] }
   | (Place & { ev: 'member'; name: string; action: 'join' | 'leave' })
   | ({ ev: 'message' } & Message)
+  | (Place & { ev: 'history'; messages: Message[] })
   | { ev: 'error' | 'disconnected'; error?: string; reason?: Refusal }
 type Stream = ReturnType<Engine['process']['spawn']>
 // The session's inbox, as connect's environment carries it.
@@ -306,6 +307,10 @@ async function onEvent($: Engine, event: Event) {
     }
     case 'message':
       await show($, event)
+
+      return
+    case 'history':
+      await showHistory($, event)
 
       return
     case 'error':

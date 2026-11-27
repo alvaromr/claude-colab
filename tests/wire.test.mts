@@ -66,10 +66,10 @@ test('an invitation carries what it was given, and nothing else passes for one',
 })
 
 /** What `readLines` gives from `chunks` sent in turn, and whether it cut the stream. */
-function linesFrom(chunks: (string | Buffer)[]) {
+function linesFrom(chunks: (string | Buffer)[], longest?: number) {
   const stream = new PassThrough()
   const values: Value[] = []
-  readLines(stream, value => values.push(value))
+  readLines(stream, value => values.push(value), longest)
   for (const chunk of chunks) stream.write(chunk)
   return { values, isCut: stream.destroyed }
 }
@@ -89,6 +89,8 @@ test('a line that is not a JSON object, or longer than a line may be, cuts the s
   }
   assert.deepEqual(linesFrom(['x'.repeat(MAX_LINE)]), { values: [], isCut: false }, 'as long as a line may be')
   assert.deepEqual(linesFrom(['x'.repeat(MAX_LINE + 1)]), { values: [], isCut: true }, 'longer')
+  assert.deepEqual(linesFrom(['x'.repeat(MAX_LINE + 1)], MAX_LINE + 1), { values: [], isCut: false }, 'told longer')
+  assert.deepEqual(linesFrom(['x'.repeat(MAX_LINE + 2)], MAX_LINE + 1), { values: [], isCut: true }, 'past it')
 })
 
 test('a key is 32 bytes, nothing shorter or missing', () => {

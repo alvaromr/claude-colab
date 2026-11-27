@@ -116,8 +116,9 @@ Siempre da "machine": el nombre que toma el servidor si se abre sin --name.`,
       usage: 'claude-colab connect <ip>[:<puerto>] [--name <nombre>] [--socket <ruta>]',
       help: d => `Abre la conexión con el servidor y la mantiene. Usa la clave guardada con key.
 Escribe una línea JSON por evento: "connected", "rooms" (la lista de salas cambió), "member" (alguien entró o
-salió de una de tus salas), "message" (con "own": true si es tuyo), "error" (con "reason": "name-taken" si tu
-nombre ya está en uso allí) y "disconnected" al terminar.
+salió de una de tus salas), "message" (con "own": true si es tuyo), "history" (al entrar en una sala, lo dicho
+en ella que guarda el servidor, en "messages"), "error" (con "reason": "name-taken" si tu nombre ya está en uso
+allí) y "disconnected" al terminar.
 Los demás comandos hablan con este proceso por su socket local.
 
   --name <nombre>   tu nombre en el servidor, único allí (por defecto, tu usuario: ${d.user})
@@ -273,8 +274,9 @@ Always gives "machine": the name the server takes when opened without --name.`,
       usage: 'claude-colab connect <ip>[:<port>] [--name <name>] [--socket <path>]',
       help: d => `Opens the connection to the server and keeps it. Uses the key saved with key.
 Writes one JSON line per event: "connected", "rooms" (the list of rooms changed), "member" (someone came into or
-left one of your rooms), "message" (with "own": true if it is yours), "error" (with "reason": "name-taken" if your
-name is in use there) and "disconnected" at the end.
+left one of your rooms), "message" (with "own": true if it is yours), "history" (on going into a room, what the
+server keeps of what was said there, in "messages"), "error" (with "reason": "name-taken" if your name is in use
+there) and "disconnected" at the end.
 The other commands talk to this process over its local socket.
 
   --name <name>     your name on the server, unique there (by default, your user: ${d.user})

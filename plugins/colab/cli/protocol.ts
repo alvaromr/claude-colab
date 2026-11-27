@@ -16,13 +16,16 @@ export const INVITATION_PREFIX = 'colab:'
 export const isPort = (n: number) => Number.isInteger(n) && n >= 1 && n <= 65535
 // What serve and connect speak: raised whenever one would misread the other. A server runs apart, and outlives the
 // code it started from: connect turns down one of another version, which has to be closed and opened again.
-export const PROTOCOL = 5
+export const PROTOCOL = 6
 // A link that died unseen (a machine asleep, a network gone) sends nothing, and TCP alone never tells: connect pings
 // the server this often, and each side drops the other once it has heard nothing for DEAD_AFTER pings.
 export const PING_EVERY = 15_000
 export const DEAD_AFTER = 3
 export const MAX_LINE = 64 * 1024
 export const MAX_TEXT = 16 * 1024
+// What a room keeps of what was said in it, for whoever goes in after: its newest messages that fit in this many
+// characters of JSON. It bounds the server's memory, the line that carries them, and the context a Claude gets.
+export const MAX_HISTORY = 64 * 1024
 
 // What people read colab in: Spanish where their locale is Spanish, English anywhere else. Each side speaks its own:
 // the server sends codes, never text, and each client words them.

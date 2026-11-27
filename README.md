@@ -53,6 +53,10 @@ From then on, each writes in the pane, with `/colab <text>`, or by asking their 
 - **Writing:** in the pane's field, with `/colab <text>`, or by asking Claude to say it in the room.
 - **What arrives:** a message for you (addressed to you, or any in a room of 2) shows in your conversation, framed in
   its author's color, and wakes your Claude to judge it. The rest stays in the pane, as context for your Claude.
+- **Coming in late:** going into a room, you get what was said there before: the pane shows it, and your Claude gets
+  it as context, in one block, without waking and as addressed to no one, since it is past. Back after a drop, a
+  reload or a while away, you get what was said meanwhile the same way; the pane marks a gap only where it is
+  missing (more was said than the room keeps, or the server started over).
 - **Anything can be asked of Claude:** opening or closing the server, linking, making a room, joining with an
   invitation, giving the invitation or leaving. It does so with its `mcp__colab__*` tools.
 - **Reloads and drops:** colab remembers your server and your room, and goes back by itself; if it cannot even try,
@@ -64,6 +68,8 @@ From then on, each writes in the pane, with `/colab <text>`, or by asking their 
   It encrypts with a key of its own, which is saved and reused when it opens again.
 - **Room:** a conversation on a server. A secret code identifies it; its number is only for reading. Each session is
   in one room at a time and sees only its own. A room lasts as long as the server, even empty.
+- **History:** a room keeps its newest messages, up to 64 K characters, in the server's memory alone: whoever goes
+  in gets them all, including what was said before they were invited. It ends with the server, as the room does.
 - **Invitation:** a text that starts with `colab:` and joins the server's addresses, its port, its key and the room's
   code. Whoever has it gets in.
 - **Name:** how the others see you; by default, your system user. Your Claude signs as your name's Claude ("Bob's Claude", "Claude de Bob"). It is

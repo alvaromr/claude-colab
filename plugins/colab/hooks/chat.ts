@@ -2,8 +2,8 @@
 // pane's chat it takes and how far back the wheel's moves lead it. Pure, with no engine: Node tests it, with coverage
 // and mutation.
 
-/** A line of the chat's log, as far as its order and its gaps need. */
-type Logged = { n: number; code: string; gap?: true }
+/** A line of the chat's log, as far as its order, its gaps and telling its messages apart need. */
+type Logged = { n: number; code: string; key?: string; gap?: true }
 /** A link, as far as telling whether a message is for it needs: its name, while it is on. */
 type Linked = { status: string; name?: string }
 
@@ -12,14 +12,31 @@ export const appended = <L extends Logged>(log: L[], line: L, size: number) =>
   [...log, { ...line, n: (log.at(-1)?.n ?? 0) + 1 }].slice(-size)
 
 /**
- * Back in the room of `place`: what was said there meanwhile never came, and the log says so, with a gap after its
- * last line, unless the room has none or it ends in a gap already, until the room says something again.
+ * The log with the history of the room of `place`, which the server hands on going in: the messages of that room it
+ * lacks, oldest first and numbered, which `fresh` lists too. Back in a room it has lines of, a gap goes first where
+ * the history does not reach back to the last of them, nor a gap ends them already: what was said away is missing
+ * then (more was said than the server keeps, or it started over), until the room says something again.
  */
-export function withGap<L extends Logged>(log: L[], place: { code: string; label: string }, size: number) {
-  const last = log.findLast(line => line.code === place.code)
-  if (last === undefined || last.gap) return log
+export function withHistory<L extends Logged>(
+  log: L[],
+  place: { code: string; label: string },
+  history: L[],
+  size: number,
+) {
+  const here = log.filter(line => line.code === place.code)
+  const last = here.at(-1)
+  const seen = new Set(here.map(line => line.key))
   const gap = { ...place, n: 0, from: '', by: 'person' as const, text: '', own: false, gap: true as const }
-  return appended<L | typeof gap>(log, gap, size)
+  const reaches = last === undefined || last.gap || history.some(line => line.key === last.key)
+  let kept = reaches ? log : appended<L | typeof gap>(log, gap, size)
+  const fresh: L[] = []
+
+  for (const line of history.filter(one => !seen.has(one.key))) {
+    kept = appended<L | typeof gap>(kept, line, size)
+    fresh.push(kept.at(-1) as L)
+  }
+
+  return { log: kept, fresh }
 }
 
 /** How many people the server last listed in the room of `code`: none for one it did not list. */
@@ -35,16 +52,28 @@ export const shownTo = (to: unknown, people: number) => (typeof to === 'string' 
 
 /**
  * A message received, as a line of the chat: its text and who, where and to whom cleaned, by its person unless it says
- * otherwise, numbered on logging.
+ * otherwise, numbered on logging, and keyed by the server's id and time, which no other message of its room shares,
+ * even after the server started over and counts its ids again.
  */
 export function lineOf<B extends string>(
-  message: { code: string; label: string; from: string; by?: B; to?: string; text: string; own: boolean },
+  message: {
+    code: string
+    label: string
+    id: number
+    at: string
+    from: string
+    by?: B
+    to?: string
+    text: string
+    own: boolean
+  },
   people: number,
 ) {
   const to = shownTo(message.to === undefined ? undefined : cleaned(message.to), people)
   return {
     n: 0,
     code: message.code,
+    key: `${message.id}@${message.at}`,
     label: cleaned(message.label),
     from: cleaned(message.from),
     by: message.by ?? ('person' as const),

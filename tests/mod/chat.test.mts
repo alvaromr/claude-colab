@@ -14,7 +14,7 @@ import {
   scrolledBack,
   shownTo,
   wheeled,
-  withGap,
+  withHistory,
 } from '../../plugins/colab/hooks/chat.ts'
 
 const HERE = { code: 'c'.repeat(24), label: '1' }
@@ -35,13 +35,55 @@ test('a line joins the log last, numbered after the one before it, and the log k
   assert.deepEqual(appended([said(1), said(2), said(3)], said(0), 3), [said(2), said(3), said(4)])
 })
 
-test('back in a room it was in, the log marks a gap once, until the room says something again', () => {
-  const gap = said(3, { from: '', text: '', gap: true })
-  assert.deepEqual(withGap([said(1), said(2)], HERE, 10), [said(1), said(2), gap])
-  assert.deepEqual(withGap([said(1), said(2), gap], HERE, 10), [said(1), said(2), gap], 'one is there already')
-  assert.deepEqual(withGap([said(1)], { ...HERE, code: 'd'.repeat(24) }, 10), [said(1)], 'a room never seen: none')
-  const other = said(2, { code: 'd'.repeat(24) })
-  assert.deepEqual(withGap([said(1), other], HERE, 2), [other, { ...gap, n: 3 }], 'kept to the newest too')
+test('a room’s history gives the log, numbered and in order, what it lacks of that room, and tells which', () => {
+  // The server's messages, as lines: their keys tell them apart, in the room and in no other.
+  const one = said(0, { key: '1@T', text: 'uno' })
+  const two = said(0, { key: '2@T', text: 'dos' })
+  const three = said(0, { key: '3@T', text: 'tres' })
+  const elsewhere = said(1, { code: 'd'.repeat(24), key: '2@T' })
+  const seen = [{ ...one, n: 1 }, elsewhere]
+  assert.deepEqual(withHistory(seen, HERE, [one, two, three], 10), {
+    log: [...seen, { ...two, n: 2 }, { ...three, n: 3 }],
+    fresh: [
+      { ...two, n: 2 },
+      { ...three, n: 3 },
+    ],
+  })
+  assert.deepEqual(
+    withHistory([], HERE, [one, two], 10).fresh,
+    [
+      { ...one, n: 1 },
+      { ...two, n: 2 },
+    ],
+    'a room new to it',
+  )
+  assert.deepEqual(withHistory(seen, HERE, [one], 10), { log: seen, fresh: [] }, 'nothing new')
+  assert.deepEqual(
+    withHistory(seen, HERE, [one, two, three], 2),
+    {
+      log: [
+        { ...two, n: 2 },
+        { ...three, n: 3 },
+      ],
+      fresh: [
+        { ...two, n: 2 },
+        { ...three, n: 3 },
+      ],
+    },
+    'the log kept to its newest, what it handed over too',
+  )
+})
+
+test('back in a room, the log marks a gap where the history does not reach back to its last line there', () => {
+  const one = said(1, { key: '1@T' })
+  const two = said(0, { key: '2@T', text: 'dos' })
+  const gap = (n: number) => said(n, { from: '', text: '', gap: true })
+  assert.deepEqual(withHistory([one], HERE, [two], 10).log, [one, gap(2), { ...two, n: 3 }], 'more was said than kept')
+  assert.deepEqual(withHistory([one], HERE, [], 10).log, [one, gap(2)], 'the server started over')
+  assert.deepEqual(withHistory([said(1)], HERE, [two], 10).log, [said(1), gap(2), { ...two, n: 3 }], 'a line of no key')
+  assert.deepEqual(withHistory([one, gap(2)], HERE, [], 10).log, [one, gap(2)], 'one is there already')
+  const other = said(1, { code: 'd'.repeat(24) })
+  assert.deepEqual(withHistory([other], HERE, [], 10).log, [other], 'a room never seen: none')
 })
 
 test('a room counts the members the server last listed for it; one it did not list, none', () => {
@@ -67,13 +109,14 @@ test('a recipient shows only in a room of more than two, the one case where nami
 })
 
 test('a message received becomes a line of the chat: cleaned, by its person unless it says otherwise', () => {
-  const message = { ...HERE, from: 'Bob', text: 'ho​la', own: false, to: 'Eva' }
-  assert.deepEqual(lineOf(message, 3), { ...said(0, { text: 'hola' }), to: 'Eva' })
-  assert.deepEqual(lineOf({ ...message, by: 'claude' }, 2), said(0, { text: 'hola', by: 'claude' }))
+  const message = { ...HERE, id: 4, at: 'T', from: 'Bob', text: 'ho​la', own: false, to: 'Eva' }
+  const line = (more: Record<string, unknown> = {}) => said(0, { key: '4@T', text: 'hola', ...more })
+  assert.deepEqual(lineOf(message, 3), line({ to: 'Eva' }), 'keyed by its id and time, which no other has')
+  assert.deepEqual(lineOf({ ...message, by: 'claude' }, 2), line({ by: 'claude' }))
   const hidden = { ...message, from: 'B‮ob', label: '1​', to: 'E\u0007va' }
   assert.deepEqual(lineOf(hidden, 3), lineOf(message, 3), 'who, where and to whom lose them too')
   const { to, ...toNoOne } = message
-  assert.deepEqual(lineOf(toNoOne, 3), said(0, { text: 'hola' }), `to no one, not to ${to}`)
+  assert.deepEqual(lineOf(toNoOne, 3), line(), `to no one, not to ${to}`)
 })
 
 test('a message loses what could redraw the terminal or hide text, and keeps its tabs and lines', () => {

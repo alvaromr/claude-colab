@@ -10,7 +10,16 @@ import { dirname } from 'node:path'
 import type { Writable } from 'node:stream'
 import tls from 'node:tls'
 import { privateFolder, socketError } from './home.mts'
-import { DEAD_AFTER, isLoopback, MAX_LINE, PING_EVERY, PROTOCOL, type Refusal, type Value } from './protocol.ts'
+import {
+  DEAD_AFTER,
+  isLoopback,
+  MAX_HISTORY,
+  MAX_LINE,
+  PING_EVERY,
+  PROTOCOL,
+  type Refusal,
+  type Value,
+} from './protocol.ts'
 import { TEXT } from './strings.mts'
 import { clientOptions, invitation, readLines, writeLine } from './wire.mts'
 
@@ -30,7 +39,7 @@ const REQUESTS: Record<string, string[]> = {
 }
 // Stryker restore ArrayDeclaration
 // What the server may push; `connected`, `disconnected` and `error` are this process's own, never the server's.
-const SERVER_EVENTS = new Set(['rooms', 'member', 'message'])
+const SERVER_EVENTS = new Set(['rooms', 'member', 'message', 'history'])
 const INBOX_TIMEOUT = 5_000
 // A start takes milliseconds: a turn to start held longer than this was left by a crash.
 const TURN_STALE = 10_000
@@ -148,18 +157,26 @@ export function connect(
       writeLine(server, { ...request, ref })
     })
 
-  readLines(server, event => {
-    heard = Date.now()
-    if (event.ev === 'reply') {
-      const { ev, ref, ...result } = event
-      pending.get(ref)?.(worded(result))
-      // Stryker disable next-line CallExpression: bookkeeping, see above
-      pending.delete(ref)
-      return
-    }
-    if (!SERVER_EVENTS.has(String(event.ev))) return
-    emit(event.ev === 'message' ? { ...event, own: event.from === name } : event)
-  })
+  readLines(
+    server,
+    event => {
+      heard = Date.now()
+      if (event.ev === 'reply') {
+        const { ev, ref, ...result } = event
+        pending.get(ref)?.(worded(result))
+        // Stryker disable next-line CallExpression: bookkeeping, see above
+        pending.delete(ref)
+        return
+      }
+      if (!SERVER_EVENTS.has(String(event.ev))) return
+      const owned = (message: Value) => ({ ...message, own: message.from === name })
+      if (event.ev === 'message') return emit(owned(event))
+      if (event.ev !== 'history') return emit(event)
+      if (Array.isArray(event.messages)) emit({ ...event, messages: event.messages.map(owned) })
+    },
+    // A room's history is the one line longer than a request may be: what a room keeps, with a line to spare.
+    MAX_LINE + MAX_HISTORY,
+  )
   let socketId: number | undefined // the inode of the socket this process listens on, so that it removes only its own
   let pings: NodeJS.Timeout | undefined
   server.on('secureConnect', async () => {

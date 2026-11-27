@@ -51,11 +51,14 @@ export type Author = 'person' | 'claude'
  * A message of the room as the pane's chat and the conversation's rows show it; `n` numbers it in this session, and
  * `to` is kept only where the room had more than two people, the one case naming the recipient tells anything.
  * `code` is its room's, which the chat goes by: rooms of the same label (another server's, or one made after the
- * server started over) never mix. A `gap` line holds no message: it marks a return, after which what was said away is
- * missing. `from` is empty in a gap, and in a message of this session drawn after its link ended, whose name is gone.
+ * server started over) never mix. `key`, the server's id and time of the message, tells it apart from any other of its
+ * room's: what the room's history brings is logged once. A `gap` line holds no message: it marks a return, after which
+ * what was said away is missing, as the history did not reach back. `from` is empty in a gap, and in a message of this
+ * session drawn after its link ended, whose name is gone.
  */
 export type Line = Place & {
   n: number
+  key?: string
   from: string
   by: Author
   to?: string

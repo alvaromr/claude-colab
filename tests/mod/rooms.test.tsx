@@ -2,31 +2,13 @@ import { expect, test } from 'claude-code/testing'
 
 import { CODE, fromBob, HERE, linkedAna, PANE, ROOM, SEEDED, seed } from './support.ts'
 
-test('going back into a room marks where: what was said away never came', async ($, on) => {
+test('going back into a room leaves the chat as it was: what was said away comes with the room’s history', async ($, on) => {
   const state: Record<string, unknown> = {
     ...SEEDED,
     room: null,
     want: { server: '127.0.0.1:47470', name: 'Alice', place: null },
     recent: [{ server: '127.0.0.1:47470', ...HERE }],
-  }
-  seed(on, state)
-  const joined = JSON.stringify({ ok: true, ...HERE, members: ['Alice'] })
-  on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text: joined } }))
-  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
-
-  await ui.press({ key: `recent:${CODE}` })
-  expect((state.log as { code: string; gap?: true }[]).at(-1)).toMatchObject({ code: CODE, gap: true })
-  await ui.unmount()
-})
-
-test('going back again with nothing said in between keeps the one mark there is', async ($, on) => {
-  const marked = [fromBob(1, 'hola'), { n: 2, ...HERE, from: '', by: 'person', text: '', own: false, gap: true }]
-  const state: Record<string, unknown> = {
-    ...SEEDED,
-    room: null,
-    want: { server: '127.0.0.1:47470', name: 'Alice', place: null },
-    recent: [{ server: '127.0.0.1:47470', ...HERE }],
-    log: marked,
+    log: [fromBob(1, 'hola')],
   }
   seed(on, state)
   const joined = JSON.stringify({ ok: true, ...HERE, members: ['Alice'] })
@@ -35,7 +17,7 @@ test('going back again with nothing said in between keeps the one mark there is'
 
   await ui.press({ key: `recent:${CODE}` })
   expect(state.room).toEqual(HERE)
-  expect(state.log).toEqual(marked)
+  expect(state.log).toEqual([fromBob(1, 'hola')])
   await ui.unmount()
 })
 

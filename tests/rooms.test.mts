@@ -2,7 +2,7 @@
 // kept per link; codes and the time are the test's own. `hub.test.mts` tests them through the real server.
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
-import type { Value } from '../plugins/colab/cli/protocol.ts'
+import { MAX_HISTORY, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.ts'
 import { type Client, type Result, roomsOf } from '../plugins/colab/cli/rooms.mts'
 
 const AT = new Date('2026-11-20T10:00:00Z')
@@ -56,7 +56,7 @@ test('each hello says the server, its version and the lowest color no one connec
   const { rules, hello } = server()
   const said = rules.hello('Ana', 'Ana')
   assert.ok('client' in said)
-  assert.deepEqual(said.result, { name: 'Ana', color: 0, title: 'Prueba', version: 5, rooms: [] })
+  assert.deepEqual(said.result, { name: 'Ana', color: 0, title: 'Prueba', version: PROTOCOL, rooms: [] })
   const eva = hello('Eva')
   assert.equal(hello('Leo').color, 2)
   rules.drop(eva)
@@ -72,6 +72,7 @@ test('a room is made with the next number or a name, and its maker is in it; its
   assert.deepEqual(take('Ana'), [
     { ev: 'member', code: made.code, label: '1', name: 'Ana', action: 'join' },
     { ev: 'rooms', rooms: [{ ...made, busy: [] }] },
+    { ev: 'history', code: made.code, label: '1', messages: [] },
   ])
   assert.deepEqual(take('Eva'), [{ ev: 'rooms', rooms: [] }], 'one in no room sees none')
   ask(ana, 'leave')
@@ -189,7 +190,7 @@ test('a request is answered before anyone hears of the rooms it changed, and onl
   const said = tracked.hello('Ana', 'Ana')
   assert.ok('client' in said)
   tracked.request(said.client, { op: 'create' }, () => order.push('reply'))
-  assert.deepEqual(order, ['member', 'reply', 'rooms'])
+  assert.deepEqual(order, ['member', 'reply', 'rooms', 'history'])
 
   for (const op of ['ping', 'rooms', 'say']) {
     take('Ana')
@@ -205,6 +206,55 @@ test('a request is answered before anyone hears of the rooms it changed, and onl
     [...rules.clients()].map(client => client.name),
     ['Ana'],
   )
+})
+
+test('whoever goes into a room gets what was said there before, oldest first, once in, after the rooms', () => {
+  const { hello, ask, take } = server()
+  const ana = hello('Ana')
+  const eva = hello('Eva')
+  const { code } = ask(ana, 'create')
+  ask(ana, 'say', { text: 'primero', by: 'claude' })
+  ask(ana, 'say', { text: 'segundo', to: 'Ana' })
+  ask(ana, 'say', { text: 'x', to: 'Nadie' })
+  ask(ana, 'leave')
+  const said = { code, label: '1', from: 'Ana', color: 0, at: AT.toISOString() }
+  const messages = [
+    { ...said, id: 1, by: 'claude', text: 'primero' },
+    { ...said, id: 2, by: 'person', to: 'Ana', text: 'segundo' },
+  ]
+  take('Eva')
+  ask(eva, 'join', { code })
+  assert.deepEqual(
+    take('Eva').slice(-2),
+    [
+      { ev: 'rooms', rooms: [{ code, label: '1', members: ['Eva'], busy: [] }] },
+      { ev: 'history', code, label: '1', messages },
+    ],
+    'an empty room keeps it too, and what was refused was never said',
+  )
+  take('Ana')
+  assert.deepEqual(ask(ana, 'create', { code }).members, ['Eva', 'Ana'], 'made again by its code: joined')
+  assert.deepEqual(take('Ana', 'history'), [{ ev: 'history', code, label: '1', messages }])
+  assert.deepEqual(take('Eva', 'history'), [], 'no one else gets it again')
+})
+
+test('a room keeps only its newest messages that fit in MAX_HISTORY characters of JSON', () => {
+  const { hello, ask, take } = server()
+  const ana = hello('Ana')
+  const { code } = ask(ana, 'create')
+  // Each message takes a quarter of MAX_HISTORY in JSON: four fill it to the character.
+  const empty = { code, label: '1', id: 1, from: 'Ana', by: 'person', color: 0, text: '', at: AT.toISOString() }
+  const text = 'x'.repeat(MAX_HISTORY / 4 - JSON.stringify(empty).length)
+  const kept = () => {
+    ask(ana, 'leave')
+    ask(ana, 'join', { code })
+    const [history] = take('Ana', 'history').slice(-1) as [{ messages: Value[] }]
+    return history.messages.map(message => message.id)
+  }
+  for (let n = 1; n <= 5; n++) ask(ana, 'say', { text })
+  assert.deepEqual(kept(), [2, 3, 4, 5])
+  ask(ana, 'say', { text: 'y' })
+  assert.deepEqual(kept(), [3, 4, 5, 6], 'one more pushes the oldest out')
 })
 
 test('a connection gone leaves its room, frees its name, and everyone hears of it', () => {

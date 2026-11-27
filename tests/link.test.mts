@@ -12,7 +12,7 @@ import tls from 'node:tls'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { afterAll as after, test } from 'vitest'
 import { connect, networkAddresses, reachableAt } from '../plugins/colab/cli/link.mts'
-import { DEAD_AFTER, MAX_LINE, NAME_RULE, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.ts'
+import { DEAD_AFTER, MAX_HISTORY, MAX_LINE, NAME_RULE, PROTOCOL, type Value } from '../plugins/colab/cli/protocol.ts'
 import { newKey, parseInvitation, parseKey, readLines, serverOptions, writeLine } from '../plugins/colab/cli/wire.mts'
 import { fakeProcess } from './host.mts'
 
@@ -137,7 +137,7 @@ function ask(socketPath: string, path: string, body: Value | string | undefined,
   })
 }
 
-test('only rooms, member and message come from the server: connected and the rest are connect’s own', async () => {
+test('only rooms, member, message and history come from the server: connected and the rest are connect’s own', async () => {
   const server = await standIn({
     answer: (request, socket) => {
       if (request.op !== 'rooms') return {}
@@ -148,6 +148,15 @@ test('only rooms, member and message come from the server: connected and the res
       writeLine(socket, { ev: 'member', name: 'Eva', action: 'join' })
       writeLine(socket, { ev: 'message', from: 'Ana', text: 'mío', own: false })
       writeLine(socket, { ev: 'message', from: 'Eva', text: 'suyo', own: true })
+      writeLine(socket, {
+        ev: 'history',
+        label: '1',
+        messages: [
+          { from: 'Ana', own: false },
+          { from: 'Eva', own: true },
+        ],
+      })
+      writeLine(socket, { ev: 'history', label: '2', messages: 'no es una lista' })
       writeLine(socket, { ev: 'reply', ref: 999, ok: true }) // to no request of its own
       return { rooms: [] }
     },
@@ -156,7 +165,7 @@ test('only rooms, member and message come from the server: connected and the res
   await ana.until(event => event.ev === 'connected')
 
   assert.equal((await ask(ana.socketPath, '/rooms', {})).status, 200)
-  await ana.until(event => event.ev === 'message' && event.from === 'Eva')
+  await ana.until(event => event.ev === 'history')
   const connected = {
     ev: 'connected',
     name: 'Ana',
@@ -174,8 +183,16 @@ test('only rooms, member and message come from the server: connected and the res
       { ev: 'member', name: 'Eva', action: 'join' },
       { ev: 'message', from: 'Ana', text: 'mío', own: true },
       { ev: 'message', from: 'Eva', text: 'suyo', own: false },
+      {
+        ev: 'history',
+        label: '1',
+        messages: [
+          { from: 'Ana', own: true },
+          { from: 'Eva', own: false },
+        ],
+      },
     ],
-    'own, by who sent it, whatever the server says; nothing forged got through',
+    'own, by who sent it, whatever the server says; nothing forged got through, nor a history of no list',
   )
   assert.equal((await ask(ana.socketPath, '/rooms', {})).status, 200, 'a reply to nothing changes nothing')
   ana.stop()
@@ -347,6 +364,45 @@ test('a request the server leaves unanswered is answered as such, and the link l
   })
   assert.equal((await ask(ana.socketPath, '/leave', undefined)).answer.ok, true, 'a body may be left out')
   ana.stop()
+  server.close()
+})
+
+test('a history as long as a room keeps, past the line a request may be, reaches connect whole', async () => {
+  const longest = MAX_LINE + MAX_HISTORY
+  const history = (text: string) => ({ ev: 'history', label: '1', messages: [{ from: 'Eva', text }] })
+  const text = 'x'.repeat(longest - JSON.stringify(history('')).length)
+  assert.equal(JSON.stringify(history(text)).length, longest)
+  // Its end comes apart, so that connect holds the whole line unfinished first: meanwhile nothing else is written,
+  // neither the request's reply nor a ping's.
+  let splitting = false
+  const inTwo = (socket: tls.TLSSocket, line: Value) => {
+    splitting = true
+    socket.write(JSON.stringify(line))
+    setTimeout(() => {
+      socket.write('\n')
+      splitting = false
+    }, 100)
+    return undefined
+  }
+  const server = await standIn({
+    answer: (request, socket) =>
+      request.op === 'join'
+        ? inTwo(socket, history(text))
+        : request.op === 'rooms'
+          ? inTwo(socket, history(`${text}x`))
+          : splitting
+            ? undefined
+            : {},
+  })
+  const ana = connectTo(server.port)
+  await ana.until(event => event.ev === 'connected')
+
+  void ask(ana.socketPath, '/join', {})
+  await ana.until(event => event.ev === 'history')
+  assert.deepEqual(ana.events.at(-1), { ...history(text), messages: [{ from: 'Eva', text, own: false }] })
+  void ask(ana.socketPath, '/rooms', {}).catch(() => undefined) // unanswered: the link ends
+  await ana.until(event => event.ev === 'disconnected')
+  assert.equal(ana.events.filter(event => event.ev === 'history').length, 1, 'one longer cuts the link')
   server.close()
 })
 

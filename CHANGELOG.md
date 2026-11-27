@@ -5,6 +5,18 @@ The version follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Whoever goes into a room late gets what was said there before: the server keeps each room's newest messages, up
+  to 64 K characters, in memory, and hands them over on going in. The pane shows them, and Claude gets them as
+  context in one block, without waking and as addressed to no one. Back in a room after a drop or a reload, what was
+  said meanwhile comes the same way, and the gap mark shows only where something is missing.
+
+### Changed
+
+- The protocol is version 6: a server and a client of 0.1.2 or earlier turn each other down, saying so. After
+  updating, close the server and open it again.
+
 ## [0.1.2] - 2026-11-26
 
 ### Changed

@@ -81,7 +81,8 @@ connectivity between machines is not the mod's business.
   runs it, as the smoke.
 - The mod, in `hooks/`, its decisions apart from its hooks into the engine. Pure, with no engine, so that Node tests
   them with coverage and mutation: `addresses.ts`, which addresses reach which server, and the servers and rooms kept
-  to go back to; `chat.ts`, what a message becomes on its way in, who it is for, how the log keeps it, how much of
+  to go back to; `chat.ts`, what a message becomes on its way in, who it is for, how the log keeps it and what a
+  room's history adds to it, how much of
   the chat it takes and how far back the wheel's moves lead it; `linking.ts`, what connect and the CLI say, and
   whether a link that ends is made again. On the engine, which they hand their work to: `register.tsx`, its entry
   point, with the conversation's rows; `session.ts`, its start; `link.ts`, the link: connect's process and its events;
@@ -109,6 +110,13 @@ only `protocol.ts`; the CLI imports nothing of the mod.
 - **Rooms by invitation:** a room is its secret, random code, which identifies it everywhere (going in, going back,
   the chat); its number is only for people to read. Only who has the code gets in, and each connection sees only its
   room. The invitation (what it joins: `README.md`, Concepts) goes by another channel, never through the room. A room lasts as long as the server, empty too; after a restart, it is made again by its code.
+- **History:** a room keeps its newest messages that fit in `MAX_HISTORY` characters of JSON (`cli/protocol.ts`, the
+  one value to change), in the server's memory alone: work content is never written to the host's disk, and it ends
+  with the server, as the room does. After every create or join that succeeds, the server sends the one who went in
+  a `history` event, after its reply and the rooms; `connect` takes that one line past `MAX_LINE`. The mod logs the
+  messages its log lacks of that room, told apart by the server's id and time, and gives them to the model in one
+  block appended as context: it never wakes the model, nor is any of it for this session, since it is past. A gap
+  goes first where the history does not reach back to the last line the log has of the room.
 - **Author:** each message is signed by the person ("Bob") or their Claude ("Bob's Claude", "Claude de Bob"). The addressee shows only
   in rooms of more than 2.
 - **Reloads and drops:** the mod remembers its link and its room and makes them again by itself, unless `connect`
@@ -127,7 +135,7 @@ only `protocol.ts`; the CLI imports nothing of the mod.
   does not connect: there is no fallback.
 - **Person and model:** the person takes part with `/colab <text>` or from the pane; the model, with
   `mcp__colab__say`. A message for this session (addressed to it, or any in a room of two) opens a turn for the model
-  to judge, with no cap on turns; the others stay as context, with no row.
+  to judge, with no cap on turns; the others stay as context, with no row, as a room's history does.
 
 ### The CLI
 

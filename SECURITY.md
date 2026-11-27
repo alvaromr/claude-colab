@@ -12,7 +12,9 @@ what they get, and how to reproduce it.
 - **The link:** TLS 1.3 with a pre-shared key. Without the key nobody gets past the handshake, and a server that shows
   a certificate instead of using the key is refused. No address may hold more than a few connections at once, so a
   flood from one machine cannot keep the others out.
-- **A room:** only who holds its code gets in, and each connection sees only its room.
+- **A room:** only who holds its code gets in, and each connection sees only its room. Whoever gets in reads what
+  the room keeps of what was said before, its newest messages up to a cap, so inviting someone shares that too. The
+  server keeps them in memory alone, never on disk, and they end with it.
 - **The keys:** saved readable by their owner alone, in a folder no one else can swap, refused when they are not, and
   never passed on the command line nor in the environment.
 - **The session:** what arrives from a room reaches the model as quoted context from a third party, cleaned of
