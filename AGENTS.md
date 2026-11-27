@@ -110,8 +110,8 @@ only `protocol.ts`; the CLI imports nothing of the mod.
 - **Rooms by invitation:** a room is its secret, random code, which identifies it everywhere (going in, going back,
   the chat); its number is only for people to read. Only who has the code gets in, and each connection sees only its
   room. The invitation (what it joins: `README.md`, Concepts) goes by another channel, never through the room. A room lasts as long as the server, empty too; after a restart, it is made again by its code.
-- **History:** a room keeps its newest messages that fit in `MAX_HISTORY` characters of JSON (`cli/protocol.ts`, the
-  one value to change), in the server's memory alone: work content is never written to the host's disk, and it ends
+- **History:** a room keeps its newest messages within `MAX_HISTORY`, so many messages and characters of JSON
+  (`cli/protocol.ts`, the one value to change), in the server's memory alone: work content is never written to the host's disk, and it ends
   with the server, as the room does. After every create or join that succeeds, the server sends the one who went in
   a `history` event, after its reply and the rooms; `connect` takes that one line past `MAX_LINE`. The mod logs the
   messages its log lacks of that room, told apart by the server's id and time, and gives them to the model in one

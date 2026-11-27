@@ -238,23 +238,38 @@ test('whoever goes into a room gets what was said there before, oldest first, on
   assert.deepEqual(take('Eva', 'history'), [], 'no one else gets it again')
 })
 
-test('a room keeps only its newest messages that fit in MAX_HISTORY characters of JSON', () => {
+/** A server with Ana alone in room 1, and `kept()`, the ids of the messages its history holds. */
+function keeping() {
   const { hello, ask, take } = server()
   const ana = hello('Ana')
   const { code } = ask(ana, 'create')
-  // Each message takes a quarter of MAX_HISTORY in JSON: four fill it to the character.
-  const empty = { code, label: '1', id: 1, from: 'Ana', by: 'person', color: 0, text: '', at: AT.toISOString() }
-  const text = 'x'.repeat(MAX_HISTORY / 4 - JSON.stringify(empty).length)
   const kept = () => {
     ask(ana, 'leave')
     ask(ana, 'join', { code })
     const [history] = take('Ana', 'history').slice(-1) as [{ messages: Value[] }]
     return history.messages.map(message => message.id)
   }
-  for (let n = 1; n <= 5; n++) ask(ana, 'say', { text })
+  return { code, say: (text: string) => ask(ana, 'say', { text }), kept }
+}
+
+test('a room keeps only its newest messages that fit in MAX_HISTORY characters of JSON', () => {
+  const { code, say, kept } = keeping()
+  // Each message takes a quarter of the characters in JSON: four fill them to the character.
+  const empty = { code, label: '1', id: 1, from: 'Ana', by: 'person', color: 0, text: '', at: AT.toISOString() }
+  const text = 'x'.repeat(MAX_HISTORY.characters / 4 - JSON.stringify(empty).length)
+  for (let n = 1; n <= 5; n++) say(text)
   assert.deepEqual(kept(), [2, 3, 4, 5])
-  ask(ana, 'say', { text: 'y' })
+  say('y')
   assert.deepEqual(kept(), [3, 4, 5, 6], 'one more pushes the oldest out')
+})
+
+test('a room keeps no more than MAX_HISTORY messages, however short', () => {
+  const { say, kept } = keeping()
+  for (let n = 1; n <= MAX_HISTORY.messages; n++) say('y')
+  assert.deepEqual(kept().length, MAX_HISTORY.messages, 'as many as it may')
+  say('y')
+  const ids = kept()
+  assert.deepEqual([ids.length, ids[0], ids.at(-1)], [MAX_HISTORY.messages, 2, MAX_HISTORY.messages + 1], 'one more')
 })
 
 test('a connection gone leaves its room, frees its name, and everyone hears of it', () => {

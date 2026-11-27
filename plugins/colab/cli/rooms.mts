@@ -17,7 +17,7 @@ const CLAUDES_NAME = /(^|\s)claude\s+de(\s|$)/iu
 /** A name as people read it, whatever its case or its letters' width. */
 const readsAs = (name: string) => name.normalize('NFKC').toLowerCase()
 
-// `said`: its newest messages, oldest first, that fit in MAX_HISTORY characters of JSON, as `size` counts them.
+// `said`: its newest messages, oldest first, within MAX_HISTORY: `size` counts their characters of JSON.
 type Room<L> = { code: string; label: string; members: Set<Client<L>>; said: Value[]; size: number }
 // `link`: how `deliver` reaches it. `busy`: whether its Claude is at work.
 export type Client<L> = { name: string; color: number; link: L; room: Room<L> | null; busy: boolean }
@@ -129,7 +129,8 @@ export function roomsOf<L>({ title, maxRooms = MAX_ROOMS, deliver, newCode, now 
   function keep(room: Room<L>, message: Value) {
     room.said.push(message)
     room.size += JSON.stringify(message).length
-    while (room.size > MAX_HISTORY) room.size -= JSON.stringify(room.said.shift()).length
+    while (room.size > MAX_HISTORY.characters || room.said.length > MAX_HISTORY.messages)
+      room.size -= JSON.stringify(room.said.shift()).length
   }
 
   function join(me: Client<L>, code: string | undefined): Result {

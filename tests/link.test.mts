@@ -368,7 +368,7 @@ test('a request the server leaves unanswered is answered as such, and the link l
 })
 
 test('a history as long as a room keeps, past the line a request may be, reaches connect whole', async () => {
-  const longest = MAX_LINE + MAX_HISTORY
+  const longest = MAX_LINE + MAX_HISTORY.characters
   const history = (text: string) => ({ ev: 'history', label: '1', messages: [{ from: 'Eva', text }] })
   const text = 'x'.repeat(longest - JSON.stringify(history('')).length)
   assert.equal(JSON.stringify(history(text)).length, longest)

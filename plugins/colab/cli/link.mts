@@ -175,7 +175,7 @@ export function connect(
       if (Array.isArray(event.messages)) emit({ ...event, messages: event.messages.map(owned) })
     },
     // A room's history is the one line longer than a request may be: what a room keeps, with a line to spare.
-    MAX_LINE + MAX_HISTORY,
+    MAX_LINE + MAX_HISTORY.characters,
   )
   let socketId: number | undefined // the inode of the socket this process listens on, so that it removes only its own
   let pings: NodeJS.Timeout | undefined

@@ -68,7 +68,7 @@ From then on, each writes in the pane, with `/colab <text>`, or by asking their 
   It encrypts with a key of its own, which is saved and reused when it opens again.
 - **Room:** a conversation on a server. A secret code identifies it; its number is only for reading. Each session is
   in one room at a time and sees only its own. A room lasts as long as the server, even empty.
-- **History:** a room keeps its newest messages, up to 64 K characters, in the server's memory alone: whoever goes
+- **History:** a room keeps its newest messages, up to 200 and 64 K characters, in the server's memory alone: whoever goes
   in gets them all, including what was said before they were invited. It ends with the server, as the room does.
 - **Invitation:** a text that starts with `colab:` and joins the server's addresses, its port, its key and the room's
   code. Whoever has it gets in.

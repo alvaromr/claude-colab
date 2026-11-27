@@ -23,9 +23,10 @@ export const PING_EVERY = 15_000
 export const DEAD_AFTER = 3
 export const MAX_LINE = 64 * 1024
 export const MAX_TEXT = 16 * 1024
-// What a room keeps of what was said in it, for whoever goes in after: its newest messages that fit in this many
-// characters of JSON. It bounds the server's memory, the line that carries them, and the context a Claude gets.
-export const MAX_HISTORY = 64 * 1024
+// What a room keeps of what was said in it, for whoever goes in after: its newest messages, no more of them than
+// `messages`, that fit in `characters` of JSON. It bounds the server's memory, the line
+// that carries them, and the context a Claude gets.
+export const MAX_HISTORY = { characters: 64 * 1024, messages: 200 } as const
 
 // What people read colab in: Spanish where their locale is Spanish, English anywhere else. Each side speaks its own:
 // the server sends codes, never text, and each client words them.

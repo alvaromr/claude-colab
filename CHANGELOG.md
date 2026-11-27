@@ -8,7 +8,7 @@ The version follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Whoever goes into a room late gets what was said there before: the server keeps each room's newest messages, up
-  to 64 K characters, in memory, and hands them over on going in. The pane shows them, and Claude gets them as
+  to 200 and 64 K characters, in memory, and hands them over on going in. The pane shows them, and Claude gets them as
   context in one block, without waking and as addressed to no one. Back in a room after a drop or a reload, what was
   said meanwhile comes the same way, and the gap mark shows only where something is missing.
 
